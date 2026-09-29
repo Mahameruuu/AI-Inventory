@@ -1,0 +1,21 @@
+# ── Inventory AI (kontainer inventory-ai-backend) ──
+#
+# TIDAK ADA PEKERJAAN TERJADWAL. Berkas ini sengaja dipertahankan kosong
+# supaya jelas bahwa itu keadaan yang dituju, bukan berkas yang terlupa dibuat.
+#
+# Dua baris pemindaian anomali dicabut pada 2 September 2026 bersama modulnya,
+# dan sudah dilepas dari crontab mesin ini pada tanggal yang sama. Penggantinya,
+# Analisis Umur Pakai, TIDAK membutuhkan batch: ia tidak menulis temuan ke tabel
+# mana pun melainkan menghitung ulang dari riwayat pengeluaran setiap kali
+# halamannya dibuka. Tidak ada yang bisa basi, dan tidak ada pemindaian yang
+# bisa diam-diam berhenti berjalan.
+#
+# BILA MEMBERSIHKAN CRONTAB DI MESIN LAIN, JANGAN PAKAI `grep -v anomaly`.
+# Crontab mesin ini juga memuat pekerjaan anomali PROYEK LAIN:
+#
+#     0 1 * * * docker exec pv-anomaly-v2 sh -c "python anomaly_detect.py ..."
+#
+# yang tidak ada hubungannya dengan repositori ini dan akan ikut terbuang.
+# Yang menyaring dengan tepat adalah nama modulnya:
+#
+#     crontab -l | grep -v scan_anomalies | crontab -

@@ -1,0 +1,3720 @@
+<title>Anatomi Sistem Inventory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap">
+
+<style>
+/* ------------------------------------------------------------------ *
+ * Token — palet diambil dari globals.css aplikasi Inventory System
+ * supaya dokumen ini, dokumen Anatomi Prakiraan Stok, dan layar
+ * aplikasinya terbaca sebagai satu keluarga. Warna status SENGAJA
+ * identik: chip di sini harus bisa dicocokkan langsung dengan
+ * lencana di layar.
+ * ------------------------------------------------------------------ */
+:root {
+  color-scheme: light;
+
+  --ground:    #f9f9f7;
+  --surface:   #fcfcfb;
+  --surface-2: #f2f1ec;
+  --ink:       #0b0b0b;
+  --ink-2:     #52514e;
+  --ink-3:     #898781;
+  --rule:      #e1e0d9;
+  --rule-firm: #c3c2b7;
+
+  --accent:      #2a78d6;
+  --accent-soft: rgba(42, 120, 214, 0.10);
+  --accent-line: rgba(42, 120, 214, 0.30);
+
+  --safe:     #0ca30c;
+  --attn:     #fab219;
+  --critical: #d03b3b;
+  --neutral:  #898781;
+
+  --safe-bg:     rgba(12, 163, 12, 0.10);
+  --attn-bg:     rgba(250, 178, 25, 0.14);
+  --critical-bg: rgba(208, 59, 59, 0.10);
+  --neutral-bg:  rgba(137, 135, 129, 0.12);
+
+  --shadow: 0 1px 2px rgba(11, 11, 11, 0.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground:    #0d0d0d;
+    --surface:   #1a1a19;
+    --surface-2: #232322;
+    --ink:       #ffffff;
+    --ink-2:     #c3c2b7;
+    --ink-3:     #898781;
+    --rule:      #2c2c2a;
+    --rule-firm: #45443f;
+
+    --accent:      #5c9ceb;
+    --accent-soft: rgba(92, 156, 235, 0.13);
+    --accent-line: rgba(92, 156, 235, 0.36);
+
+    --safe:     #3fc23f;
+    --attn:     #fbc34c;
+    --critical: #e86a6a;
+    --neutral:  #a3a19a;
+
+    --safe-bg:     rgba(63, 194, 63, 0.13);
+    --attn-bg:     rgba(251, 195, 76, 0.14);
+    --critical-bg: rgba(232, 106, 106, 0.13);
+    --neutral-bg:  rgba(163, 161, 154, 0.14);
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground:    #0d0d0d;
+  --surface:   #1a1a19;
+  --surface-2: #232322;
+  --ink:       #ffffff;
+  --ink-2:     #c3c2b7;
+  --ink-3:     #898781;
+  --rule:      #2c2c2a;
+  --rule-firm: #45443f;
+
+  --accent:      #5c9ceb;
+  --accent-soft: rgba(92, 156, 235, 0.13);
+  --accent-line: rgba(92, 156, 235, 0.36);
+
+  --safe:     #3fc23f;
+  --attn:     #fbc34c;
+  --critical: #e86a6a;
+  --neutral:  #a3a19a;
+
+  --safe-bg:     rgba(63, 194, 63, 0.13);
+  --attn-bg:     rgba(251, 195, 76, 0.14);
+  --critical-bg: rgba(232, 106, 106, 0.13);
+  --neutral-bg:  rgba(163, 161, 154, 0.14);
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+/* ------------------------------------------------------------------ */
+
+body {
+  /* Saat diterbitkan sebagai Artifact, reset bawaannya sudah menghapus margin
+     ini. Ditulis juga di sini supaya berkasnya tetap tampil benar ketika
+     dibuka langsung dari folder docs/ tanpa pembungkus apa pun. */
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink-2);
+  font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; }
+
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px 96px;
+}
+
+/* --- Kepala dokumen --- */
+
+.masthead {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 72px 0 40px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.eyebrow {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+h1 {
+  font-family: "IBM Plex Serif", Georgia, serif;
+  font-weight: 600;
+  font-size: clamp(2.15rem, 5.2vw, 3.1rem);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  margin: 0;
+  text-wrap: balance;
+}
+
+.standfirst {
+  font-size: 1.075rem;
+  line-height: 1.6;
+  max-width: 62ch;
+  color: var(--ink-2);
+  margin: 0;
+}
+
+.masthead-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  margin-top: 6px;
+}
+
+.tag {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  color: var(--ink-3);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 3px 9px;
+  background: var(--surface);
+}
+
+/* --- Kerangka: daftar isi + isi --- */
+
+.frame {
+  display: grid;
+  gap: 56px;
+  padding-top: 52px;
+}
+
+@media (min-width: 1040px) {
+  .frame {
+    grid-template-columns: 196px minmax(0, 1fr);
+    gap: 64px;
+  }
+}
+
+.toc { display: none; }
+
+@media (min-width: 1040px) {
+  .toc {
+    display: block;
+    position: sticky;
+    top: 40px;
+    align-self: start;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+  }
+}
+
+.toc-title {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.toc ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.toc a {
+  color: var(--ink-2);
+  text-decoration: none;
+  font-size: 13.5px;
+  line-height: 1.4;
+  display: block;
+  border-left: 2px solid transparent;
+  padding-left: 12px;
+  margin-left: -14px;
+  transition: color 0.12s, border-color 0.12s;
+}
+
+.toc a:hover,
+.toc a:focus-visible {
+  color: var(--accent);
+  border-left-color: var(--accent);
+}
+
+.body { display: flex; flex-direction: column; gap: 68px; min-width: 0; }
+
+section { display: flex; flex-direction: column; gap: 22px; scroll-margin-top: 28px; }
+
+h2 {
+  font-family: "IBM Plex Serif", Georgia, serif;
+  font-weight: 600;
+  font-size: 1.62rem;
+  line-height: 1.22;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0;
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--ink);
+  text-wrap: balance;
+}
+
+h3 {
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1.02rem;
+  line-height: 1.35;
+  color: var(--ink);
+  margin: 0;
+}
+
+p { margin: 0; max-width: 66ch; }
+
+.lede { font-size: 1.02rem; color: var(--ink-2); max-width: 64ch; }
+
+strong { color: var(--ink); font-weight: 600; }
+
+code, .mono {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.885em;
+  font-variant-ligatures: none;
+}
+
+code {
+  background: var(--surface-2);
+  border-radius: 3px;
+  padding: 1.5px 5px;
+  color: var(--ink);
+}
+
+a { color: var(--accent); }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* --- Panel instrumen: keluar sedikit lebih lebar dari kolom baca --- */
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 13px 20px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface-2);
+}
+
+.panel-head .label {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.panel-body { padding: 22px 20px; }
+.panel-scroll { overflow-x: auto; }
+
+/* --- Diagram --- */
+
+figure { margin: 0; display: flex; flex-direction: column; gap: 0; }
+
+.diagram { display: block; width: 100%; height: auto; min-width: 620px; }
+
+.d-label {
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+  fill: var(--ink-2);
+}
+.d-strong { fill: var(--ink); font-weight: 600; }
+.d-axis {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  fill: var(--ink-3);
+}
+
+figcaption {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-3);
+  padding: 14px 20px 0;
+  border-top: 1px solid var(--rule);
+  max-width: none;
+}
+
+/* --- Glosarium --- */
+
+.glossary { display: flex; flex-direction: column; gap: 0; }
+
+.term {
+  display: grid;
+  gap: 6px 28px;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.term:first-child { border-top: 1px solid var(--rule); }
+
+@media (min-width: 760px) {
+  .term { grid-template-columns: 205px minmax(0, 1fr); }
+}
+
+.term-name { display: flex; flex-direction: column; gap: 3px; }
+
+.term-en {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+}
+
+.term-id {
+  font-family: "IBM Plex Serif", Georgia, serif;
+  font-size: 1.06rem;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.term-def { display: flex; flex-direction: column; gap: 10px; }
+.term-def p { max-width: 62ch; }
+
+.aside {
+  border-left: 2px solid var(--accent-line);
+  background: var(--accent-soft);
+  padding: 10px 14px;
+  border-radius: 0 4px 4px 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 62ch;
+}
+
+.aside strong { color: var(--ink); }
+
+/* --- Rumus --- */
+
+.formula {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 13.5px;
+  line-height: 1.9;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  padding: 16px 18px;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.formula .dim { color: var(--ink-3); }
+.formula .hi  { color: var(--accent); font-weight: 500; }
+
+/* --- Tabel --- */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  min-width: 540px;
+}
+
+thead th {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--rule-firm);
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink-2);
+  vertical-align: top;
+}
+
+tbody tr:last-child td { border-bottom: none; }
+
+.num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+th.num { text-align: right; }
+
+.sku {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12.5px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* --- Chip status --- */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  padding: 3px 9px 3px 7px;
+  border-radius: 3px;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.chip::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.chip-safe     { background: var(--safe-bg); }
+.chip-safe::before     { background: var(--safe); }
+.chip-attn     { background: var(--attn-bg); }
+.chip-attn::before     { background: var(--attn); }
+.chip-critical { background: var(--critical-bg); }
+.chip-critical::before { background: var(--critical); }
+.chip-none     { background: var(--neutral-bg); }
+.chip-none::before     { background: var(--neutral); }
+
+/* --- Kartu status --- */
+
+.status-grid { display: grid; gap: 14px; }
+
+@media (min-width: 700px) {
+  .status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.status-card {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 18px 20px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--stripe, var(--rule-firm));
+  border-radius: 5px;
+  box-shadow: var(--shadow);
+}
+
+.status-card.s-safe     { --stripe: var(--safe); }
+.status-card.s-attn     { --stripe: var(--attn); }
+.status-card.s-critical { --stripe: var(--critical); }
+.status-card.s-none     { --stripe: var(--neutral); }
+
+.status-card p { font-size: 14px; max-width: none; }
+
+.rule-line {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ink);
+  background: var(--surface-2);
+  border-radius: 4px;
+  padding: 10px 12px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+/* --- Dua mesin --- */
+
+.engine-grid { display: grid; gap: 14px; }
+
+@media (min-width: 760px) {
+  .engine-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.engine {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  box-shadow: var(--shadow);
+}
+
+.engine dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 14px;
+  font-size: 13px;
+}
+
+.engine dt {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding-top: 3px;
+  white-space: nowrap;
+}
+
+.engine dd { margin: 0; color: var(--ink-2); }
+
+.engine p { font-size: 14px; max-width: none; }
+
+/* --- Alur peran --- */
+
+.roles { display: flex; flex-direction: column; gap: 0; }
+
+.role {
+  display: grid;
+  gap: 4px 20px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.role:first-child { border-top: 1px solid var(--rule); }
+
+@media (min-width: 700px) {
+  .role { grid-template-columns: 150px minmax(0, 1fr); }
+}
+
+.role-who {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  padding-top: 2px;
+}
+
+.role p { font-size: 14.5px; }
+
+/* --- Catatan kaki --- */
+
+.footnote {
+  margin-top: 4px;
+  padding-top: 22px;
+  border-top: 1px solid var(--rule);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-3);
+  max-width: 68ch;
+}
+
+/* --- Dek kartu keputusan --- */
+
+.deck { display: grid; gap: 14px; }
+
+@media (min-width: 640px) {
+  .deck { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.deck-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 20px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  box-shadow: var(--shadow);
+}
+
+.deck-card .slot {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.deck-card .name {
+  font-family: "IBM Plex Serif", Georgia, serif;
+  font-size: 1.06rem;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.deck-card .sample {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12.5px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 3px;
+  padding: 5px 9px;
+  align-self: flex-start;
+}
+
+.deck-card p { font-size: 14px; max-width: none; }
+
+/* --- Penanda kecil sebaris --- */
+
+.flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: var(--attn-bg);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.flag::before { content: "\26A0"; color: var(--attn); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* ================================================================== *
+ * Tambahan untuk dokumen sistem penuh.
+ *
+ * Token, tipografi, panel, tabel, chip, dan glosarium di atas SENGAJA
+ * disalin apa adanya dari docs/anatomi-prakiraan-stok.html: kedua
+ * dokumen harus terbaca sebagai satu keluarga, dan warna status di sini
+ * harus bisa dicocokkan langsung dengan lencana di layar aplikasi.
+ * Yang di bawah ini hanya komponen yang memang tidak ada di sana.
+ * ================================================================== */
+
+/* --- Bab modul: satu kepala, satu pertanyaan, lalu faktanya --- */
+
+.mod {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent-line);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.mod-head {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface-2);
+}
+
+.mod-head .kode {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.mod-head .nama {
+  font-family: "IBM Plex Serif", Georgia, serif;
+  font-size: 1.18rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.mod-head .tanya {
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  max-width: 68ch;
+}
+
+.mod-head .tanya em { color: var(--ink); font-style: italic; }
+
+.mod-body {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mod-body p { font-size: 14.5px; max-width: 68ch; }
+
+/* --- Daftar fakta: berkas, rute, aturan --- */
+
+.facts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px 18px;
+  font-size: 13.5px;
+}
+
+@media (min-width: 640px) {
+  .facts { grid-template-columns: 128px minmax(0, 1fr); }
+}
+
+.facts dt {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding-top: 3px;
+}
+
+.facts dd {
+  margin: 0;
+  color: var(--ink-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.facts dd.plain { display: block; }
+
+/* --- Penanda kecil: berkas sumber dan rute API --- */
+
+.file, .route {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  line-height: 1.5;
+  border-radius: 3px;
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+
+.file {
+  background: var(--surface-2);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+}
+
+.route {
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  color: var(--accent);
+}
+
+.route .verb { font-weight: 600; letter-spacing: 0.04em; }
+
+/* --- Batas modul: apa yang SENGAJA tidak dikerjakan --- */
+
+.nope {
+  border-left: 2px solid var(--critical);
+  background: var(--critical-bg);
+  padding: 11px 14px;
+  border-radius: 0 4px 4px 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 68ch;
+}
+
+.nope strong { color: var(--ink); }
+
+.nope-title {
+  display: block;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--critical);
+  margin-bottom: 5px;
+}
+
+/* --- Langkah bernomor --- */
+
+.steps { display: flex; flex-direction: column; gap: 0; counter-reset: langkah; }
+
+.step {
+  display: grid;
+  gap: 4px 18px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--rule);
+  counter-increment: langkah;
+}
+
+.step:first-child { border-top: 1px solid var(--rule); }
+
+@media (min-width: 700px) {
+  .step { grid-template-columns: 178px minmax(0, 1fr); }
+}
+
+.step-no {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.step-no::before {
+  content: counter(langkah, decimal-leading-zero);
+  color: var(--ink-3);
+  font-weight: 400;
+}
+
+.step p { font-size: 14.5px; }
+.step .file, .step .route { white-space: normal; }
+
+/* --- Kisi umum --- */
+
+.two, .three { display: grid; gap: 14px; }
+
+@media (min-width: 720px) {
+  .two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 860px) {
+  .three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* --- Kartu ringkas --- */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 17px 19px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  box-shadow: var(--shadow);
+}
+
+.card .cap {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.card .head {
+  font-family: "IBM Plex Serif", Georgia, serif;
+  font-size: 1.04rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.card p { font-size: 13.8px; max-width: none; }
+
+/* --- Daftar berbutir yang tetap rapi di kolom sempit --- */
+
+ul.tight {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 14.2px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 68ch;
+}
+
+ul.tight li::marker { color: var(--ink-3); }
+ul.tight strong { color: var(--ink); }
+
+/* --- Tautan ke dokumen tetangga --- */
+
+.linkcard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 15px 18px;
+  border: 1px solid var(--accent-line);
+  background: var(--accent-soft);
+  border-radius: 5px;
+  text-decoration: none;
+}
+
+.linkcard .cap {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.linkcard .head {
+  font-family: "IBM Plex Serif", Georgia, serif;
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.linkcard p { font-size: 13.8px; color: var(--ink-2); max-width: none; }
+
+/* --- Daftar isi bertingkat --- */
+
+.toc ol ol {
+  margin: 9px 0 2px;
+  padding-left: 13px;
+  gap: 8px;
+  border-left: 1px solid var(--rule);
+}
+
+.toc ol ol a { font-size: 12.8px; color: var(--ink-3); }
+
+/* --- Diagram: kelas bantu tambahan --- */
+
+.d-box { fill: var(--surface); stroke: var(--rule-firm); stroke-width: 1; }
+.d-box-soft { fill: var(--surface-2); stroke: var(--rule); stroke-width: 1; }
+.d-box-accent { fill: var(--accent-soft); stroke: var(--accent-line); stroke-width: 1; }
+.d-tiny {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10px;
+  fill: var(--ink-3);
+}
+.d-mono {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  fill: var(--ink-2);
+}
+.d-flow { stroke: var(--rule-firm); stroke-width: 1.5; fill: none; }
+.d-flow-accent { stroke: var(--accent); stroke-width: 1.8; fill: none; }
+
+/* --- Tabel yang lebih rapat untuk daftar panjang --- */
+
+table.dense { font-size: 13px; min-width: 620px; }
+table.dense tbody td { padding: 9px 13px; }
+table.dense td .file,
+table.dense td .route { white-space: nowrap; }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">Inventory System · Dokumentasi Sistem Menyeluruh</div>
+    <h1>Anatomi Sistem Inventory</h1>
+    <p class="standfirst">
+      Dua belas halaman, tujuh belas router, enam mesin hitung, dan satu basis data
+      yang menyaring dirinya sendiri per perusahaan. Dokumen ini menelusuri
+      seluruhnya menurut urutan kerjanya — dari satu klik di peramban sampai satu
+      baris yang tersimpan — lalu membedah tiap modul satu per satu: pertanyaan apa
+      yang dijawabnya, dari mana angkanya datang, dan apa yang <em>sengaja</em>
+      tidak dikerjakannya.
+    </p>
+    <div class="masthead-meta">
+      <span class="tag">Untuk pengembang, penerap, &amp; pemilik produk</span>
+      <span class="tag">10 halaman navigasi · 1 alur</span>
+      <span class="tag">Banyak-penyewa lewat Row Level Security</span>
+      <span class="tag">Diperbarui 7 September 2026</span>
+    </div>
+  </header>
+
+  <div class="frame">
+
+    <nav class="toc" aria-label="Daftar isi">
+      <div class="toc-title">Isi</div>
+      <ol>
+        <li><a href="#peta">Peta sistem</a></li>
+        <li><a href="#permintaan">Perjalanan satu permintaan</a></li>
+        <li><a href="#alur">Alur sistem lengkap</a></li>
+        <li><a href="#modul">Sepuluh halaman, satu alur</a>
+          <ol>
+            <li><a href="#dasbor">Dasbor</a></li>
+            <li><a href="#dasar">Data Dasar</a></li>
+            <li><a href="#input">Input Manual</a></li>
+            <li><a href="#prakiraan">Prakiraan</a></li>
+            <li><a href="#reorder">Pemesanan Ulang</a></li>
+            <li><a href="#transfer">Transfer Antar Gudang</a></li>
+            <li><a href="#umur">Analisis Umur Pakai</a></li>
+            <li><a href="#asisten">Asisten AI</a></li>
+            <li><a href="#pengaturan">Pengaturan &amp; Masuk</a></li>
+          </ol>
+        </li>
+        <li><a href="#pendukung">Modul tanpa halaman</a></li>
+        <li><a href="#mesin">Enam mesin hitung</a></li>
+        <li><a href="#ai">Di mana AI bekerja</a></li>
+        <li><a href="#penyewa">Banyak penyewa</a></li>
+        <li><a href="#data">Model data</a></li>
+        <li><a href="#api">Permukaan API</a></li>
+        <li><a href="#ambang">Ambang &amp; konstanta</a></li>
+        <li><a href="#glosarium">Glosarium</a></li>
+      </ol>
+    </nav>
+
+    <main class="body">
+
+      <!-- ============================================================ -->
+      <section id="peta">
+        <h2>Peta sistem</h2>
+        <p class="lede">
+          Tiga lapis yang berbicara satu arah, ditambah dua layanan di samping yang
+          boleh mati tanpa menjatuhkan apa pun. Seluruh angka lahir di lapis tengah;
+          peramban tidak pernah menghitung, dan basis data tidak pernah memutuskan.
+        </p>
+
+        <div class="panel">
+          <div class="panel-head">
+            <span class="label">Susunan lapis</span>
+            <span class="label">Panah = arah permintaan</span>
+          </div>
+          <div class="panel-body panel-scroll">
+            <figure>
+              <svg class="diagram" viewBox="0 0 780 500" role="img"
+                   aria-labelledby="peta-judul peta-uraian">
+                <title id="peta-judul">Susunan lapis sistem Inventory</title>
+                <desc id="peta-uraian">
+                  Peramban Next.js mengirim permintaan HTTPS bertoken ke FastAPI.
+                  FastAPI terdiri atas penjaga token, tujuh belas router, dan enam
+                  mesin hitung, lalu menulis serta membaca PostgreSQL yang menyaring
+                  baris per perusahaan lewat Row Level Security. Di samping FastAPI
+                  ada dua layanan opsional: berkas model XGBoost yang dipasang dari
+                  luar kontainer, dan runtime LLM Ollama.
+                </desc>
+
+                <!-- Peramban -->
+                <rect class="d-box" x="36" y="34" width="430" height="76" rx="5"/>
+                <text class="d-label d-strong" x="52" y="58">Peramban · Next.js App Router</text>
+                <text class="d-mono" x="52" y="78">Shell + 12 halaman · lib/api.ts · lib/i18n.tsx</text>
+                <text class="d-tiny" x="52" y="96">token JWT di localStorage · tema &amp; bahasa per pengguna</text>
+
+                <!-- panah 1 -->
+                <path class="d-flow-accent" d="M251,110 L251,140"/>
+                <path d="M251,146 l-4.5,-9 h9 Z" fill="var(--accent)"/>
+                <text class="d-mono" x="263" y="132">HTTPS · Authorization: Bearer · ?lang=id|en</text>
+
+                <!-- FastAPI -->
+                <rect class="d-box" x="36" y="146" width="430" height="230" rx="5"/>
+                <text class="d-label d-strong" x="52" y="170">FastAPI · backend/app</text>
+
+                <rect class="d-box-accent" x="52" y="182" width="398" height="36" rx="4"/>
+                <text class="d-mono" x="66" y="204">pengguna_saat_ini() → tenant.set_penyewa()</text>
+
+                <rect class="d-box-soft" x="52" y="228" width="398" height="36" rx="4"/>
+                <text class="d-mono" x="66" y="250">17 router · satu tema per berkas · tanpa rumus</text>
+
+                <rect class="d-box-soft" x="52" y="274" width="398" height="88" rx="4"/>
+                <text class="d-label" x="66" y="296">Mesin hitung — fungsi murni, tanpa SQL</text>
+                <text class="d-mono" x="66" y="316">forecasting · decision · rop · statistik</text>
+                <text class="d-mono" x="66" y="334">transfer · lifetime · ml/klasik · ml/predict</text>
+                <text class="d-tiny" x="66" y="352">seluruhnya dapat diuji tanpa basis data</text>
+
+                <!-- panah 2 -->
+                <path class="d-flow-accent" d="M251,376 L251,406"/>
+                <path d="M251,412 l-4.5,-9 h9 Z" fill="var(--accent)"/>
+                <text class="d-mono" x="263" y="398">db.readonly() / db.transaction() · SET app.company_id</text>
+
+                <!-- PostgreSQL -->
+                <rect class="d-box" x="36" y="412" width="430" height="66" rx="5"/>
+                <text class="d-label d-strong" x="52" y="436">PostgreSQL · 31 migrasi</text>
+                <text class="d-mono" x="52" y="456">Row Level Security menyaring 20 tabel per perusahaan</text>
+                <text class="d-tiny" x="52" y="470">tanpa trigger, tanpa function bisnis — rantai tulis ditulis eksplisit</text>
+
+                <!-- Sidecar: model -->
+                <rect class="d-box-soft" x="506" y="200" width="238" height="58" rx="5"/>
+                <text class="d-label" x="520" y="222">Berkas model XGBoost</text>
+                <text class="d-tiny" x="520" y="240">dipasang lewat docker -v · 757 MB</text>
+                <text class="d-tiny" x="520" y="253">mati → jatuh ke rata-rata bergerak</text>
+                <path class="d-flow" d="M506,229 L472,229" stroke-dasharray="4 3"/>
+                <path d="M466,229 l9,-4.5 v9 Z" fill="var(--rule-firm)"/>
+
+                <!-- Sidecar: LLM -->
+                <rect class="d-box-soft" x="506" y="296" width="238" height="58" rx="5"/>
+                <text class="d-label" x="520" y="318">Runtime LLM · Ollama</text>
+                <text class="d-tiny" x="520" y="336">menyusun kalimat &amp; memilih tool</text>
+                <text class="d-tiny" x="520" y="349">mati → angka tetap terbit</text>
+                <path class="d-flow" d="M506,325 L472,325" stroke-dasharray="4 3"/>
+                <path d="M466,325 l9,-4.5 v9 Z" fill="var(--rule-firm)"/>
+
+                <text class="d-tiny" x="506" y="386">Garis putus-putus = boleh tidak ada.</text>
+                <text class="d-tiny" x="506" y="400">Sistem tetap menjawab tanpa keduanya,</text>
+                <text class="d-tiny" x="506" y="414">dengan jawaban yang lebih sederhana.</text>
+              </svg>
+              <figcaption>
+                Dua kotak di kanan adalah satu-satunya bagian sistem yang boleh hilang
+                tanpa membuat halaman kosong. Model prakiraan yang tidak termuat membuat
+                ramalan turun ke rata-rata bergerak berbobot; LLM yang mati membuat
+                rekomendasi terbit sebagai kalimat yang dirakit dari angka. Keduanya
+                <em>menurunkan mutu jawaban</em>, bukan menghentikannya — dan keduanya
+                menyatakan diri lewat <code>GET /api/health</code>.
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <div class="three">
+          <div class="card">
+            <span class="cap">Aturan lapis 1</span>
+            <span class="head">Peramban tidak menghitung</span>
+            <p>
+              Tidak ada satu rumus pun di frontend. Setiap angka yang tampil sudah
+              berupa bilangan bulat versi tampilan dari backend (field <code>*_int</code>),
+              dan setiap kalimat kesimpulan sudah dirakit di <span class="file">app/i18n.py</span>.
+              Layar hanya menatanya.
+            </p>
+          </div>
+          <div class="card">
+            <span class="cap">Aturan lapis 2</span>
+            <span class="head">Router tidak berumus</span>
+            <p>
+              Router membaca, menyaring, mengurutkan, dan memformat. Begitu sebuah
+              rumus muncul di dalam router, ia otomatis punya dua rumah — dan dua
+              rumah berarti dua layar yang bisa menyebut angka berbeda untuk barang
+              yang sama tanpa satu galat pun terbit.
+            </p>
+          </div>
+          <div class="card">
+            <span class="cap">Aturan lapis 3</span>
+            <span class="head">Basis data tidak memutuskan</span>
+            <p>
+              Tidak ada trigger dan tidak ada stored procedure bisnis. Rangkaian empat
+              tabel yang menaikkan atau menurunkan stok ditulis terang-terangan di
+              Python, di dalam satu <code>transaction()</code> yang COMMIT seluruhnya
+              atau ROLLBACK seluruhnya.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="permintaan">
+        <h2>Perjalanan satu permintaan</h2>
+        <p class="lede">
+          Setiap permintaan menempuh urutan yang sama, dan urutan itu adalah tempat
+          seluruh jaminan keamanan sistem ini tinggal. Yang paling menentukan justru
+          langkah yang tidak terlihat di kode router mana pun: penyetelan penyewa
+          sebelum query pertama lahir.
+        </p>
+
+        <div class="steps">
+          <div class="step">
+            <div class="step-no">Peramban</div>
+            <p>
+              <span class="file">frontend/lib/api.ts</span> menempelkan
+              <code>Authorization: Bearer &lt;token&gt;</code> dan <code>?lang=</code> pada
+              setiap panggilan. Token disimpan di <code>localStorage</code>; jawaban 401
+              melempar pengguna kembali ke <span class="route"><span class="verb">GET</span> /login</span>.
+            </p>
+          </div>
+          <div class="step">
+            <div class="step-no">Middleware bahasa</div>
+            <p>
+              <span class="file">app/main.py</span> menyalin <code>lang</code> sekali ke
+              contextvar bahasa. Endpoint yang memang menyusun kalimat tetap menerima
+              <code>lang</code> sebagai parameter biasa; yang dilayani middleware ini
+              adalah <strong>pesan galat</strong>, yang lahir jauh di dalam lapisan data
+              dan tidak punya urusan dengan tampilan.
+            </p>
+          </div>
+          <div class="step">
+            <div class="step-no">Penjaga token</div>
+            <p>
+              <code>pengguna_saat_ini()</code> di <span class="file">app/auth.py</span>
+              memverifikasi tanda tangan JWT, lalu <strong>membaca ulang baris pengguna</strong>
+              untuk mencocokkan <code>token_version</code>. Satu query tambahan per
+              permintaan, dibayar dengan sadar: tanpa itu, menonaktifkan karyawan yang
+              keluar hari ini baru berlaku setelah tokennya kedaluwarsa sendiri.
+            </p>
+          </div>
+          <div class="step">
+            <div class="step-no">Penyewa aktif</div>
+            <p>
+              Identitas yang terbukti disimpan sebagai <code>Penyewa</code> beku di
+              contextvar <span class="file">app/tenant.py</span>. Tidak ada satu pun
+              router yang perlu tahu bahwa sistem ini banyak-penyewa — dan karena itu
+              tidak ada satu pun router yang bisa lupa.
+            </p>
+          </div>
+          <div class="step">
+            <div class="step-no">Pintu basis data</div>
+            <p>
+              <code>readonly()</code> dan <code>transaction()</code> di
+              <span class="file">app/db.py</span> adalah satu-satunya tempat query lahir.
+              Keduanya menyalin <code>company_id</code> ke setelan sesi PostgreSQL dengan
+              <code>set_config(..., true)</code> — berlaku hanya sampai transaksi selesai,
+              karena koneksi dipakai bergantian lewat pool.
+            </p>
+          </div>
+          <div class="step">
+            <div class="step-no">Row Level Security</div>
+            <p>
+              Policy pada migrasi 028 membandingkan <code>company_id</code> tiap baris
+              dengan setelan sesi itu. Ini yang benar-benar menolak baris milik penyewa
+              lain. Bila langkah sebelumnya keliru dan tidak menyetel apa pun, akibatnya
+              adalah <strong>halaman kosong</strong> — bukan data orang lain.
+            </p>
+          </div>
+          <div class="step">
+            <div class="step-no">Router → mesin</div>
+            <p>
+              Router membaca baris, memanggil mesin hitung yang tidak menyentuh SQL sama
+              sekali, lalu merakit jawaban. Angka tampilan sudah dibulatkan di sini
+              (<code>*_int</code>), kalimat kesimpulan sudah dirakit di sini.
+            </p>
+          </div>
+          <div class="step">
+            <div class="step-no">Penangan galat</div>
+            <p>
+              Tiga penangan di <span class="file">app/main.py</span>: <code>AppError</code>
+              terbit apa adanya, galat validasi pydantic disederhanakan menjadi satu
+              kalimat beserta nama field-nya, dan pengecualian tak terduga dicatat penuh
+              di log server sementara klien hanya menerima pesan umum.
+            </p>
+          </div>
+        </div>
+
+        <div class="aside">
+          <strong>Dua kesalahan konfigurasi yang tidak menimbulkan gejala apa pun</strong>
+          diperiksa saat proses menyala, dan keduanya menolak menyalakan aplikasi.
+          <code>JWT_SECRET</code> kosong berarti siapa pun dapat menerbitkan token atas
+          nama pengguna mana pun. Tersambung sebagai <em>superuser</em> PostgreSQL berarti
+          seluruh Row Level Security dilewati: setiap halaman tetap tampil normal, setiap
+          query tetap berhasil, dan yang berubah hanyalah bahwa setiap penyewa melihat
+          data seluruh penyewa. Lihat <code>_periksa_konfigurasi_keamanan()</code>.
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="alur">
+        <h2>Alur sistem lengkap</h2>
+        <p class="lede">
+          Navigasi aplikasi bukan katalog fitur melainkan <strong>satu alur</strong>, dan
+          urutannya mengikuti perjalanan datanya sendiri: apa yang dikelola, bagaimana ia
+          masuk, lalu apa yang disimpulkan mesin dari keduanya. Pengguna baru dapat
+          menelusurinya dari atas ke bawah tanpa diberi tahu urutannya.
+        </p>
+
+        <div class="panel">
+          <div class="panel-head">
+            <span class="label">Data dasar → input manual → kecerdasan AI</span>
+            <span class="label">Kiri ke kanan · tanpa jalan pintas</span>
+          </div>
+          <div class="panel-body panel-scroll">
+            <figure>
+              <svg class="diagram" viewBox="0 0 780 480" role="img"
+                   aria-labelledby="alur-judul alur-uraian">
+                <title id="alur-judul">Alur tiga tahap sistem Inventory</title>
+                <desc id="alur-uraian">
+                  Tahap pertama, data dasar: master barang, master gudang, serta kategori,
+                  satuan, pemasok, dan jarak antar gudang. Tahap kedua, input manual:
+                  penerimaan barang, pengeluaran barang, dan pesanan pembelian, yang
+                  ketiganya bermuara pada tabel inventory dan stock_movements. Tahap ketiga,
+                  kecerdasan AI: prakiraan, pemesanan ulang, transfer antar gudang, analisis
+                  umur pakai, dan asisten, yang seluruhnya diringkas dasbor. Ambang
+                  perencanaan pada master barang juga mengalir langsung ke tahap ketiga
+                  tanpa melewati tahap kedua.
+                </desc>
+
+                <!-- Tahap 1 -->
+                <text class="d-axis" x="24" y="34">1 · DATA DASAR</text>
+                <rect x="24" y="44" width="222" height="250" rx="6"
+                      fill="none" stroke="var(--rule)" stroke-dasharray="4 4"/>
+
+                <rect class="d-box" x="36" y="60" width="198" height="56" rx="4"/>
+                <text class="d-label d-strong" x="48" y="80">Master Barang</text>
+                <text class="d-tiny" x="48" y="95">SKU · satuan · harga referensi</text>
+                <text class="d-tiny" x="48" y="108">lead time · ROP · umur pakai</text>
+
+                <rect class="d-box" x="36" y="126" width="198" height="56" rx="4"/>
+                <text class="d-label d-strong" x="48" y="146">Master Gudang</text>
+                <text class="d-tiny" x="48" y="161">kode · lokasi · lintang/bujur</text>
+                <text class="d-tiny" x="48" y="174">lead time transfer</text>
+
+                <rect class="d-box-soft" x="36" y="192" width="198" height="56" rx="4"/>
+                <text class="d-label" x="48" y="212">Kategori · Satuan · Pemasok</text>
+                <text class="d-tiny" x="48" y="227">jarak antar gudang (opsional,</text>
+                <text class="d-tiny" x="48" y="240">pengganti hitungan haversine)</text>
+
+                <!-- Tahap 2 -->
+                <text class="d-axis" x="279" y="34">2 · INPUT MANUAL</text>
+                <rect x="279" y="44" width="222" height="320" rx="6"
+                      fill="none" stroke="var(--rule)" stroke-dasharray="4 4"/>
+
+                <rect class="d-box" x="291" y="60" width="198" height="50" rx="4"/>
+                <text class="d-label d-strong" x="303" y="80">Penerimaan Barang</text>
+                <text class="d-tiny" x="303" y="97">stok naik · 4 tabel sekaligus</text>
+
+                <rect class="d-box" x="291" y="120" width="198" height="50" rx="4"/>
+                <text class="d-label d-strong" x="303" y="140">Pengeluaran Barang</text>
+                <text class="d-tiny" x="303" y="157">stok turun · dicek FOR UPDATE</text>
+
+                <rect class="d-box-soft" x="291" y="180" width="198" height="50" rx="4"/>
+                <text class="d-label" x="303" y="200">Pesanan Pembelian</text>
+                <text class="d-tiny" x="303" y="217">rencana · TIDAK menyentuh stok</text>
+
+                <text class="d-tiny" x="291" y="245">ketiganya bermuara pada</text>
+
+                <rect class="d-box-accent" x="291" y="250" width="198" height="66" rx="4"/>
+                <text class="d-label d-strong" x="303" y="272">inventory · stock_movements</text>
+                <text class="d-tiny" x="303" y="289">saldo berjalan + buku besar</text>
+                <text class="d-tiny" x="303" y="304">satu-satunya sumber angka stok</text>
+
+                <!-- Tahap 3 -->
+                <text class="d-axis" x="534" y="34">3 · KECERDASAN AI</text>
+                <rect x="534" y="44" width="222" height="370" rx="6"
+                      fill="none" stroke="var(--accent-line)" stroke-dasharray="4 4"/>
+
+                <rect class="d-box" x="546" y="60" width="198" height="46" rx="4"/>
+                <text class="d-label d-strong" x="558" y="80">Prakiraan</text>
+                <text class="d-tiny" x="558" y="96">apa yang terjadi pada stok</text>
+
+                <rect class="d-box" x="546" y="116" width="198" height="46" rx="4"/>
+                <text class="d-label d-strong" x="558" y="136">Pemesanan Ulang</text>
+                <text class="d-tiny" x="558" y="152">mana yang perlu dipesan</text>
+
+                <rect class="d-box" x="546" y="172" width="198" height="46" rx="4"/>
+                <text class="d-label d-strong" x="558" y="192">Transfer Antar Gudang</text>
+                <text class="d-tiny" x="558" y="208">apa yang tak perlu dibeli</text>
+
+                <rect class="d-box" x="546" y="228" width="198" height="46" rx="4"/>
+                <text class="d-label d-strong" x="558" y="248">Analisis Umur Pakai</text>
+                <text class="d-tiny" x="558" y="264">cepat/lambat dari spesifikasi</text>
+
+                <rect class="d-box" x="546" y="284" width="198" height="46" rx="4"/>
+                <text class="d-label d-strong" x="558" y="304">Asisten AI</text>
+                <text class="d-tiny" x="558" y="320">bertanya dengan kalimat biasa</text>
+
+                <text class="d-tiny" x="546" y="345">semuanya diringkas oleh</text>
+
+                <rect class="d-box-accent" x="546" y="350" width="198" height="46" rx="4"/>
+                <text class="d-label d-strong" x="558" y="370">Dasbor</text>
+                <text class="d-tiny" x="558" y="386">tiga pertanyaan, tanpa rumus</text>
+
+                <!-- panah tahap 1 → 2 -->
+                <path class="d-flow-accent" d="M246,169 L273,169"/>
+                <path d="M279,169 l-9,-4.5 v9 Z" fill="var(--accent)"/>
+
+                <!-- panah tahap 2 → 3 -->
+                <path class="d-flow-accent" d="M501,204 L528,204"/>
+                <path d="M534,204 l-9,-4.5 v9 Z" fill="var(--accent)"/>
+
+                <!-- jalur pintas: ambang perencanaan langsung ke tahap 3 -->
+                <path class="d-flow" d="M135,294 L135,442 L645,442 L645,420"
+                      stroke-dasharray="5 4"/>
+                <path d="M645,414 l-4.5,9 h9 Z" fill="var(--rule-firm)"/>
+                <text class="d-tiny" x="200" y="436">ambang perencanaan — lead time, titik pesan, stok minimum, umur pakai —</text>
+                <text class="d-tiny" x="200" y="466">dibaca langsung oleh mesin tahap 3 tanpa melewati tahap 2</text>
+              </svg>
+              <figcaption>
+                Garis putus-putus di bawah adalah alasan mengapa Master Barang bukan
+                sekadar katalog: <code>lead_time_days</code>, <code>reorder_point</code>,
+                <code>minimum_stock</code>, <code>safety_stock</code>, dan
+                <code>service_life_value</code> masuk langsung ke mesin keputusan. Satu
+                kolom yang belum terisi di sana tidak menimbulkan galat — ia hanya membuat
+                sistem memakai jalur cadangan yang lebih tumpul, dan setiap jalur cadangan
+                itu disebutkan pada bab modulnya masing-masing.
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <div class="two">
+          <div class="card">
+            <span class="cap">Kenapa urutannya begitu</span>
+            <span class="head">Pemesanan Ulang sebelum Transfer</span>
+            <p>
+              Pemesanan Ulang menjawab <em>berapa yang kurang</em>; Transfer menjawab
+              <em>dari mana kekurangan itu ditutup</em>. Membalik urutannya berarti
+              menawarkan sumber untuk kekurangan yang belum pernah dihitung.
+            </p>
+          </div>
+          <div class="card">
+            <span class="cap">Kenapa urutannya begitu</span>
+            <span class="head">Umur Pakai sesudah Pemesanan Ulang</span>
+            <p>
+              Analisis Umur Pakai menjelaskan pola penggantian yang <em>menghasilkan</em>
+              permintaan. Ia dibaca setelah orang melihat apa yang perlu dipesan, bukan
+              sebelumnya — dan ia sengaja tidak mengubah satu pun angka pemesanan.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="modul">
+        <h2>Sepuluh halaman, satu alur</h2>
+        <p class="lede">
+          Setiap halaman menjawab <strong>satu</strong> pertanyaan. Itu bukan gaya
+          penulisan melainkan aturan perancangan yang beberapa kali menyebabkan halaman
+          dipecah atau dicabut: layar yang menjawab dua pertanyaan sekaligus membuat
+          pembacanya menyimpulkan bahwa mengubah setelan yang satu ikut mengubah jawaban
+          yang lain.
+        </p>
+
+        <div class="panel">
+          <div class="panel-head">
+            <span class="label">Peta halaman</span>
+            <span class="label">Urutan = urutan navigasi</span>
+          </div>
+          <div class="panel-body panel-scroll">
+            <table class="dense">
+              <thead>
+                <tr>
+                  <th>Halaman</th>
+                  <th>Satu pertanyaan yang dijawabnya</th>
+                  <th>Endpoint utama</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><a href="#dasbor">Dasbor</a><br><span class="sku">/</span></td>
+                  <td>Bagaimana kondisi persediaan, apa yang perlu perhatian, apa yang diprakirakan?</td>
+                  <td><span class="route"><span class="verb">GET</span> /api/dashboard</span></td>
+                </tr>
+                <tr>
+                  <td><a href="#dasar">Master Barang</a><br><span class="sku">/master/items</span></td>
+                  <td>Apa saja yang dikelola, dan berapa ambang perencanaannya?</td>
+                  <td><span class="route">/api/items</span></td>
+                </tr>
+                <tr>
+                  <td><a href="#dasar">Master Gudang</a><br><span class="sku">/master/warehouses</span></td>
+                  <td>Di mana barang disimpan, dan seberapa jauh antar gudang?</td>
+                  <td><span class="route">/api/warehouses</span></td>
+                </tr>
+                <tr>
+                  <td><a href="#input">Penerimaan Barang</a><br><span class="sku">/transactions/receipts</span></td>
+                  <td>Apa yang masuk hari ini, dari pemasok mana?</td>
+                  <td><span class="route">/api/stock-receipts</span></td>
+                </tr>
+                <tr>
+                  <td><a href="#input">Pengeluaran Barang</a><br><span class="sku">/transactions/issues</span></td>
+                  <td>Apa yang keluar hari ini, dan untuk keperluan apa?</td>
+                  <td><span class="route">/api/stock-issues</span></td>
+                </tr>
+                <tr>
+                  <td><a href="#prakiraan">Prakiraan</a><br><span class="sku">/forecasting</span></td>
+                  <td>Apa yang kemungkinan terjadi pada stok barang ini?</td>
+                  <td><span class="route">/api/forecast</span></td>
+                </tr>
+                <tr>
+                  <td><a href="#reorder">Pemesanan Ulang</a><br><span class="sku">/reorder</span></td>
+                  <td>Mana saja yang perlu dipesan hari ini, dan berapa?</td>
+                  <td><span class="route">/api/reorder</span></td>
+                </tr>
+                <tr>
+                  <td><a href="#transfer">Transfer Antar Gudang</a><br><span class="sku">/transfer</span></td>
+                  <td>Apa yang tidak perlu dibeli karena barangnya ada di gudang sebelah?</td>
+                  <td><span class="route">/api/transfer</span></td>
+                </tr>
+                <tr>
+                  <td><a href="#umur">Analisis Umur Pakai</a><br><span class="sku">/lifetime</span></td>
+                  <td>Apakah komponen diganti lebih cepat atau lebih lambat dari spesifikasi?</td>
+                  <td><span class="route">/api/lifetime</span></td>
+                </tr>
+                <tr>
+                  <td><a href="#asisten">Asisten AI</a><br><span class="sku">/assistant</span></td>
+                  <td>Bisakah saya bertanya dengan kalimat biasa?</td>
+                  <td><span class="route"><span class="verb">POST</span> /api/assistant/query</span></td>
+                </tr>
+                <tr>
+                  <td><a href="#pengaturan">Pengaturan</a><br><span class="sku">/settings</span></td>
+                  <td>Konfigurasi apa yang sedang benar-benar berlaku?</td>
+                  <td><span class="route">/api/health</span></td>
+                </tr>
+                <tr>
+                  <td><a href="#pengaturan">Masuk</a><br><span class="sku">/login</span></td>
+                  <td>Siapa yang memakai, atas nama perusahaan mana?</td>
+                  <td><span class="route">/api/auth/login</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <figcaption>
+            Pengaturan tidak ada di sidebar: ia tinggal di popup akun di kanan atas,
+            terpisah dari alur kerja. Masuk juga tidak — ia gerbangnya, bukan salah satu
+            perhentiannya.
+          </figcaption>
+        </div>
+
+        <div class="aside">
+          <strong>Modul yang dicabut, dan kenapa dicatat di sini.</strong> Persediaan,
+          Riwayat, Laporan, Penyesuaian Stok, Impor Massal, dan Pengguna dihapus pada
+          31 Agustus 2026 karena berdiri di luar alur tiga tahap atau hanya menyajikan
+          tabel angka mentah. Deteksi Anomali dihapus seluruhnya pada 2 September 2026 dan
+          tempatnya diisi Analisis Umur Pakai. <strong>Kodenya ikut dihapus, bukan sekadar
+          disembunyikan dari menu</strong> — supaya tidak ada halaman yang hidup tanpa
+          jalan menuju ke sana. Sebagian endpoint-nya tetap hidup karena dipakai Asisten
+          AI; lihat <a href="#pendukung">Modul tanpa halaman</a>.
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="dasbor">
+        <h2>Dasbor</h2>
+
+        <div class="mod">
+          <div class="mod-head">
+            <span class="kode">Halaman utama · /</span>
+            <span class="nama">Dasbor</span>
+            <span class="tanya">
+              Tiga pertanyaan, dan hanya tiga: <em>bagaimana kondisi persediaan sekarang</em>,
+              <em>apa yang membutuhkan perhatian</em>, dan <em>apa yang diprakirakan akan
+              terjadi</em>.
+            </span>
+          </div>
+          <div class="mod-body">
+            <dl class="facts">
+              <dt>Layar</dt>
+              <dd><span class="file">frontend/app/page.tsx</span></dd>
+              <dt>Router</dt>
+              <dd><span class="file">app/routers/dashboard.py</span></dd>
+              <dt>Endpoint</dt>
+              <dd><span class="route"><span class="verb">GET</span> /api/dashboard?lang=</span></dd>
+              <dt>Isi jawaban</dt>
+              <dd class="plain">
+                <code>condition</code> (jumlah SKU, total stok, nilai persediaan, stok per
+                gudang) · <code>attention</code> (perlu pesan ulang, risiko habis, prioritas
+                tinggi, sampai enam baris teratas) · <code>forecast</code> (kebutuhan
+                sepanjang horizon keputusan) · <code>state</code> (satu kalimat + nada).
+              </dd>
+            </dl>
+
+            <p>
+              <strong>Dasbor tidak punya rumus sendiri.</strong> Seluruh angka “perlu
+              perhatian” dan “ke depan” datang dari mesin Pemesanan Ulang: router ini
+              memanggil <code>reorder.daftar_reorder()</code> dan hanya meringkas
+              jawabannya. Sebelumnya dasbor memakai definisi “stok menipis” miliknya
+              sendiri — <code>quantity &lt;= COALESCE(NULLIF(reorder_point,0), minimum_stock)</code>
+              — sementara halaman Pemesanan Ulang memakai <strong>titik pesan efektif</strong>
+              yang memperhitungkan laju pemakaian, lead time, dan safety stock. Dua definisi
+              berarti dasbor dapat berbunyi “3 barang menipis” sementara halaman di
+              sebelahnya menyebut lima, dan tidak ada satu galat pun yang menunjukkan mana
+              yang benar.
+            </p>
+
+            <div class="nope">
+              <span class="nope-title">Yang dicabut pada 2 September 2026</span>
+              Tiga kartu berisi <strong>jumlah dokumen</strong> (penerimaan, pengeluaran,
+              pergerakan) — tidak ada keputusan yang berubah karena jumlah dokumen naik.
+              Donat “Arus Stok 30 Hari” — mengulang dua angka yang sudah diucapkan kartu di
+              sebelahnya. Dua gauge “Kesiapan Operasional” — persentase master data yang
+              berstatus aktif, bukan kondisi persediaan sama sekali. Tabel “Transaksi
+              Terakhir” — salinan halaman Transaksi.
+            </div>
+
+            <div class="aside">
+              <strong>Dasar nilai persediaan dinyatakan terbuka.</strong> Nilainya dihitung
+              dari <code>items.unit_price</code>, yaitu harga referensi master — bukan harga
+              perolehan sebenarnya. Metode valuasi FIFO atau rata-rata bergerak belum menjadi
+              lingkup sistem ini, jadi field <code>value_basis</code> ikut terbit supaya
+              angkanya tidak disalahartikan. Asisten AI pun diwajibkan menyebutkannya.
+            </div>
+
+            <p>
+              Biaya pemanggilan mesin reorder dari dasbor sudah diukur: dua puluh pasangan
+              barang/gudang selesai dalam 0,3 detik, dan mesinnya menjepit diri sendiri pada
+              <code>reorder.BATAS_BARIS</code>. Tabel perhatian dipotong pada enam baris —
+              dasbor bukan daftar kerja, ia hanya membuat pembacanya tahu <em>ada apa</em>,
+              lalu menyerahkan penanganannya ke halaman yang memang dibuat untuk itu.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="dasar">
+        <h2>Tahap 1 — Data Dasar</h2>
+        <p class="lede">
+          Dua halaman, dan keduanya menuntut peran <code>owner</code> atau
+          <code>admin</code>. Alasannya bukan kehati-hatian umum: satu SKU yang salah atau
+          satu satuan yang diubah artinya menjalar ke setiap transaksi, setiap prakiraan,
+          dan setiap rekomendasi yang menyebutnya — dan tidak ada satu layar pun yang akan
+          menampilkan galat.
+        </p>
+
+        <div class="mod">
+          <div class="mod-head">
+            <span class="kode">Data dasar · /master/items</span>
+            <span class="nama">Master Barang</span>
+            <span class="tanya">
+              Apa saja yang dikelola, dan berapa <em>ambang perencanaan</em> tiap barang?
+            </span>
+          </div>
+          <div class="mod-body">
+            <dl class="facts">
+              <dt>Layar</dt>
+              <dd>
+                <span class="file">frontend/app/master/items/page.tsx</span>
+                <span class="file">components/master-crud.tsx</span>
+              </dd>
+              <dt>Router</dt>
+              <dd>
+                <span class="file">app/routers/master.py</span> (tulis)
+                <span class="file">app/routers/catalog.py</span> (baca)
+              </dd>
+              <dt>Endpoint</dt>
+              <dd>
+                <span class="route"><span class="verb">GET</span> /api/items</span>
+                <span class="route"><span class="verb">POST</span> /api/items</span>
+                <span class="route"><span class="verb">PATCH</span> /api/items/{id}</span>
+                <span class="route"><span class="verb">DELETE</span> /api/items/{id}</span>
+              </dd>
+              <dt>Ruas</dt>
+              <dd class="plain">
+                SKU · nama · kategori · satuan · harga referensi · <strong>titik pesan</strong> ·
+                stok minimum · stok maksimum · <strong>stok pengaman</strong> ·
+                <strong>lead time (hari)</strong> · kritikalitas
+                (<code>critical / high / medium / low</code>).
+              </dd>
+            </dl>
+
+            <p>
+              Lima ruas terakhir bukan hiasan katalog — itulah masukan yang dibaca langsung
+              oleh mesin keputusan, melewati seluruh tahap transaksi. Bila salah satunya
+              kosong, sistem tetap menjawab, tetapi dengan jalur cadangan yang lebih tumpul:
+            </p>
+
+            <ul class="tight">
+              <li><strong>Titik pesan kosong</strong> → dipakai <em>Stok Minimum</em>, supaya
+                barang tidak pernah luput dari pengawasan hanya karena satu kolom belum terisi.</li>
+              <li><strong>Lead time kosong</strong> → dipakai <code>FALLBACK_HARI_PANTAU</code>
+                (14 hari) sebagai tenggat menyiapkan permintaan pembelian.</li>
+              <li><strong>Stok pengaman kosong</strong> → dihitung dinamis dari sebaran
+                permintaan, bukan dibiarkan nol. Lihat <a href="#mesin">mesin ROP</a>.</li>
+            </ul>
+
+            <div class="aside">
+              <strong>Menghapus itu pengecualian, bukan aturan.</strong> Seluruh foreign key
+              ke master data memakai <code>NO ACTION</code>, jadi begitu satu kategori dipakai
+              satu barang saja, ia tidak akan pernah bisa dihapus lagi — dan itu memang benar,
+              karena menghapusnya membuat riwayat transaksi kehilangan artinya. Yang tersedia:
+              <em>menonaktifkan</em> untuk data yang sudah terpakai, dan <em>menghapus</em>
+              hanya untuk data yang belum tersentuh apa pun. Yang kedua bukan kemewahan —
+              salah ketik satu baris saat mengisi data awal lalu terpaksa hidup dengan
+              “SATAUN” selamanya di daftar pilihan adalah pengalaman yang membuat orang
+              berhenti mengisi.
+            </div>
+
+            <div class="nope">
+              <span class="nope-title">Belum ada jalan masuknya</span>
+              <code>items.service_life_value</code> dan <code>service_life_unit</code>
+              (migrasi 029) — angka referensi yang menjadi dasar seluruh
+              <a href="#umur">Analisis Umur Pakai</a> — <strong>belum dapat disunting dari
+              layar mana pun</strong>. Saat ini keduanya diisi oleh
+              <span class="file">backend/tools/histori_umur_pakai.py</span>. Halaman Umur
+              Pakai menghitung berapa banyak barang yang belum punya referensi
+              (<code>without_reference</code>) justru supaya kekosongan itu terlihat, bukan
+              tersembunyi.
+            </div>
+          </div>
+        </div>
+
+        <div class="mod">
+          <div class="mod-head">
+            <span class="kode">Data dasar · /master/warehouses</span>
+            <span class="nama">Master Gudang</span>
+            <span class="tanya">
+              Di mana barang disimpan, dan <em>seberapa jauh</em> satu gudang dari yang lain?
+            </span>
+          </div>
+          <div class="mod-body">
+            <dl class="facts">
+              <dt>Layar</dt>
+              <dd><span class="file">frontend/app/master/warehouses/page.tsx</span></dd>
+              <dt>Endpoint</dt>
+              <dd>
+                <span class="route"><span class="verb">GET</span> /api/warehouses</span>
+                <span class="route"><span class="verb">POST</span> /api/warehouses</span>
+                <span class="route"><span class="verb">PUT</span> /api/warehouse-distances</span>
+              </dd>
+              <dt>Ruas</dt>
+              <dd class="plain">
+                kode · nama · lokasi · <strong>lintang &amp; bujur</strong> ·
+                <strong>lead time transfer (hari)</strong> · aktif.
+              </dd>
+            </dl>
+
+            <p>
+              Koordinat dan lead time transfer ada di sini demi satu modul saja:
+              <a href="#transfer">Transfer Antar Gudang</a>. Jarak antar gudang dihitung
+              haversine dari koordinat; bila sepasang gudang punya jarak yang dicatat
+              eksplisit lewat <code>/api/warehouse-distances</code>, angka itulah yang
+              dipakai — jarak jalan darat Surabaya–Jakarta bukan jarak garis lurusnya.
+            </p>
+
+            <div class="aside">
+              Lintang dan bujur <strong>sengaja tidak ikut ke tabel daftar</strong>. Kolom
+              angka pada tabel itu dicetak tanpa desimal, sehingga lintang −7,2575 akan
+              tampil sebagai “−7” — sebuah titik empat puluh kilometer dari gudang yang
+              dimaksud. Nilainya tetap terbaca dan tersunting pada formulir.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="input">
+        <h2>Tahap 2 — Input Manual</h2>
+        <p class="lede">
+          Dua halaman yang menggerakkan stok, dan satu modul di belakangnya yang sengaja
+          <em>tidak</em> menggerakkannya. Ketiganya bermuara pada dua tabel yang sama, dan
+          dua tabel itulah satu-satunya sumber angka stok di seluruh sistem.
+        </p>
+
+        <div class="panel">
+          <div class="panel-head">
+            <span class="label">Rantai tulis</span>
+            <span class="label">Satu permintaan = satu transaksi</span>
+          </div>
+          <div class="panel-body">
+            <div class="formula">Penerimaan   <span class="hi">stock_receipts</span> → stock_receipt_items → <span class="hi">stock_movements</span> → <span class="hi">inventory</span>  <span class="dim">(stok naik)</span>
+Pengeluaran  <span class="hi">stock_issues</span>   → stock_issue_items   → <span class="hi">stock_movements</span> → <span class="hi">inventory</span>  <span class="dim">(stok turun)</span>
+Transfer     <span class="hi">stock_transfers</span> → stock_transfer_items → <span class="hi">stock_movements</span> → <span class="hi">inventory</span> <span class="dim">(dua sisi)</span>
+Pesanan      <span class="hi">purchase_orders</span> → purchase_order_items <span class="dim">— berhenti di sini, stok tidak bergerak</span></div>
+          </div>
+          <figcaption>
+            Basis data tidak punya trigger maupun function bisnis, jadi seluruh rangkaian ini
+            ditulis eksplisit di Python. Bila satu langkah gagal, blok
+            <code>transaction()</code> melakukan ROLLBACK dan tidak ada satu baris pun yang
+            tersisa — receipt, movement, dan inventory tidak pernah tersimpan setengah-setengah.
+          </figcaption>
+        </div>
+
+        <div class="mod">
+          <div class="mod-head">
+            <span class="kode">Input manual · /transactions/receipts</span>
+            <span class="nama">Penerimaan Barang</span>
+            <span class="tanya">Apa yang masuk hari ini, dari pemasok mana, dan berapa harganya?</span>
+          </div>
+          <div class="mod-body">
+            <dl class="facts">
+              <dt>Layar</dt>
+              <dd><span class="file">frontend/app/transactions/receipts/page.tsx</span></dd>
+              <dt>Router</dt>
+              <dd><span class="file">app/routers/stock_receipts.py</span></dd>
+              <dt>Mesin tulis</dt>
+              <dd><span class="file">app/penerimaan.py</span> — <code>catat_penerimaan()</code></dd>
+              <dt>Endpoint</dt>
+              <dd>
+                <span class="route"><span class="verb">POST</span> /api/stock-receipts</span>
+                <span class="route"><span class="verb">GET</span> /api/stock-receipts</span>
+                <span class="route"><span class="verb">GET</span> /api/stock-receipts/{id}</span>
+              </dd>
+            </dl>
+
+            <p>
+              Rantai empat tabel itu dulu hidup di dalam endpoint POST. Ia dipindah ke
+              <span class="file">app/penerimaan.py</span> ketika penerimaan juga dapat lahir
+              dari <strong>PO yang ditandai diterima</strong>: dua pemanggil untuk satu
+              rangkaian yang menaikkan stok, dan menyalinnya berarti dua tempat yang harus
+              sama-sama benar selamanya. Perbedaan sekecil apa pun di antara keduanya berupa
+              <em>stok yang salah</em>, bukan tampilan yang salah.
+            </p>
+
+            <p>
+              Yang tinggal di router hanyalah pemeriksaan masukan formulir — gudang, pemasok,
+              dan seluruh barang harus ada serta masih aktif — dan bentuk jawabannya. Nomor
+              dokumen dibuat lewat <code>next_document_number()</code> di bawah <em>advisory
+              lock</em> khusus, sehingga dua permintaan bersamaan tidak pernah menghasilkan
+              nomor kembar.
+            </p>
+          </div>
+        </div>
+
+        <div class="mod">
+          <div class="mod-head">
+            <span class="kode">Input manual · /transactions/issues</span>
+            <span class="nama">Pengeluaran Barang</span>
+            <span class="tanya">Apa yang keluar hari ini, dan untuk keperluan apa?</span>
+          </div>
+          <div class="mod-body">
+            <dl class="facts">
+              <dt>Layar</dt>
+              <dd><span class="file">frontend/app/transactions/issues/page.tsx</span></dd>
+              <dt>Router</dt>
+              <dd><span class="file">app/routers/stock_issues.py</span></dd>
+              <dt>Endpoint</dt>
+              <dd>
+                <span class="route"><span class="verb">POST</span> /api/stock-issues</span>
+                <span class="route"><span class="verb">GET</span> /api/stock-issues</span>
+              </dd>
+            </dl>
+
+            <p>
+              Bedanya dengan penerimaan hanya satu, dan itu menentukan: pengeluaran harus
+              <strong>memeriksa ketersediaan lebih dulu</strong>. Baris <code>inventory</code>
+              dikunci dengan <code>SELECT … FOR UPDATE</code> sebelum diperiksa, lalu kuncinya
+              dipegang sampai transaksi berakhir. Tanpa itu, dua permintaan yang datang
+              bersamaan bisa sama-sama lolos pemeriksaan dan membuat stok jadi minus.
+            </p>
+
+            <div class="aside">
+              <strong>Halaman ini adalah sumber seluruh kecerdasan sistem.</strong> Laju
+              pemakaian, prakiraan, titik pesan efektif, kekurangan transfer, dan jarak antar
+              penggantian pada Analisis Umur Pakai — semuanya diturunkan dari deret
+              <code>stock_issue_items</code>. Basis data ini tidak mencatat pemasangan
+              maupun pelepasan komponen; pengeluaran barang dari gudang adalah satu-satunya
+              jejak yang dimilikinya.
+            </div>
+
+            <div class="nope">
+              <span class="nope-title">Frontend tidak memutuskan</span>
+              Layar hanya menampilkan sisa stok sebagai <em>petunjuk</em>. Penolakan karena
+              stok tidak cukup selalu datang dari backend
+              (<code>INSUFFICIENT_STOCK</code>, HTTP 422) — bukan dari pemeriksaan di
+              peramban yang bisa dilewati siapa pun.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="prakiraan">
+        <h2>Tahap 3a — Prakiraan</h2>
+
+        <div class="mod">
+          <div class="mod-head">
+            <span class="kode">Kecerdasan AI · /forecasting</span>
+            <span class="nama">Prakiraan Kebutuhan Stok</span>
+            <span class="tanya">
+              Satu pertanyaan saja: <em>apa yang kemungkinan terjadi pada stok barang ini</em>.
+              Bukan “berapa yang harus dibeli” — itu pertanyaan halaman berikutnya.
+            </span>
+          </div>
+          <div class="mod-body">
+            <dl class="facts">
+              <dt>Layar</dt>
+              <dd>
+                <span class="file">frontend/app/forecasting/page.tsx</span>
+                <span class="file">components/forecast-sections.tsx</span>
+                <span class="file">components/charts.tsx</span>
+              </dd>
+              <dt>Router</dt>
+              <dd>
+                <span class="file">app/routers/forecast_api.py</span>
+                <span class="file">app/routers/forecasting.py</span>
+              </dd>
+              <dt>Mesin</dt>
+              <dd>
+                <span class="file">app/forecasting.py</span>
+                <span class="file">app/decision.py</span>
+                <span class="file">app/rop.py</span>
+                <span class="file">app/ml/klasik.py</span>
+                <span class="file">app/ml/predict.py</span>
+              </dd>
+              <dt>Endpoint</dt>
+              <dd>
+                <span class="route"><span class="verb">GET</span> /api/forecast</span>
+                <span class="route"><span class="verb">GET</span> /api/forecast/models</span>
+                <span class="route"><span class="verb">GET</span> /api/forecast/rop</span>
+                <span class="route"><span class="verb">POST</span> /api/forecast/recommendation</span>
+              </dd>
+            </dl>
+
+            <p>
+              <strong>Empat blok, dan tidak lebih.</strong> Banner status yang menyimpulkan
+              kondisi stok dalam satu kalimat; empat kartu berisi kebutuhan periode, laju
+              pemakaian, sisa stok, dan perkiraan kapan stok habis; grafik histori dan
+              proyeksi dengan garis hari ini serta garis titik pesan; dan panel
+              <em>Detail perhitungan</em> yang tertutup, berisi asal-usul seluruh angka di
+              atasnya.
+            </p>
+
+            <div class="nope">
+              <span class="nope-title">Kenapa halaman ini pernah dipecah</span>
+              Layar ini dulu memuat empat blok sekaligus — prakiraan, kondisi persediaan,
+              keputusan reorder, dan pengadaan — sehingga terbaca sebagai layar keputusan
+              pembelian. Yang paling merepotkan bukan panjangnya, melainkan
+              <strong>dua patokan waktu dalam satu layar</strong>: hanya blok prakiraan yang
+              bergerak saat periode diganti, sedangkan tiga blok lainnya berpatokan lead
+              time. Pembaca menyimpulkan bahwa mengubah pilihan “30 hari” ikut mengubah
+              urgensi pembelian. Ketiga blok itu kini berdiri di
+              <a href="#reorder">/reorder</a>: apa pun yang dirender halaman ini
+              <em>boleh</em> berubah saat periode diganti, dan apa pun yang tidak boleh
+              berubah tidak lagi berada di sini.
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <span class="label">Perjalanan stok satu barang</span>
+            <span class="label">Sumbu tegak: unit · Sumbu datar: hari</span>
+          </div>
+          <div class="panel-body panel-scroll">
+            <figure>
+              <svg class="diagram" viewBox="0 0 780 400" role="img"
+                   aria-labelledby="diagram-judul diagram-uraian">
+                <title id="diagram-judul">Grafik stok terhadap waktu</title>
+                <desc id="diagram-uraian">
+                  Stok menurun dari kiri ke kanan. Garis penuh menandai histori sampai
+                  hari ini, garis putus-putus menandai prakiraan. Stok memotong garis
+                  titik pemesanan ulang, lalu terus turun melewati stok pengaman menuju
+                  nol. Jarak antara kedua perpotongan itu adalah waktu tunggu kiriman.
+                </desc>
+
+                <!-- garis nol dan kisi -->
+                <line x1="70" y1="300" x2="716" y2="300" stroke="var(--rule-firm)" stroke-width="1"/>
+                <line x1="70" y1="40"  x2="70"  y2="300" stroke="var(--rule-firm)" stroke-width="1"/>
+
+                <!-- pita waktu tunggu -->
+                <rect x="470" y="40" width="120" height="260" fill="var(--attn-bg)"/>
+                <line x1="470" y1="40" x2="470" y2="300" stroke="var(--attn)" stroke-width="1" stroke-dasharray="2 3"/>
+                <line x1="590" y1="40" x2="590" y2="300" stroke="var(--attn)" stroke-width="1" stroke-dasharray="2 3"/>
+
+                <!-- area di bawah kurva -->
+                <path d="M70,40 L110,55 L150,68 L190,86 L230,99 L270,117 L310,130
+                         L350,148 L390,161 L430,179 L470,196 L510,213 L550,231
+                         L590,248 L630,266 L670,283 L700,296 L700,300 L70,300 Z"
+                      fill="var(--accent-soft)"/>
+
+                <!-- histori (garis penuh) -->
+                <polyline points="70,40 110,55 150,68 190,86 230,99 270,117 310,130"
+                          fill="none" stroke="var(--accent)" stroke-width="2.5"
+                          stroke-linejoin="round" stroke-linecap="round"/>
+
+                <!-- prakiraan (garis putus-putus) -->
+                <polyline points="310,130 350,148 390,161 430,179 470,196 510,213
+                                  550,231 590,248 630,266 670,283 700,296"
+                          fill="none" stroke="var(--accent)" stroke-width="2.5"
+                          stroke-dasharray="6 5" stroke-linejoin="round" stroke-linecap="round"/>
+
+                <!-- penanda hari ini -->
+                <line x1="310" y1="30" x2="310" y2="300" stroke="var(--ink-3)" stroke-width="1"/>
+                <circle cx="310" cy="130" r="4.5" fill="var(--accent)"/>
+                <text class="d-label d-strong" x="310" y="22" text-anchor="middle">Hari ini</text>
+
+                <!-- garis titik pemesanan ulang -->
+                <line x1="70" y1="196" x2="716" y2="196" stroke="var(--critical)"
+                      stroke-width="1.5" stroke-dasharray="7 4"/>
+                <text class="d-label" x="716" y="192" text-anchor="end" fill="var(--critical)">
+                  Reorder Point · 40
+                </text>
+
+                <!-- garis stok pengaman -->
+                <line x1="70" y1="261" x2="716" y2="261" stroke="var(--ink-3)"
+                      stroke-width="1.5" stroke-dasharray="3 4"/>
+                <text class="d-label" x="716" y="257" text-anchor="end">Safety Stock · 15</text>
+
+                <!-- perpotongan -->
+                <circle cx="470" cy="196" r="5" fill="var(--critical)"/>
+                <circle cx="590" cy="261" r="5" fill="var(--ink-3)"/>
+
+                <!-- anotasi: pesan sekarang -->
+                <line x1="470" y1="196" x2="470" y2="332" stroke="var(--rule-firm)" stroke-width="1"/>
+                <text class="d-label d-strong" x="470" y="350" text-anchor="middle">Pesan di sini</text>
+                <text class="d-label" x="470" y="368" text-anchor="middle">stok menyentuh titik pesan</text>
+
+                <!-- anotasi: kiriman tiba -->
+                <line x1="590" y1="261" x2="590" y2="332" stroke="var(--rule-firm)" stroke-width="1"/>
+                <text class="d-label d-strong" x="612" y="350">Kiriman tiba</text>
+                <text class="d-label" x="612" y="368">cadangan belum terpakai</text>
+
+                <!-- ukuran waktu tunggu -->
+                <line x1="470" y1="60" x2="590" y2="60" stroke="var(--attn)" stroke-width="1.5"/>
+                <line x1="470" y1="55" x2="470" y2="65" stroke="var(--attn)" stroke-width="1.5"/>
+                <line x1="590" y1="55" x2="590" y2="65" stroke="var(--attn)" stroke-width="1.5"/>
+                <text class="d-label d-strong" x="530" y="50" text-anchor="middle">Lead Time</text>
+
+                <!-- stok saat ini -->
+                <text class="d-label d-strong" x="298" y="126" text-anchor="end">Current Stock</text>
+
+                <!-- sumbu -->
+                <text class="d-axis" x="62" y="44"  text-anchor="end">100</text>
+                <text class="d-axis" x="62" y="200" text-anchor="end">40</text>
+                <text class="d-axis" x="62" y="265" text-anchor="end">15</text>
+                <text class="d-axis" x="62" y="304" text-anchor="end">0</text>
+              </svg>
+              <figcaption>
+                Hampir seluruh istilah pada halaman Prakiraan adalah <em>garis mendatar</em>
+                pada grafik yang sama. Titik pemesanan ulang bukan tanda bahaya — ia tanda
+                <em>waktu</em>: ia diletakkan cukup tinggi supaya, selama menunggu kiriman
+                datang, stok yang tersisa masih sanggup melayani pemakaian.
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <h3>Tiga status prakiraan, dan kenapa bukan tingkat urgensi</h3>
+        <div class="status-grid">
+          <div class="status-card s-safe">
+            <span class="chip chip-safe">SAFE</span>
+            <p>Perkiraan sisa stok di akhir periode masih di atas titik pesan, dan lebih dari
+               25% di atasnya.</p>
+          </div>
+          <div class="status-card s-attn">
+            <span class="chip chip-attn">ATTENTION</span>
+            <p>Masih di atas titik pesan, tetapi tidak lebih dari <code>FORECAST_ATTENTION_BAND</code>
+               (1,25×) di atasnya — satu periode lagi akan menembusnya. Tanpa pita ini, status
+               melompat dari SAFE langsung ke CRITICAL tanpa peringatan.</p>
+          </div>
+          <div class="status-card s-critical">
+            <span class="chip chip-critical">CRITICAL</span>
+            <p>Perkiraan sisa stok menembus titik pesan di dalam periode yang dipilih.</p>
+          </div>
+          <div class="status-card s-none">
+            <span class="chip chip-none">INSUFFICIENT_DATA</span>
+            <p>Riwayat belum memenuhi <code>FORECAST_MIN_HISTORY_DAYS</code> (14 hari rentang)
+               atau <code>FORECAST_MIN_OUTFLOW_DAYS</code> (3 hari dengan pengeluaran).
+               Seluruh angka prakiraan kosong, dan halaman mengatakannya.</p>
+          </div>
+        </div>
+
+        <div class="nope">
+          <span class="nope-title">Status ini tidak boleh dibaca sebagai urgensi</span>
+          Nilainya ditentukan oleh perkiraan sisa stok pada <strong>akhir periode</strong>,
+          sehingga ia bergerak hanya karena panjang periode diubah: barang yang sama berbunyi
+          SAFE pada 7 hari dan CRITICAL pada 30 hari tanpa ada yang berubah pada stoknya. Itu
+          mengukur panjang horizon, bukan kegawatan. Urgensi diambil dari
+          <code>action_status</code> (<a href="#reorder">lapisan keputusan</a>), yang
+          bersandar pada lead time dan tidak bergerak saat horizon berubah — dan karena itu
+          <code>status</code> sengaja <strong>tidak dikirim</strong> ke Asisten AI.
+        </div>
+
+        <h3>Tujuh pilihan model, satu kontrak</h3>
+        <p>
+          Setiap model menerima riwayat pengeluaran harian yang berakhir pada <code>as_of</code>
+          dan mengembalikan ramalan <em>n</em> hari sesudahnya. Bentuk itu sama persis untuk
+          model klasik maupun XGBoost, sehingga mesin prakiraan tidak perlu tahu model mana
+          yang sedang dipakai — ia hanya menerima deret angka. Daftarnya diterbitkan backend
+          lewat <span class="route"><span class="verb">GET</span> /api/forecast/models</span>,
+          <strong>bukan disalin ke kamus frontend</strong>: daftar yang hidup di dua tempat
+          akan berbeda isinya cepat atau lambat, dan yang terlihat pengguna adalah pilihan
+          yang justru ditolak backend.
+        </p>
+
+        <div class="panel panel-scroll">
+          <table class="dense">
+            <thead>
+              <tr>
+                <th>Kunci</th><th>Nama di layar</th><th>Cocok untuk</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><span class="sku">best</span></td><td>Terbaik (otomatis)</td>
+                  <td>Mengadu seluruh model klasik di atas riwayat barang itu sendiri lewat
+                      backtest 4 lipatan, lalu memakai pemenangnya. Menuntut ≥ 28 hari riwayat.</td></tr>
+              <tr><td><span class="sku">statistik</span></td><td>Statistik Sederhana <em>(bawaan)</em></td>
+                  <td>Rata-rata riwayat, datar sepanjang horizon. Yang paling mudah
+                      dipertanggungjawabkan angkanya, dan cukup untuk kebanyakan barang.</td></tr>
+              <tr><td><span class="sku">croston_sba</span></td><td>Croston SBA</td>
+                  <td>Permintaan intermiten — banyak hari nol, sesekali melonjak. Dirancang
+                      persis untuk deret berlubang.</td></tr>
+              <tr><td><span class="sku">theta</span></td><td>Theta</td>
+                  <td>Deret bertren yang tetap perlu diredam.</td></tr>
+              <tr><td><span class="sku">ses</span></td><td>Pemulusan Eksponensial</td>
+                  <td>Deret tanpa tren maupun musim yang jelas.</td></tr>
+              <tr><td><span class="sku">seasonal_naive</span></td><td>Naif Musiman</td>
+                  <td>Barang yang mengikuti irama minggu kerja; di sana ia menang telak.</td></tr>
+              <tr><td><span class="sku">wma</span></td><td>Rata-rata Bergerak Berbobot</td>
+                  <td>Cadangan universal. Inilah yang dipakai bila model ML tidak termuat.</td></tr>
+              <tr><td><span class="sku">xgboost_tweedie</span></td><td>XGBoost Tweedie</td>
+                  <td>Model global lintas SKU. Ditandai <code>available: false</code> bila
+                      berkasnya tidak terpasang, supaya layar dapat menonaktifkan pilihannya
+                      alih-alih membiarkan pengguna memilih sesuatu yang diam-diam jatuh ke
+                      cadangan.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="aside">
+          <strong>Kenapa klasik, bukan hanya model besar.</strong> Permintaan barang gudang
+          berbentuk intermiten dan deretnya pendek. Pada bentuk seperti itu metode klasik
+          sering mengungguli model pembelajaran mesin — bukan karena modelnya lemah,
+          melainkan karena tidak ada cukup sinyal untuk dipelajari, sedangkan metode klasik
+          membawa asumsinya sendiri yang kebetulan cocok. Yang penting bukan memilih model
+          terpandai, melainkan <em>mengetahui</em> mana yang cocok untuk deret ini; karena itu
+          <span class="file">app/ml/klasik.py</span> menyediakan sekaligus sekumpulan model
+          dan cara mengadu mereka. Seluruhnya aritmetika pustaka standar — menambah
+          statsmodels atau sktime untuk lima rumus berarti menambah ratusan megabyte pada
+          image demi kode yang muat dalam satu berkas.
+        </div>
+
+        <div class="two">
+          <div class="card">
+            <span class="cap">Penyelarasan hari</span>
+            <span class="head">Bagian paling mudah salah</span>
+            <p>
+              Saat pelatihan, permintaan hari D sendiri <em>tidak</em> ikut menjadi fitur:
+              model memetakan “keadaan awal hari D” menjadi “permintaan D+1”. Karena itu,
+              untuk meramal hari P, baris fitur harus disusun bertanggal P−1 dengan riwayat
+              yang berakhir di P−2. Menyusunnya bertanggal P akan menggeser seluruh pola
+              mingguan satu hari dan menghasilkan angka hari berikutnya yang dilabeli hari ini.
+            </p>
+          </div>
+          <div class="card">
+            <span class="cap">Bentuk berkas model</span>
+            <span class="head">11,7 GB versus 1,7 GB</span>
+            <p>
+              Model yang sama dapat dibaca dari JSON teks atau UBJSON biner. Bacaan JSON
+              memuncak di 11,6 GB dan sampahnya menetap di arena glibc, sehingga proses tampak
+              memakai belasan giga seumur hidupnya; bacaan UBJSON memuncak di 1,7 GB. Isi
+              modelnya sendiri sekitar 90 MB.
+            </p>
+          </div>
+        </div>
+
+        <div class="aside">
+          <strong>Jendela riwayat memanjang sendiri.</strong> Jendela bawaan 90 hari, tetapi
+          bila di dalamnya tidak termuat cukup hari pengeluaran, ia melebar sampai
+          <code>LOOKBACK_MAKS_HARI</code> — dua puluh tahun, sepanjang riwayat terpanjang di
+          basis data ini dan sepanjang umur pakai komponen paling awet yang dicatatnya.
+          Jendela sepanjang itu tetap dihitung utuh, tetapi grafik hanya menerima
+          <code>MAKS_TITIK_GRAFIK</code> (365) titik: mengirim tujuh ribu titik ke peramban
+          hanya menghasilkan garis yang tidak terbaca sekaligus muatan beberapa megabita.
+        </div>
+
+        <a class="linkcard" href="anatomi-prakiraan-stok.html">
+          <span class="cap">Dokumen pendamping</span>
+          <span class="head">Anatomi Prakiraan Stok</span>
+          <p>
+            Pembedahan halaman Prakiraan untuk petugas gudang dan perencana: empat kartu
+            keputusan satu per satu, glosarium istilah Inggris–Indonesia, cara tiap angka
+            dihitung, dan contoh nyata beserta keadaan saat datanya belum cukup.
+          </p>
+        </a>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="reorder">
+        <h2>Tahap 3b — Pemesanan Ulang</h2>
+
+        <div class="mod">
+          <div class="mod-head">
+            <span class="kode">Kecerdasan AI · /reorder</span>
+            <span class="nama">Pemesanan Ulang</span>
+            <span class="tanya">
+              Satu pertanyaan: <em>mana saja yang perlu dipesan hari ini, dan berapa</em> —
+              satu layar untuk seluruh gudang, bukan satu barang pada satu waktu.
+            </span>
+          </div>
+          <div class="mod-body">
+            <dl class="facts">
+              <dt>Layar</dt>
+              <dd>
+                <span class="file">frontend/app/reorder/page.tsx</span>
+                <span class="file">components/reorder-list.tsx</span>
+                <span class="file">components/reorder-sections.tsx</span>
+              </dd>
+              <dt>Router</dt>
+              <dd><span class="file">app/routers/reorder.py</span></dd>
+              <dt>Mesin</dt>
+              <dd>
+                <span class="file">app/decision.py</span>
+                <span class="file">app/rop.py</span>
+                <span class="file">app/statistik.py</span>
+              </dd>
+              <dt>Endpoint</dt>
+              <dd>
+                <span class="route"><span class="verb">GET</span> /api/reorder</span>
+                <span class="route"><span class="verb">POST</span> /api/purchase-orders</span>
+              </dd>
+            </dl>
+
+            <p>
+              Layar ini dulu menjawab untuk <em>satu</em> barang pada satu waktu — dropdown
+              gudang, dropdown barang, lalu satu panel keputusan. Jawabannya benar, tetapi
+              pertanyaannya salah: orang pengadaan tidak datang membawa satu SKU, ia datang
+              membawa satu gudang dan waktu yang terbatas. Barang yang tidak kebetulan ia
+              pilih tidak pernah muncul sama sekali.
+            </p>
+
+            <p>
+              <strong>Keputusannya tidak berubah, hanya cakupannya.</strong> Tiap baris
+              dihitung jalur yang sama persis dengan <code>/api/forecast</code> —
+              <code>forecasting._susun()</code> lalu <code>decision.lapisan_keputusan()</code>
+              — sehingga satu barang mustahil menyebut status, titik pesan, atau jumlah yang
+              berbeda di daftar ini dan di halaman Prakiraan. Yang dikerjakan router hanyalah
+              perulangan, penyaringan, pengurutan, dan peringkasan.
+            </p>
+
+            <div class="nope">
+              <span class="nope-title">Tidak ada pemilih periode, tidak ada pemilih model</span>
+              <strong>Periode</strong> — jumlah pesanan berpatokan
+              <code>decision.HORIZON_KEPUTUSAN</code> (14 hari, dipatok backend), bukan
+              periode tampilan. Menyediakan dropdown periode akan menyiratkan bahwa
+              menggesernya mengubah jumlah pesanan; padahal tidak, dan tidak boleh.<br>
+              <strong>Model</strong> — titik pesan tidak menuntut model prakiraan untuk
+              berarti; ia menuntut laju pemakaian dan ketidakpastiannya. Daftar ini dipatok ke
+              rumus statistik sederhana supaya urutan pekerjaan pengadaan tidak berubah karena
+              setelan tampilan di layar sebelah.
+            </div>
+          </div>
+        </div>
+
+        <h3>Rantai titik pesan</h3>
+        <p>
+          Inti <span class="file">app/rop.py</span>: model prakiraan yang dipilih tidak hanya
+          menghasilkan angka permintaan — <strong>galatnya sendiri langsung menjadi bahan
+          menghitung safety stock</strong>. Dua keputusan yang selama ini terpisah, “model
+          mana” dan “seberapa aman”, disambung menjadi satu rantai.
+        </p>
+
+        <div class="formula"><span class="dim">jalur model</span>
+  model dipilih
+    → permintaan harian rata-rata (D)
+    → <span class="hi">RMSE</span> backtest model itu + strategi layanan (Z)
+      → safety stock = Z × RMSE × √(lead time)
+        → <span class="hi">ROP = D × lead time + safety stock</span>
+
+<span class="dim">jalur statistik — bawaan, dan rumus ROP-nya SAMA PERSIS</span>
+  riwayat pengeluaran
+    → rata-rata harian (D)
+    → <span class="hi">simpangan baku</span> permintaan harian (σ) + strategi layanan (Z)
+      → safety stock = Z × σ × √(lead time)
+        → <span class="hi">ROP = D × lead time + safety stock</span></div>
+
+        <p>
+          Akibat rantai pertama, safety stock menjadi <strong>dinamis</strong>: model yang
+          meramal barang ini dengan tepat menghasilkan cadangan tipis, model yang sering
+          meleset menghasilkan cadangan tebal. Itu jauh lebih jujur daripada safety stock
+          tetap pada master barang, yang tidak tahu apa-apa tentang seberapa sulit barang itu
+          diramal. Yang dipakai <strong>RMSE, bukan MASE</strong>: safety stock dinyatakan
+          dalam unit barang, sedangkan MASE adalah rasio tanpa satuan — ia menjawab “model
+          mana lebih baik”, bukan “berapa unit ia meleset”.
+        </p>
+
+        <div class="aside">
+          <strong>Kenapa jalur statistik yang menjadi bawaan.</strong> Tiga harga jalur model
+          nyata: backtest menuntut ≥ 28 hari riwayat dan di bawah itu cadangan jatuh ke nol;
+          “cadangan setebal ini karena RMSE backtest Croston SBA pada empat lipatan” bukan
+          kalimat yang dapat diperiksa orang gudang; dan galat model bukan sebaran permintaan
+          — pada barang berpola teratur, model yang tepat bergalat nyaris nol sehingga
+          cadangannya ikut menghilang, padahal permintaan besok tetap tidak pasti. Field
+          <code>safety_stock_basis</code> pada jawaban <strong>menyebut mana yang benar-benar
+          dipakai</strong>: angka cadangan yang dilaporkan tanpa menyebut dasarnya tidak dapat
+          diperiksa siapa pun.
+        </div>
+
+        <h3>Tiga strategi layanan</h3>
+        <div class="panel panel-scroll">
+          <table>
+            <thead>
+              <tr><th>Kunci</th><th class="num">Z</th><th class="num">Tingkat layanan</th><th>Artinya bagi orang gudang</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><span class="sku">aman</span></td><td class="num">2,05</td><td class="num">98%</td>
+                  <td>98 dari 100 kali permintaan selama masa tunggu tertutup.</td></tr>
+              <tr><td><span class="sku">standar</span> <em>(bawaan)</em></td><td class="num">1,28</td><td class="num">90%</td>
+                  <td>Titik tengah antara ongkos gudang dan ongkos berhenti produksi.</td></tr>
+              <tr><td><span class="sku">hemat</span></td><td class="num">0,84</td><td class="num">80%</td>
+                  <td>Cadangan tipis; dipilih untuk barang murah yang mudah didapat ulang.</td></tr>
+            </tbody>
+          </table>
+          <figcaption>
+            Namanya sengaja menyebut <em>konsekuensinya</em>, bukan angkanya. Orang gudang
+            memilih antara “aman” dan “hemat”; Z-score 2,05 tidak berarti apa-apa baginya
+            sampai diterjemahkan menjadi “98 dari 100 kali permintaan tertutup”.
+          </figcaption>
+        </div>
+
+        <h3>Tiga status tindakan dan tiga prioritas</h3>
+        <div class="status-grid">
+          <div class="status-card s-safe">
+            <span class="chip chip-safe">AMAN</span>
+            <p>Stok tersedia masih di atas titik pesan efektif. Jumlah pesanan nol.</p>
+          </div>
+          <div class="status-card s-attn">
+            <span class="chip chip-attn">PERLU_REORDER</span>
+            <p>Stok menyentuh atau melewati titik pesan efektif. Ada jumlah yang harus dipesan.</p>
+          </div>
+          <div class="status-card s-critical">
+            <span class="chip chip-critical">RISIKO_STOCKOUT</span>
+            <p>Stok diperkirakan habis <em>sebelum</em> kiriman tiba, bahkan bila dipesan hari ini.</p>
+          </div>
+          <div class="status-card s-none">
+            <span class="chip chip-none">PANTAU</span>
+            <p>Belum dapat dinilai — histori belum cukup, jadi jumlahnya <code>null</code>,
+               bukan nol.</p>
+          </div>
+        </div>
+
+        <div class="aside">
+          <strong>Status dan jumlah tidak boleh berselisih.</strong> “Segera pesan” berarti
+          ada jumlah yang harus dipesan, dan sebaliknya. Invarian itu dijaga di satu tempat —
+          <code>status_keputusan()</code>, yang menerima jumlah pengadaan sebagai masukan.
+          Satu-satunya keadaan “perlu reorder” berdampingan dengan nol adalah barang yang
+          tidak ada pemakaiannya sama sekali: kebutuhan horizonnya nol, dan itu jawaban yang
+          benar.
+        </div>
+
+        <h3>Berapa yang dipesan</h3>
+        <div class="formula">titik pesan efektif = max(<span class="dim">ROP master</span>, D × lead time + safety stock)
+target             = max(titik pesan efektif, <span class="dim">kebutuhan 14 hari</span> + safety stock)
+kebutuhan          = max(0, target − stok tersedia)
+<span class="hi">jumlah             = ceil(kebutuhan)</span>          <span class="dim">← ke ATAS, bukan setengah ke atas</span></div>
+
+        <ul class="tight">
+          <li><strong>Nol bila stok masih di atas titik pesan efektif</strong>, apa pun isi
+            prakiraan. Inilah yang membuat “prakiraan tinggi” tidak dengan sendirinya berarti
+            pengadaan.</li>
+          <li><strong>Tidak pernah negatif.</strong> Selisih dijepit di nol sebelum dibulatkan,
+            supaya stok yang melampaui sasaran tidak menghasilkan angka minus yang terbaca
+            sebagai “kembalikan ke pemasok”.</li>
+          <li><strong><code>null</code> berbeda dari nol.</strong> Nol menyatakan “tidak perlu
+            membeli”; <code>null</code> menyatakan “belum tahu”. Menyamakan keduanya akan
+            menampilkan “tidak perlu pesan” untuk barang yang belum pernah dinilai.</li>
+          <li><strong>Dibulatkan ke atas</strong> — satu-satunya pengecualian dari pembulatan
+            setengah ke atas yang berlaku di seluruh sistem. Memesan satu unit lebih banyak
+            berongkos gudang; memesan satu unit lebih sedikit berongkos berhenti produksi.</li>
+          <li><strong>Belum ada jumlah pesanan minimum maupun kelipatan kemasan</strong>, jadi
+            tidak ada pembulatan lain yang diterapkan tanpa mengarang aturan.</li>
+        </ul>
+
+        <div class="aside">
+          <strong>Biayanya dibatasi, dan kejujurannya diterbitkan.</strong> Tiap baris
+          menjalankan rantai prakiraan penuh, jadi jumlah pasangan barang/gudang yang diproses
+          dijepit pada <code>BATAS_BARIS</code> (400). Lebih baik menjawab sebagian dengan
+          jujur — lewat field <code>truncated</code> dan <code>row_limit</code> pada jawaban —
+          daripada menahan permintaan selama puluhan detik atau, lebih buruk, diam-diam
+          menampilkan daftar yang tidak lengkap.
+        </div>
+
+        <div class="aside">
+          <strong>PO yang lahir dari panel ini berstatus <code>draft</code> dan tanpa
+          pemasok.</strong> Master barang tidak menyimpan pemasok, jadi tidak ada pemasok yang
+          dapat dipilih sistem tanpa mengarang. Pemasoknya diisi saat PO benar-benar
+          diterbitkan.
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="transfer">
+        <h2>Tahap 3c — Transfer Antar Gudang</h2>
+
+        <div class="mod">
+          <div class="mod-head">
+            <span class="kode">Kecerdasan AI · /transfer</span>
+            <span class="nama">Transfer Antar Gudang</span>
+            <span class="tanya">
+              Satu pertanyaan: <em>apa yang tidak perlu dibeli hari ini karena barangnya sudah
+              ada di gudang sebelah, dan dari gudang mana persisnya</em>.
+            </span>
+          </div>
+          <div class="mod-body">
+            <dl class="facts">
+              <dt>Layar</dt>
+              <dd>
+                <span class="file">frontend/app/transfer/page.tsx</span>
+                <span class="file">components/transfer-sections.tsx</span>
+                <span class="file">components/peta-transfer.tsx</span>
+              </dd>
+              <dt>Router</dt>
+              <dd><span class="file">app/routers/transfer.py</span></dd>
+              <dt>Mesin</dt>
+              <dd><span class="file">app/transfer.py</span> — murni, tanpa satu baris SQL</dd>
+              <dt>Endpoint</dt>
+              <dd>
+                <span class="route"><span class="verb">GET</span> /api/transfer</span>
+                <span class="route"><span class="verb">GET</span> /api/transfer/detail</span>
+                <span class="route"><span class="verb">POST</span> /api/transfers</span>
+                <span class="route"><span class="verb">PATCH</span> /api/transfers/{id}/status</span>
+              </dd>
+            </dl>
+
+            <div class="nope">
+              <span class="nope-title">Batas terpenting modul ini</span>
+              Modul ini <strong>tidak</strong> menghitung kebutuhan, <strong>tidak</strong>
+              menghitung titik pesan, dan <strong>tidak</strong> menghitung jumlah pesanan.
+              Ketiganya sudah dijawab <span class="file">app/decision.py</span> lewat jalur
+              yang sama dengan halaman Prakiraan dan Pemesanan Ulang, dan menghitungnya ulang
+              di sini berarti satu barang dapat menyebut kekurangan yang berbeda di dua layar
+              tanpa satu galat pun terbit. Yang masuk ke sini adalah <strong>angka jadi</strong>
+              (<code>recommended_order_qty</code>); yang dikerjakan di sini hanya memilih dari
+              gudang mana kekurangan itu ditutup. Uji <span class="file">test_transfer_api.py</span>
+              mengunci invarian tersebut.
+            </div>
+
+            <div class="formula">kekurangan (dari <span class="hi">decision.saran_qty_reorder</span>)
+  → cari gudang yang punya barangnya
+  → buang yang stoknya tidak benar-benar berlebih
+  → pencocokan fuzzy bila nomor barangnya berbeda <span class="dim">(opt-in)</span>
+  → skor: jarak + kecukupan + surplus + waktu tempuh
+  → peringkat
+  → alokasi, boleh menggabungkan beberapa gudang
+  → <span class="dim">sisanya, bila ada, kembali menjadi urusan Pemesanan Ulang</span></div>
+          </div>
+        </div>
+
+        <h3>Skor kandidat: empat komponen, satu pengali</h3>
+        <div class="panel panel-scroll">
+          <table>
+            <thead>
+              <tr><th>Komponen</th><th class="num">Bobot</th><th>Pertanyaan yang dijawabnya</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Kecukupan</strong></td><td class="num">0,40</td>
+                  <td>Cukupkah untuk menutup kebutuhan sekali kirim? Bobot terbesar karena satu
+                      kiriman selalu lebih murah daripada dua: satu dokumen, satu truk, satu
+                      penerimaan.</td></tr>
+              <tr><td><strong>Jarak</strong></td><td class="num">0,25</td>
+                  <td>Semakin dekat semakin murah. Nol di atas
+                      <code>TRANSFER_JARAK_MAKS_KM</code> (1.000 km) — selisih 1.100 dan 1.400 km
+                      tidak mengubah keputusan siapa pun, sedangkan selisih 20 dan 320 km
+                      mengubah segalanya.</td></tr>
+              <tr><td><strong>Surplus</strong></td><td class="num">0,20</td>
+                  <td>Seberapa <em>dalam</em> kelebihannya? Gudang yang 70% stoknya berlebih
+                      adalah donor jauh lebih aman daripada yang hanya lebih satu unit di atas
+                      titik pesannya.</td></tr>
+              <tr><td><strong>Waktu tempuh</strong></td><td class="num">0,15</td>
+                  <td>Bukan jarak — penyeberangan dan izin muat tidak terbaca dari kilometer.
+                      Nol di atas <code>TRANSFER_WAKTU_MAKS_HARI</code> (14 hari), yaitu masa
+                      tunggu pembelian yang khas pada data ini.</td></tr>
+              <tr><td><strong>Kemiripan nama</strong></td><td class="num">×</td>
+                  <td><strong>Mengalikan, bukan menambah komponen kelima.</strong> Ia bukan
+                      keunggulan melainkan keraguan: kandidat yang hanya “mirip 90%” harus kalah
+                      dari kandidat yang cocok pasti pada keadaan lain yang sama. Cocok pasti
+                      bernilai 1,0 sehingga tidak berpengaruh apa pun.</td></tr>
+            </tbody>
+          </table>
+          <figcaption>
+            Keempat bobot dijumlahkan menjadi satu supaya skor selalu berada di 0–100 apa pun
+            yang digeser; kalau salah satu dinaikkan, turunkan yang lain. Mesinnya sengaja
+            <strong>tidak menormalkan ulang</strong>, karena normalisasi diam-diam akan
+            menyembunyikan setelan yang salah ketik. Rincian komponen ikut diterbitkan pada
+            tiap kandidat: skor tunggal “78” tidak memberi tahu apa pun tentang apa yang harus
+            diperbaiki, sedangkan empat komponen yang berdampingan menunjukkan bahwa gudang
+            itu menang karena dekat meski stoknya pas-pasan.
+          </figcaption>
+        </div>
+
+        <h3>Tiga keputusan, lima alasan penolakan</h3>
+        <div class="three">
+          <div class="card">
+            <span class="cap">Keputusan</span>
+            <span class="head">TRANSFER</span>
+            <p>Seluruh kebutuhan tertutup dari gudang lain. Tidak ada yang perlu dibeli.</p>
+          </div>
+          <div class="card">
+            <span class="cap">Keputusan</span>
+            <span class="head">TRANSFER_SEBAGIAN</span>
+            <p>
+              <strong>Bukan kegagalan.</strong> Memindahkan 8 dari 10 yang dibutuhkan tetap
+              menutup delapan hari pemakaian, dan yang dibeli tinggal dua. Menyamakannya
+              dengan “pembelian” akan membuat orang pengadaan memesan sepuluh.
+            </p>
+          </div>
+          <div class="card">
+            <span class="cap">Keputusan</span>
+            <span class="head">PEMBELIAN</span>
+            <p>Tidak ada gudang yang layak menjadi sumber. Kekurangan kembali sepenuhnya
+               menjadi urusan Pemesanan Ulang.</p>
+          </div>
+        </div>
+
+        <ul class="tight">
+          <li><code>TIDAK_AMAN</code> — gudang itu sendiri sedang perlu pesan ulang.</li>
+          <li><code>TANPA_SURPLUS</code> — stoknya ada, tetapi tidak benar-benar berlebih.</li>
+          <li><code>NONAKTIF</code> — gudangnya sudah tidak dipakai.</li>
+          <li><code>SATUAN_BEDA</code> — hanya mungkin pada jalur fuzzy; satuan wajib sama.</li>
+          <li><code>MIRIP_KURANG</code> — kemiripan nama di bawah ambang.</li>
+        </ul>
+
+        <div class="aside">
+          <strong>Fuzzy tidak pernah menggantikan cocok pasti.</strong> Barang yang sama di dua
+          gudang memakai <code>item_id</code> yang sama, dan pasangan itu diambil lebih dulu,
+          selalu, tanpa menyentuh pencocokan nama sama sekali. Fuzzy hanya menjawab satu
+          keadaan yang memang ada di data nyata: satu barang fisik terlanjur terdaftar dua kali
+          dengan nomor berbeda — hasil impor dari dua cabang, atau dua orang yang memasukkannya
+          pada hari berbeda. Karena tebakan seperti itu bisa salah, ia <strong>mati secara
+          bawaan</strong>, ambangnya tinggi (<code>0,88</code>), satuannya wajib sama, dan
+          setiap barisnya membawa skor kemiripannya sendiri supaya orang gudang dapat
+          menolaknya <em>sebelum</em> barang bergerak.
+        </div>
+
+        <div class="aside">
+          <strong>Seluruh kuantitas di sini bilangan bulat</strong>, dan itu bukan soal
+          tampilan: yang dipindahkan adalah barang fisik, dan “kirim 3,4 bearing” bukan
+          perintah yang dapat dijalankan siapa pun. Surplus dibulatkan <em>ke bawah</em> dan
+          kebutuhan <em>ke atas</em>, sehingga pembulatan tidak pernah menjanjikan barang yang
+          tidak ada.
+        </div>
+
+        <h3>Daur hidup dokumen transfer</h3>
+        <div class="panel">
+          <div class="panel-head">
+            <span class="label">Perpindahan status yang diizinkan</span>
+            <span class="label">app/transfer.py · PERPINDAHAN</span>
+          </div>
+          <div class="panel-body panel-scroll">
+            <figure>
+              <svg class="diagram" viewBox="0 0 780 170" role="img"
+                   aria-labelledby="tf-judul tf-uraian">
+                <title id="tf-judul">Perpindahan status dokumen transfer</title>
+                <desc id="tf-uraian">
+                  Draft dapat berpindah ke approved atau cancelled. Approved dapat berpindah ke
+                  in_transit atau cancelled. In_transit hanya dapat berpindah ke completed.
+                  Completed dan cancelled adalah keadaan akhir.
+                </desc>
+
+                <rect class="d-box" x="20" y="40" width="150" height="44" rx="4"/>
+                <text class="d-label d-strong" x="95" y="60" text-anchor="middle">draft</text>
+                <text class="d-tiny" x="95" y="76" text-anchor="middle">diajukan dari layar</text>
+
+                <rect class="d-box" x="215" y="40" width="150" height="44" rx="4"/>
+                <text class="d-label d-strong" x="290" y="60" text-anchor="middle">approved</text>
+                <text class="d-tiny" x="290" y="76" text-anchor="middle">disetujui</text>
+
+                <rect class="d-box" x="410" y="40" width="150" height="44" rx="4"/>
+                <text class="d-label d-strong" x="485" y="60" text-anchor="middle">in_transit</text>
+                <text class="d-tiny" x="485" y="76" text-anchor="middle">barang di jalan</text>
+
+                <rect class="d-box-accent" x="605" y="40" width="150" height="44" rx="4"/>
+                <text class="d-label d-strong" x="680" y="60" text-anchor="middle">completed</text>
+                <text class="d-tiny" x="680" y="76" text-anchor="middle">stok berpindah</text>
+
+                <rect class="d-box-soft" x="215" y="120" width="345" height="34" rx="4"/>
+                <text class="d-label" x="387" y="142" text-anchor="middle">cancelled — hanya dari draft atau approved</text>
+
+                <path class="d-flow-accent" d="M170,62 L209,62"/>
+                <path d="M215,62 l-9,-4.5 v9 Z" fill="var(--accent)"/>
+                <path class="d-flow-accent" d="M365,62 L404,62"/>
+                <path d="M410,62 l-9,-4.5 v9 Z" fill="var(--accent)"/>
+                <path class="d-flow-accent" d="M560,62 L599,62"/>
+                <path d="M605,62 l-9,-4.5 v9 Z" fill="var(--accent)"/>
+
+                <path class="d-flow" d="M290,84 L290,114" stroke-dasharray="4 3"/>
+                <path d="M290,120 l-4.5,-9 h9 Z" fill="var(--rule-firm)"/>
+                <path class="d-flow" d="M485,84 L485,114" stroke-dasharray="4 3"/>
+                <path d="M485,120 l-4.5,-9 h9 Z" fill="var(--rule-firm)"/>
+                <path class="d-flow" d="M95,84 L95,137 L209,137" stroke-dasharray="4 3"/>
+                <path d="M215,137 l-9,-4.5 v9 Z" fill="var(--rule-firm)"/>
+
+                <text class="d-tiny" x="20" y="126">in_transit tidak punya</text>
+                <text class="d-tiny" x="20" y="140">jalan ke cancelled.</text>
+              </svg>
+              <figcaption>
+                <strong>Transfer yang sudah <code>in_transit</code> tidak dapat dibatalkan.</strong>
+                Barang sudah di jalan; membatalkannya bukan pembatalan melainkan
+                <em>transfer balik</em>, dan itu dokumen tersendiri — bukan satu tombol yang
+                diam-diam mengembalikan stok ke gudang asal tanpa jejak pergerakan.
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <div class="aside">
+          <strong>Dua tab, dan keduanya perlu.</strong> “Rekomendasi” dihitung ulang setiap kali
+          dibuka dari stok yang berlaku saat itu; “Dokumen” adalah apa yang sudah diajukan dan
+          sedang berjalan. Menyatukannya berarti satu daftar yang separuh barisnya berubah
+          sendiri dan separuh lagi tidak, tanpa ada yang menjelaskan mana yang mana. Panel
+          detail pun <em>menghitung ulang</em> dari sumber yang sama alih-alih memakai potongan
+          daftar sebelumnya — panel yang menampilkan angka dari permintaan sebelumnya akan
+          menyebut surplus yang sudah tidak ada lagi.
+        </div>
+
+        <div class="aside">
+          <strong>Satu kartu per kebutuhan, bukan satu baris tabel.</strong> Perintah yang
+          dihasilkan layar ini menggerakkan barang antar pulau, dan arah perpindahannya tidak
+          boleh bersandar pada ingatan pembaca tentang kolom mana yang mengirim — apalagi pada
+          dua kode gudang yang berselisih satu huruf. Tiap kartu menyebut nama gudang lengkap
+          pada blok berlabel PENGIRIM dan PENERIMA, dengan panah beserta jumlahnya di antara
+          keduanya.
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="umur">
+        <h2>Tahap 3d — Analisis Umur Pakai</h2>
+
+        <div class="mod">
+          <div class="mod-head">
+            <span class="kode">Kecerdasan AI · /lifetime</span>
+            <span class="nama">Analisis Umur Pakai</span>
+            <span class="tanya">
+              Satu pertanyaan: <em>apakah komponen diganti lebih cepat atau lebih lambat
+              daripada umur pakai yang diharapkan</em>.
+            </span>
+          </div>
+          <div class="mod-body">
+            <dl class="facts">
+              <dt>Layar</dt>
+              <dd>
+                <span class="file">frontend/app/lifetime/page.tsx</span>
+                <span class="file">components/lifetime-sections.tsx</span>
+              </dd>
+              <dt>Router</dt>
+              <dd><span class="file">app/routers/lifetime.py</span></dd>
+              <dt>Mesin</dt>
+              <dd><span class="file">app/lifetime.py</span> — murni, tanpa satu baris SQL</dd>
+              <dt>Endpoint</dt>
+              <dd>
+                <span class="route"><span class="verb">GET</span> /api/lifetime</span>
+                <span class="route"><span class="verb">GET</span> /api/lifetime/{item_id}/{warehouse_id}</span>
+              </dd>
+              <dt>Sumber</dt>
+              <dd class="plain">
+                Referensi: <code>items.service_life_value</code> + <code>service_life_unit</code>
+                (migrasi 029). Aktual: jarak antar baris <code>stock_issue_items</code>.
+              </dd>
+            </dl>
+
+            <p>
+              Halaman ini menempati posisi <strong>Deteksi Anomali</strong>, yang dihapus
+              seluruhnya pada 2 September 2026 — mesin deteksi, tabel temuan, pemindai batch,
+              dan halamannya. Yang dijawab modul lama adalah “apakah pola jumlah stok berubah”,
+              sebuah pertanyaan yang jawabannya hanya berdiri di atas ambang statistik yang
+              harus dikalibrasi terus-menerus. Yang dijawab halaman ini berdiri di atas angka
+              referensi yang memang tercatat di master barang, sehingga “menyimpang” punya arti
+              yang dapat ditunjuk sumbernya.
+            </p>
+
+            <div class="nope">
+              <span class="nope-title">Tiga hal yang tidak boleh dilakukan di layar ini</span>
+              <strong>1. Menyebut sebab.</strong> Boleh: “diganti 30% lebih cepat daripada umur
+              pakai harapan”. Tidak boleh: “karena olinya telat diganti”. Data beban, suhu,
+              pelumasan, dan pemeliharaan tidak ada di sistem ini — dan panel
+              <em>Faktor Pendukung</em> tercetak justru untuk mengatakan itu.<br>
+              <strong>2. Memprakirakan kerusakan.</strong> Ini bukan predictive maintenance.
+              Yang diukur adalah apa yang <em>sudah</em> terjadi.<br>
+              <strong>3. Mengubah prakiraan atau pemesanan ulang.</strong> Aturan bisnis yang
+              menghubungkan umur pakai dengan titik pesan belum ada; mengarangnya di sini akan
+              menggerakkan uang pengadaan tanpa seorang pun menyetujuinya. Yang ada hanyalah
+              <em>tautan</em> ke kedua halaman itu, dan kalimat dampak yang berbunyi
+              “berpotensi”, bukan “akan”.
+            </div>
+          </div>
+        </div>
+
+        <h3>Dari mana angkanya datang</h3>
+        <div class="formula"><span class="dim">referensi (master barang)</span>
+  service_life_value + satuan → <span class="hi">umur harapan (hari)</span>
+      'jam'   → nilai ÷ OPERATING_HOURS_PER_DAY   <span class="dim">(16 jam/hari — dua shift)</span>
+      'tahun' → nilai × 365                       <span class="dim">TIDAK dikali jam operasi</span>
+
+<span class="dim">aktual (riwayat pengeluaran)</span>
+  tanggal penggantian → jarak antar penggantian → <span class="hi">MEDIAN</span> = umur aktual
+
+<span class="dim">penilaian</span>
+  pita = umur harapan × (1 ± <span class="hi">0,15</span>)
+  aktual &lt; batas bawah → PREMATURE
+  aktual &gt; batas atas  → EXTENDED
+  di dalam pita        → NORMAL
+  tanpa referensi / tanpa jarak → INSUFFICIENT</div>
+
+        <ul class="tight">
+          <li><strong>Median, bukan rata-rata.</strong> Satu penggantian yang dimajukan karena
+            kerusakan tidak sengaja — atau satu jarak yang melar karena mesin berhenti sebulan —
+            menggeser rata-rata cukup jauh untuk memindahkan kategori seluruh barang, sedangkan
+            yang ingin dijawab adalah “berapa umur yang <em>lazim</em>”.</li>
+          <li><strong>Perbandingan terhadap pita, bukan terhadap deviasi yang sudah
+            dibulatkan.</strong> Pembulatan pada angka persen membuat baris tepat di tepi pita
+            berpindah kategori tergantung berapa desimal yang kebetulan ditampilkan.</li>
+          <li><strong>Tren menuntut minimal 6 jarak</strong>
+            (<code>LIFETIME_MIN_INTERVAL_TREN</code>). Menamai arah atas dua atau tiga angka
+            berarti menamai kebetulan. Yang dibandingkan adalah median paruh awal dengan median
+            paruh akhir — bukan regresi, karena cara ini tidak menuntut asumsi bentuk hubungan
+            apa pun dan tahan terhadap satu jarak yang menyimpang jauh.</li>
+          <li><strong><code>INSUFFICIENT</code> bukan kategori umur pakai</strong> melainkan
+            pernyataan bahwa umurnya belum dapat diukur. Dipisahkan supaya tidak pernah
+            terhitung sebagai “wajar”.</li>
+        </ul>
+
+        <div class="aside">
+          <strong>Batas ukurannya dinyatakan pada tiap baris.</strong> Basis data ini tidak
+          mencatat pemasangan maupun pelepasan satu unit; yang tercatat adalah pengeluaran
+          barang dari gudang. Ukuran “jarak antar penggantian” benar bila satu titik pemasangan
+          mengambil satu unit setiap kali komponennya diganti. Bila kelak satu barang terpasang
+          pada banyak titik, jaraknya menjadi jarak antar penggantian <em>armada</em> — bukan
+          umur satu unit. Karena itu setiap baris membawa field <code>basis</code> yang
+          menyebutkan hal ini apa adanya, alih-alih menyembunyikannya di balik satu angka yang
+          terlihat pasti.
+        </div>
+
+        <div class="aside">
+          <strong>Kenapa satuannya tidak dinormalkan ke jam di basis data.</strong> Dengan 24
+          jam sehari, 20 tahun menjadi 175.200 jam; dengan satu shift kerja, 40.000 jam.
+          Selisihnya lebih dari empat kali lipat, dan asumsi sebesar itu tidak boleh tertanam
+          diam-diam di dalam kolom. Migrasi 029 juga sengaja <em>tidak</em> menumpangkan angka
+          ini pada <code>lead_time_days</code>: mengisi lead time dengan 12.500 jam akan
+          membuat titik pesan meledak menjadi puluhan ribu unit dan setiap barang berstatus
+          “Segera pesan” — tanpa satu galat pun yang menunjuk sebabnya.
+        </div>
+
+        <div class="aside">
+          Panel detail dipotong pada <code>BATAS_KEJADIAN_DETAIL</code> (60) kejadian.
+          Perusahaan Utama menyimpan sampai 93 penggantian untuk satu filter oli sepanjang dua
+          puluh tahun; yang dibaca orang adalah yang terakhir, dan mengirim seluruhnya hanya
+          membesarkan jawaban tanpa menambah keterangan.
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="asisten">
+        <h2>Tahap 3e — Asisten AI</h2>
+
+        <div class="mod">
+          <div class="mod-head">
+            <span class="kode">Kecerdasan AI · /assistant</span>
+            <span class="nama">AI Inventory Assistant</span>
+            <span class="tanya">
+              Satu pertanyaan: <em>bisakah saya bertanya tentang persediaan dengan kalimat
+              biasa</em> — dan mendapat jawaban yang angkanya persis sama dengan yang tercetak
+              di layar.
+            </span>
+          </div>
+          <div class="mod-body">
+            <dl class="facts">
+              <dt>Layar</dt>
+              <dd><span class="file">frontend/app/assistant/page.tsx</span></dd>
+              <dt>Router</dt>
+              <dd><span class="file">app/routers/assistant.py</span></dd>
+              <dt>Runtime</dt>
+              <dd><span class="file">app/llm.py</span> — Ollama lokal maupun Ollama Cloud</dd>
+              <dt>Katalog tool</dt>
+              <dd><span class="file">app/tools.py</span> — 18 tool baca, 2 tool tulis</dd>
+              <dt>Endpoint</dt>
+              <dd>
+                <span class="route"><span class="verb">POST</span> /api/assistant/query</span>
+                <span class="route"><span class="verb">GET</span> /api/assistant/suggestions</span>
+                <span class="route"><span class="verb">GET</span> /api/assistant/health</span>
+              </dd>
+            </dl>
+
+            <div class="formula">pertanyaan + riwayat → model → <span class="hi">tool call</span> → handler endpoint yang SAMA
+    dengan yang dipakai frontend → PostgreSQL → hasil → model → jawaban bahasa alami</div>
+
+            <p>
+              <strong>Model tidak pernah menyentuh basis data.</strong> Ia hanya boleh meminta
+              data lewat tool di <span class="file">app/tools.py</span>, yang meneruskan ke
+              handler endpoint yang sama persis dengan yang dipakai layar — sehingga jawaban
+              chat dan jawaban halaman mustahil bersumber dari query yang berbeda. Karena
+              handler itu berjalan di dalam permintaan yang sama, <strong>Row Level Security
+              tetap berlaku</strong>: asisten tidak dapat membaca penyewa lain sekalipun
+              diminta.
+            </p>
+          </div>
+        </div>
+
+        <h3>Tiga penjagaan pada apa yang dilihat model</h3>
+        <div class="three">
+          <div class="card">
+            <span class="cap">Penjagaan 1</span>
+            <span class="head">Angka versi tampilan</span>
+            <p>
+              Seluruh angka yang dikirim ke model adalah bilangan bulat yang sama persis dengan
+              yang tercetak di kartu. Model dilarang menghitung ulang atau membulatkan sendiri:
+              mengirim “22,042” berarti pengguna membaca “22,042 PCS” di chat sementara layar
+              berbunyi “22 PCS” untuk barang yang sama.
+            </p>
+          </div>
+          <div class="card">
+            <span class="cap">Penjagaan 2</span>
+            <span class="head"><code>status</code> tidak dikirim</span>
+            <p>
+              SAFE/ATTENTION/CRITICAL bergerak hanya karena panjang periode diubah. Yang
+              dikirim sebagai indikator urgensi adalah <code>action_status</code>, yang
+              bersandar pada lead time. Deret harian grafik juga tidak ikut — ratusan titik
+              tidak membuat penalaran lebih baik, hanya menghabiskan konteks.
+            </p>
+          </div>
+          <div class="card">
+            <span class="cap">Penjagaan 3</span>
+            <span class="head">Laju sebagai label</span>
+            <p>
+              Barang yang keluar tiga kali dalam enam puluh hari berlaju 0,003 per hari;
+              dibulatkan ia menjadi nol dan jawaban model berubah menjadi “tidak ada pemakaian”
+              — salah, dan justru pada barang yang datanya paling tipis. Karena itu laju
+              dikirim sebagai kalimat, bukan angka.
+            </p>
+          </div>
+        </div>
+
+        <div class="aside">
+          <strong>Tool tulis menuntut persetujuan dua kali.</strong>
+          <code>create_stock_receipt</code> dan <code>create_stock_issue</code> hanya berjalan
+          bila dipanggil dengan <code>confirm=true</code>, dan prompt sistem mewajibkan model
+          menanyakan gudang, barang, serta jumlahnya kepada pengguna terlebih dahulu. Seluruh
+          kemampuan menulis dapat dimatikan sepenuhnya lewat
+          <code>ASSISTANT_ALLOW_WRITE=false</code>, dan saat itu asisten hanya bisa membaca.
+          Riwayat percakapan yang ikut dikirim dibatasi <code>ASSISTANT_HISTORY_LIMIT</code>
+          (12 giliran) dan putaran pemanggilan tool dibatasi
+          <code>ASSISTANT_MAX_TOOL_ROUNDS</code> (5).
+        </div>
+
+        <div class="nope">
+          <span class="nope-title">Identitas mesinnya sengaja disembunyikan</span>
+          Nama model, nama runtime, dan katalog model yang terpasang tidak pernah ditampilkan —
+          tidak di layar, tidak di pesan galat. Bagi pengguna bisnis detail itu bukan sesuatu
+          yang bisa ditindaklanjuti, dan menampilkannya membuat halaman terlihat seperti alat
+          internal, bukan produk. Seluruh keterangan teknisnya tetap lengkap di log server,
+          tempat administrator memang mencarinya. Yang <em>ditampilkan</em> ke pengguna adalah
+          daftar sumber data yang benar-benar dibaca untuk menjawab pertanyaannya.
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="pengaturan">
+        <h2>Pengaturan &amp; Masuk</h2>
+
+        <div class="two">
+          <div class="mod">
+            <div class="mod-head">
+              <span class="kode">Popup akun · /settings</span>
+              <span class="nama">Pengaturan</span>
+              <span class="tanya">Konfigurasi apa yang sedang <em>benar-benar</em> berlaku?</span>
+            </div>
+            <div class="mod-body">
+              <p>
+                Alamat API, status koneksi, bahasa, tema tampilan, dan aturan yang sedang
+                dipakai backend — dibaca dari <span class="route"><span class="verb">GET</span> /api/health</span>,
+                yang juga melaporkan status pemuatan model prakiraan.
+                <strong>Tidak ada tombol yang tidak melakukan apa-apa.</strong> Bahasa dan tema
+                disimpan per peramban; keduanya tidak menyentuh basis data.
+              </p>
+            </div>
+          </div>
+
+          <div class="mod">
+            <div class="mod-head">
+              <span class="kode">Gerbang · /login</span>
+              <span class="nama">Masuk &amp; Daftar</span>
+              <span class="tanya">Siapa yang memakai sistem, dan atas nama perusahaan mana?</span>
+            </div>
+            <div class="mod-body">
+              <p>
+                <span class="route"><span class="verb">POST</span> /api/auth/login</span>
+                <span class="route"><span class="verb">POST</span> /api/auth/signup</span>
+                <span class="route"><span class="verb">GET</span> /api/auth/me</span>
+                <span class="route"><span class="verb">POST</span> /api/auth/change-password</span>
+                <span class="route"><span class="verb">POST</span> /api/auth/logout-all</span>
+              </p>
+              <p>
+                Kata sandi minimal <strong>sepuluh</strong> karakter — bukan delapan, karena
+                delapan sudah menjadi angka bawaan di mana-mana sehingga daftar kata sandi
+                bocoran pun disusun untuk panjang itu. Batas 72 bita bcrypt ditegakkan
+                terang-terangan: memotong diam-diam berarti dua kata sandi berbeda yang 72 bita
+                pertamanya sama akan sama-sama diterima.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="aside">
+          <strong>Token yang sudah terbit tidak bisa dihapus</strong> — itu konsekuensi jujur
+          dari JWT tanpa penyimpanan sesi. Yang membatasinya dua hal: umurnya
+          (<code>JWT_TTL_HOURS</code>) dan kolom <code>users.token_version</code>, yang ikut
+          ditandatangani dan diperiksa ulang pada setiap permintaan. Menaikkan angka itu —
+          persis yang dilakukan <code>POST /api/auth/logout-all</code> — membuat seluruh token
+          lama milik satu pengguna langsung ditolak.
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="pendukung">
+        <h2>Modul tanpa halaman</h2>
+        <p class="lede">
+          Lima kelompok endpoint hidup tanpa layar sendiri. Sebagian kehilangan halamannya
+          pada pemangkasan 31 Agustus 2026 tetapi tetap dipakai Asisten AI; sebagian memang
+          tidak pernah punya, karena yang membutuhkannya bukan manusia di depan layar.
+        </p>
+
+        <div class="mod">
+          <div class="mod-head">
+            <span class="kode">Tanpa halaman · dipakai panel Reorder</span>
+            <span class="nama">Pesanan Pembelian</span>
+            <span class="tanya">Apa yang sudah <em>direncanakan</em> dibeli, tetapi belum tiba?</span>
+          </div>
+          <div class="mod-body">
+            <dl class="facts">
+              <dt>Router</dt>
+              <dd><span class="file">app/routers/purchase_orders.py</span></dd>
+              <dt>Endpoint</dt>
+              <dd>
+                <span class="route"><span class="verb">POST</span> /api/purchase-orders</span>
+                <span class="route"><span class="verb">PATCH</span> /api/purchase-orders/{id}/status</span>
+                <span class="route"><span class="verb">POST</span> /api/purchase-orders/{id}/receive</span>
+                <span class="route"><span class="verb">GET</span> /api/purchase-orders</span>
+              </dd>
+            </dl>
+            <p>
+              <strong>Pesanan, bukan penerimaan</strong> — dan seluruh modul ini ada supaya
+              perbedaan itu tidak pernah kabur. Satu permintaan di sini menulis
+              <em>dua</em> tabel dan berhenti: tidak ada <code>stock_movements</code>, tidak ada
+              <code>inventory</code>. Sebelum modul ini ada, satu-satunya cara mencatat rencana
+              pembelian adalah membuat penerimaan barang — dan itu menaikkan stok untuk barang
+              yang belum dikirim: stok di layar naik padahal raknya masih kosong, dan prakiraan
+              yang membaca stok itu langsung menyimpulkan tidak perlu membeli apa-apa.
+            </p>
+            <p>
+              PO yang ditandai <em>diterima</em> memanggil <code>catat_penerimaan()</code> yang
+              sama dengan formulir Penerimaan Barang — itulah pemanggil kedua yang membuat
+              rantai empat tabel dipindahkan ke berkasnya sendiri.
+            </p>
+          </div>
+        </div>
+
+        <div class="mod">
+          <div class="mod-head">
+            <span class="kode">Tanpa halaman · dipakai Asisten AI</span>
+            <span class="nama">Persediaan, Pergerakan, &amp; Laporan</span>
+            <span class="tanya">Berapa stok berjalan, apa yang bergerak, dan bagaimana ringkasannya?</span>
+          </div>
+          <div class="mod-body">
+            <dl class="facts">
+              <dt>Router</dt>
+              <dd>
+                <span class="file">app/routers/inventory.py</span>
+                <span class="file">app/routers/reports.py</span>
+              </dd>
+              <dt>Endpoint</dt>
+              <dd>
+                <span class="route"><span class="verb">GET</span> /api/inventory</span>
+                <span class="route"><span class="verb">GET</span> /api/inventory/low-stock</span>
+                <span class="route"><span class="verb">GET</span> /api/stock-movements</span>
+                <span class="route"><span class="verb">GET</span> /api/reports/stock</span>
+                <span class="route"><span class="verb">GET</span> /api/reports/receipts</span>
+                <span class="route"><span class="verb">GET</span> /api/reports/issues</span>
+              </dd>
+            </dl>
+            <p>
+              Halamannya dicabut karena hanya menyajikan tabel angka mentah, tetapi endpoint-nya
+              tetap hidup: itulah yang dibaca <code>get_inventory</code>,
+              <code>get_low_stock</code>, dan <code>get_stock_report</code> milik Asisten AI.
+              Perlu dicatat bahwa <code>/api/inventory/low-stock</code> memakai ambang sederhana
+              <code>COALESCE(NULLIF(reorder_point,0), minimum_stock)</code> — <strong>bukan</strong>
+              titik pesan efektif. Untuk keputusan pengadaan, yang berlaku adalah
+              <a href="#reorder">/api/reorder</a>.
+            </p>
+          </div>
+        </div>
+
+        <div class="mod">
+          <div class="mod-head">
+            <span class="kode">Tanpa halaman · admin</span>
+            <span class="nama">Pengguna &amp; Peran</span>
+            <span class="tanya">Siapa saja yang boleh masuk, dan sejauh apa?</span>
+          </div>
+          <div class="mod-body">
+            <dl class="facts">
+              <dt>Router</dt>
+              <dd><span class="file">app/routers/users.py</span></dd>
+              <dt>Endpoint</dt>
+              <dd>
+                <span class="route"><span class="verb">GET</span> /api/users</span>
+                <span class="route"><span class="verb">POST</span> /api/users</span>
+                <span class="route"><span class="verb">PATCH</span> /api/users/{id}</span>
+                <span class="route"><span class="verb">POST</span> /api/users/{id}/reset-password</span>
+              </dd>
+            </dl>
+
+            <div class="panel panel-scroll">
+              <table>
+                <thead>
+                  <tr><th>Peran</th><th>Boleh</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><span class="sku">owner</span></td>
+                      <td>Segalanya. <strong>Selalu lolos tanpa perlu disebut</strong> pada tiap
+                          penjaga peran: pemilik perusahaan tidak boleh bisa mengunci dirinya
+                          sendiri di luar. Tidak dapat dinonaktifkan.</td></tr>
+                  <tr><td><span class="sku">admin</span></td>
+                      <td>Master data (barang, gudang, kategori, satuan, pemasok, jarak),
+                          pengguna, dan reset penyewa demo.</td></tr>
+                  <tr><td><span class="sku">staff</span></td>
+                      <td>Transaksi: penerimaan, pengeluaran, transfer, PO, simulasi demo.</td></tr>
+                  <tr><td><span class="sku">viewer</span></td>
+                      <td>Baca saja. Tetap dapat menanyakan apakah penyewa ini demo — yang
+                          dibatasi peran adalah tombolnya, bukan pengetahuan bahwa ia ada.</td></tr>
+                </tbody>
+              </table>
+              <figcaption>
+                Dua aturan yang <em>tidak</em> diketahui basis data ditulis di router: seseorang
+                tidak boleh menurunkan perannya sendiri, dan owner tidak boleh dinonaktifkan.
+                Keduanya bukan soal kepemilikan baris, melainkan soal jangan sampai ada
+                perusahaan yang kehilangan seluruh pemegang kuncinya. Penyaringan antar
+                perusahaan sendiri <strong>tidak</strong> ditulis ulang di sini — policy
+                <code>users_penyewa</code> pada migrasi 028 sudah mengerjakannya.
+              </figcaption>
+            </div>
+          </div>
+        </div>
+
+        <div class="mod">
+          <div class="mod-head">
+            <span class="kode">Tanpa halaman · bilah atas penyewa demo</span>
+            <span class="nama">Penyewa Demo</span>
+            <span class="tanya">Bisakah calon pelanggan melihat angkanya <em>bergerak</em>?</span>
+          </div>
+          <div class="mod-body">
+            <dl class="facts">
+              <dt>Mesin</dt>
+              <dd><span class="file">app/demo.py</span> · <span class="file">app/jobs/buat_demo.py</span></dd>
+              <dt>Layar</dt>
+              <dd><span class="file">frontend/components/demo-bar.tsx</span></dd>
+              <dt>Endpoint</dt>
+              <dd>
+                <span class="route"><span class="verb">GET</span> /api/demo/status</span>
+                <span class="route"><span class="verb">POST</span> /api/demo/reset</span>
+              </dd>
+            </dl>
+            <p>
+              Menjual sistem ini menuntut satu hal yang tidak bisa disiapkan sebelumnya: calon
+              pelanggan harus melihat angkanya bergerak. Tangkapan layar tidak membuktikan apa
+              pun, dan mengetik transaksi satu per satu di depan orang membuat presentasi
+              berhenti di formulir. Modul ini menyediakan satu tombol yang
+              <strong>mencatat penjualan sungguhan</strong>, lalu membiarkan seluruh sistem
+              bereaksi sendiri — stok turun, peringatan menyala, prakiraan bergeser, rekomendasi
+              berubah. Simulasi yang tidak menyimpan apa pun hanya akan menjadi kalkulator.
+            </p>
+            <ul class="tight">
+              <li><strong>Datanya dibangkitkan, bukan disalin.</strong> Menyalin dari perusahaan
+                lain berarti membaca lintas penyewa — persis yang dilarang seluruh lapisan.
+                Membangkitkannya sendiri membuat modul ini berjalan sebagai penyewa demo biasa,
+                dengan hak yang sama seperti pengguna mana pun.</li>
+              <li><strong>Angkanya tetap sama setiap kali.</strong> Pembangkit acaknya berbenih
+                tetap (<code>BENIH = 20260828</code>), jadi demo yang diulang menghasilkan angka
+                yang sama persis — yang mendemokan perlu tahu apa yang akan muncul di layar
+                sebelum ia menekan tombolnya.</li>
+              <li><strong>Seluruh fungsi yang menghapus memeriksa tanda demo lebih dulu.</strong>
+                Perusahaan biasa tidak akan pernah bisa mengosongkan dirinya sendiri lewat jalur
+                ini, bahkan bila endpoint-nya dipanggil langsung.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="mesin">
+        <h2>Enam mesin hitung</h2>
+        <p class="lede">
+          Seluruh rumus sistem ini tinggal di berkas-berkas berikut, dan tidak satu pun di
+          antaranya menyentuh SQL. Itu bukan kerapian: fungsi murni dapat diuji tanpa basis
+          data, dan enam belas berkas uji di <span class="file">backend/tests/</span> mengunci
+          perilakunya tanpa satu baris data sungguhan.
+        </p>
+
+        <div class="panel panel-scroll">
+          <table class="dense">
+            <thead>
+              <tr><th>Berkas</th><th>Menjawab</th><th>Dipanggil oleh</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="file">app/forecasting.py</span></td>
+                <td>Berapa laju pemakaian, berapa perkiraan sisa, dan apa status risikonya.</td>
+                <td>Prakiraan · Pemesanan Ulang · Dasbor · Transfer</td>
+              </tr>
+              <tr>
+                <td><span class="file">app/decision.py</span></td>
+                <td>Perlu bertindak? Kapan? Berapa yang dipesan? Juga: seluruh kalimat
+                    kesimpulan dan versi bulat tiap angka.</td>
+                <td>Prakiraan · Pemesanan Ulang · Dasbor · Transfer · Asisten</td>
+              </tr>
+              <tr>
+                <td><span class="file">app/rop.py</span></td>
+                <td>Titik pesan lewat rantai model → permintaan → galat backtest → safety stock.</td>
+                <td><span class="route">/api/forecast/rop</span></td>
+              </tr>
+              <tr>
+                <td><span class="file">app/statistik.py</span></td>
+                <td>Rata-rata dan simpangan baku permintaan harian — jalur bawaan menuju ROP.</td>
+                <td><span class="file">app/rop.py</span> · <span class="file">app/ml/klasik.py</span></td>
+              </tr>
+              <tr>
+                <td><span class="file">app/ml/klasik.py</span></td>
+                <td>Enam model klasik + adu model 4 lipatan (MASE untuk memilih, RMSE untuk
+                    cadangan).</td>
+                <td>Prakiraan · ROP</td>
+              </tr>
+              <tr>
+                <td><span class="file">app/ml/predict.py</span> +
+                    <span class="file">app/ml/features.py</span></td>
+                <td>Penyajian model XGBoost global; definisi fitur yang <em>satu</em> untuk
+                    pelatihan dan penyajian.</td>
+                <td>Prakiraan</td>
+              </tr>
+              <tr>
+                <td><span class="file">app/transfer.py</span></td>
+                <td>Gudang mana yang layak menjadi sumber, berapa dialokasikan, dan kenapa yang
+                    lain ditolak.</td>
+                <td>Transfer Antar Gudang</td>
+              </tr>
+              <tr>
+                <td><span class="file">app/lifetime.py</span></td>
+                <td>Umur harapan vs umur aktual, kategori, dan arah tren penggantian.</td>
+                <td>Analisis Umur Pakai</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="two">
+          <div class="card">
+            <span class="cap">Aturan yang berlaku di semuanya</span>
+            <span class="head">Satu sumber angka</span>
+            <p>
+              Seluruh nilai turunan dihitung di backend, bukan di frontend. Antarmuka hanya
+              memformat apa yang dikirim; tidak ada rumus yang hidup di dua tempat sekaligus dan
+              bisa berselisih diam-diam.
+            </p>
+          </div>
+          <div class="card">
+            <span class="cap">Aturan yang berlaku di semuanya</span>
+            <span class="head">Bulat untuk layar, desimal untuk hitungan</span>
+            <p>
+              Satuan gudang bersifat diskrit — tidak ada pengambilan 0,6 PACK — sehingga setiap
+              angka yang sampai ke pengguna berupa bilangan bulat lewat field <code>*_int</code>.
+              Presisi aslinya tidak dibuang: perhitungan tetap berjalan atas float, dan nilai
+              desimalnya pindah ke panel <em>Detail perhitungan</em>.
+            </p>
+          </div>
+        </div>
+
+        <div class="aside">
+          <strong>Satu-satunya definisi fitur.</strong>
+          <span class="file">app/ml/features.py</span> dibaca oleh dua jalur: pelatihan memakai
+          pandas tervektorisasi, penyajian memakai Python biasa untuk satu baris. Kalau keduanya
+          sampai berbeda, model menerima susunan angka yang berbeda dari yang dipelajarinya dan
+          hasilnya salah <em>tanpa satu galat pun muncul</em>. Karena itu ada
+          <code>bandingkan_jalur()</code> yang menguji keduanya menghasilkan angka identik, dan
+          uji itu dijalankan setiap kali model dilatih.
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="ai">
+        <h2>Di mana AI bekerja — dan di mana ia sengaja tidak dilibatkan</h2>
+        <p class="lede">
+          Kelompok navigasi bernama “Kecerdasan AI”, tetapi kecerdasan itu terbagi tiga jenis
+          yang sangat berbeda tanggung jawabnya. Satu-satunya yang berupa model bahasa tidak
+          pernah menyentuh satu angka pun.
+        </p>
+
+        <div class="roles">
+          <div class="role">
+            <div class="role-who">Aritmetika</div>
+            <p>
+              Rata-rata bergerak berbobot, simpangan baku, median jarak penggantian, skor
+              kandidat transfer. Dapat ditelusuri baris per baris dan dijelaskan ke pengguna
+              tanpa menyebut “model bilang begitu”. Inilah yang menghasilkan sebagian besar
+              angka di layar.
+            </p>
+          </div>
+          <div class="role">
+            <div class="role-who">Model prakiraan</div>
+            <p>
+              Enam model klasik dan satu XGBoost global. Mereka meramal <em>deret permintaan
+              harian</em> — tidak lebih. Keputusan “perlu pesan atau tidak” diambil lapisan
+              keputusan di atasnya, bukan oleh model.
+            </p>
+          </div>
+          <div class="role">
+            <div class="role-who">Model bahasa</div>
+            <p>
+              Dua tugas, dan hanya dua: <strong>menerjemahkan hasil yang sudah jadi menjadi
+              kalimat</strong>, dan <strong>memilih tool mana yang harus dipanggil</strong> untuk
+              menjawab pertanyaan bebas. Ia tidak menghitung, tidak membulatkan, dan tidak
+              menyentuh basis data.
+            </p>
+          </div>
+          <div class="role">
+            <div class="role-who">Bukan AI</div>
+            <p>
+              Titik pesan, jumlah pesanan, alokasi transfer, dan kategori umur pakai. Seluruhnya
+              rumus tertulis dengan konstanta yang punya sumber — lihat
+              <a href="#ambang">Ambang &amp; konstanta</a>.
+            </p>
+          </div>
+        </div>
+
+        <div class="two">
+          <div class="card">
+            <span class="cap">Pemisahan endpoint</span>
+            <span class="head">Angka dan kalimat berjalan terpisah</span>
+            <p>
+              <span class="route"><span class="verb">GET</span> /api/forecasting</span>
+              menerbitkan angka tanpa menyentuh LLM sama sekali;
+              <span class="route"><span class="verb">POST</span> /api/forecasting/analysis</span>
+              menyusun kalimat penjelasnya. Grafik harus tetap muncul cepat walau layanan AI
+              sedang lambat atau mati.
+            </p>
+          </div>
+          <div class="card">
+            <span class="cap">Anti-karangan</span>
+            <span class="head">LLM tidak menerima angka dari klien</span>
+            <p>
+              Endpoint analisis <em>menghitung ulang</em> lewat mesin yang sama, sehingga model
+              mustahil disuguhi angka karangan lalu diminta membenarkannya. Judul rekomendasi
+              pun tetap dirakit dari angka, bukan dari keluaran model.
+            </p>
+          </div>
+        </div>
+
+        <div class="aside">
+          <strong>Bila LLM mati, rekomendasi tetap terbit.</strong> Jawabannya kembali ke bentuk
+          yang disusun dari angka, ditandai <code>source: "rule_based"</code> dan
+          <code>ai_available: false</code> beserta satu kalimat pemberitahuan. Bila berkas model
+          prakiraan tidak termuat, ramalan kembali ke rata-rata bergerak berbobot. Dua jalur
+          cadangan itu <em>menyatakan diri</em> — yang berbahaya bukan kegagalannya, melainkan
+          kegagalan yang diam.
+        </div>
+
+        <div class="nope">
+          <span class="nope-title">Karena itu aplikasi menolak menyala</span>
+          Bila <code>FORECAST_USE_MODEL=true</code> tetapi berkas modelnya tidak ditemukan,
+          proses berhenti dengan galat yang menyebutkan direktori yang dipakai dan cara
+          memasangnya. Tanpa pemeriksaan itu, berkas model yang hilang hanya menghasilkan satu
+          baris peringatan di log: setiap halaman tetap terisi, setiap angka tetap masuk akal,
+          dan yang berubah hanyalah bahwa seluruh prakiraan menjadi lebih buruk — diam-diam,
+          sampai ada yang kebetulan membaca log. Untuk sengaja berjalan tanpa model, setel
+          <code>FORECAST_USE_MODEL=false</code>.
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="penyewa">
+        <h2>Banyak penyewa</h2>
+        <p class="lede">
+          Satu basis data melayani banyak perusahaan, dan pemisahannya <strong>tidak</strong>
+          ditulis di satu pun dari 17 router. Pembagian tanggung jawabnya disengaja: kalau
+          lapisan aplikasi keliru, akibatnya permintaan ditolak atau halaman kosong. Kalau
+          penyaringan ikut tinggal di aplikasi, satu kekeliruan yang sama berarti data satu
+          klien tampil di layar klien lain.
+        </p>
+
+        <div class="steps">
+          <div class="step">
+            <div class="step-no">Migrasi 024–025</div>
+            <p>Tabel <code>companies</code> dan <code>users</code>. Satu pengguna milik satu
+               perusahaan; peran disimpan pada barisnya.</p>
+          </div>
+          <div class="step">
+            <div class="step-no">Migrasi 026</div>
+            <p>Kolom <code>company_id</code> ditambahkan pada <strong>20 tabel</strong>.
+               Penambahan kolom tidak menulis ulang tabel — pada basis data 1,3 GB berisi 3,1
+               juta baris <code>stock_movements</code>, seluruh migrasi 024–028 selesai dalam
+               <strong>4 detik</strong>.</p>
+          </div>
+          <div class="step">
+            <div class="step-no">Migrasi 027</div>
+            <p>Keunikan dijadikan <em>per perusahaan</em>: dua penyewa boleh sama-sama punya SKU
+               <code>BRG-001</code>.</p>
+          </div>
+          <div class="step">
+            <div class="step-no">Migrasi 028</div>
+            <p>Row Level Security. Policy membandingkan <code>company_id</code> tiap baris dengan
+               setelan sesi yang dipasang <span class="file">app/db.py</span>.</p>
+          </div>
+        </div>
+
+        <div class="nope">
+          <span class="nope-title">Syarat yang membatalkan seluruhnya bila dilanggar</span>
+          Aplikasi <strong>wajib</strong> tersambung sebagai role non-superuser
+          (<code>inventory_app</code>). PostgreSQL membebaskan superuser dari <em>seluruh</em>
+          Row Level Security: setiap halaman tetap tampil normal, setiap query tetap berhasil,
+          dan tidak ada satu galat pun yang terbit — yang berubah hanyalah bahwa penyewa mana
+          pun melihat data seluruh penyewa. Justru karena tidak menimbulkan gejala apa pun,
+          keadaan itu diperiksa saat proses menyala dan (dengan
+          <code>DB_TOLAK_SUPERUSER</code>) menolak menyalakan aplikasi. Kredensial admin
+          <code>ADMIN_DATABASE_URL</code> dipakai hanya untuk migrasi dan basis data uji, dan
+          tidak ikut masuk kontainer.
+        </div>
+
+        <div class="aside">
+          <strong>Kenapa contextvar, bukan parameter.</strong> Penyaringan penyewa harus terjadi
+          pada <em>setiap</em> query. Melewatkan <code>company_id</code> sebagai parameter
+          berarti menyentuh ratusan pemanggilan di belasan router — dan yang lebih buruk,
+          membuat “lupa melewatkannya” menjadi kesalahan yang mungkin terjadi. Disimpan di
+          <span class="file">app/tenant.py</span>, kedua pintu basis data mengambilnya sendiri.
+          Setelannya dipasang dengan <code>set_config(..., true)</code> sehingga berlaku hanya
+          sampai transaksi selesai: koneksi dipakai bergantian lewat pool, dan setelan yang
+          menempel pada koneksi akan terbawa ke permintaan berikutnya yang kebetulan mendapat
+          koneksi yang sama.
+        </div>
+
+        <a class="linkcard" href="multi-tenant-penerapan.md">
+          <span class="cap">Dokumen pendamping</span>
+          <span class="head">Penerapan fondasi banyak-penyewa</span>
+          <p>
+            Langkah operator yang harus dijalankan manual: cadangan, urutan migrasi, pembuatan
+            role aplikasi, pemindahan data lama ke perusahaan pertama, dan jalan pulang bila
+            diperlukan. Berisi juga catatan waktu nyata tiap langkah pada basis data produksi.
+          </p>
+        </a>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="data">
+        <h2>Model data</h2>
+        <p class="lede">
+          Tiga puluh satu migrasi, dan hanya empat kelompok tabel yang benar-benar perlu
+          dipahami untuk membaca sistem ini.
+        </p>
+
+        <div class="panel panel-scroll">
+          <table class="dense">
+            <thead>
+              <tr><th>Kelompok</th><th>Tabel</th><th>Catatan</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Master</strong></td>
+                <td><code>categories</code> <code>units</code> <code>warehouses</code>
+                    <code>suppliers</code> <code>items</code> <code>warehouse_distances</code></td>
+                <td>Foreign key memakai <code>NO ACTION</code>: data yang sudah terpakai
+                    dinonaktifkan, tidak dihapus.</td>
+              </tr>
+              <tr>
+                <td><strong>Transaksi</strong></td>
+                <td><code>stock_receipts</code> <code>stock_issues</code>
+                    <code>stock_transfers</code> <code>purchase_orders</code> + tabel
+                    <code>*_items</code> masing-masing</td>
+                <td>Dokumen beserta barisnya. Nomor dokumen dibuat di bawah advisory lock per
+                    jenis.</td>
+              </tr>
+              <tr>
+                <td><strong>Saldo</strong></td>
+                <td><code>inventory</code> <code>stock_movements</code></td>
+                <td><code>inventory</code> menyimpan saldo berjalan per barang per gudang
+                    (termasuk <code>available_quantity</code>); <code>stock_movements</code>
+                    adalah buku besarnya. Keduanya ditulis dalam transaksi yang sama dengan
+                    dokumennya.</td>
+              </tr>
+              <tr>
+                <td><strong>Penyewa</strong></td>
+                <td><code>companies</code> <code>users</code></td>
+                <td>Ditambahkan migrasi 024–025; <code>company_id</code> menyebar ke 20 tabel
+                    pada 026.</td>
+              </tr>
+              <tr>
+                <td><strong>Tidur</strong></td>
+                <td><code>stock_batches</code> <code>serial_numbers</code>
+                    <code>stock_adjustments</code></td>
+                <td>Tabelnya ada sejak migrasi 012–017, tetapi tidak ada halaman maupun mesin
+                    yang membacanya saat ini.</td>
+              </tr>
+              <tr>
+                <td><strong>Dihapus</strong></td>
+                <td><s><code>anomaly_findings</code></s></td>
+                <td>Dibuat migrasi 020, dibuang migrasi 030 bersama seluruh modul Deteksi
+                    Anomali.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="aside">
+          <strong>Stok tidak pernah dicatat terpisah dari pergerakannya.</strong> Angka
+          “Stok Saat Ini” bukan catatan mandiri melainkan hasil rangkaian masuk-keluar yang
+          ditulis dalam transaksi yang sama — jadi tidak mungkin berselisih dengan riwayat
+          transaksi.
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="api">
+        <h2>Permukaan API</h2>
+        <p class="lede">
+          Seluruh router data di bawah <code>/api</code> menuntut token yang sah. Dependency-nya
+          dipasang di <strong>satu tempat</strong> pada <span class="file">app/main.py</span>,
+          bukan di setiap endpoint: endpoint yang lupa memasangnya tidak akan menolak siapa pun
+          dan tidak akan menimbulkan gejala apa pun sampai seseorang menemukannya. Di sana,
+          menambah router baru tanpa penjaga terlihat sebagai baris yang berbeda sendiri.
+        </p>
+
+        <div class="panel panel-scroll">
+          <table class="dense">
+            <thead>
+              <tr><th>Router</th><th>Prefiks</th><th>Penjaga tambahan</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><span class="file">auth.py</span></td><td><code>/api/auth</code></td>
+                  <td><strong>Tanpa token</strong> — masuk dan mendaftar justru yang sedang diminta.</td></tr>
+              <tr><td><span class="file">users.py</span></td><td><code>/api/users</code></td>
+                  <td>admin / owner</td></tr>
+              <tr><td><span class="file">dashboard.py</span></td><td><code>/api/dashboard</code></td><td>—</td></tr>
+              <tr><td><span class="file">catalog.py</span></td><td><code>/api/warehouses</code> <code>/api/items</code> <code>/api/suppliers</code></td><td>— (baca)</td></tr>
+              <tr><td><span class="file">master.py</span></td><td>sama seperti catalog + <code>/api/categories</code> <code>/api/units</code> <code>/api/warehouse-distances</code></td>
+                  <td>admin / owner (tulis)</td></tr>
+              <tr><td><span class="file">inventory.py</span></td><td><code>/api/inventory</code> <code>/api/stock-movements</code></td><td>—</td></tr>
+              <tr><td><span class="file">stock_receipts.py</span></td><td><code>/api/stock-receipts</code></td><td>—</td></tr>
+              <tr><td><span class="file">stock_issues.py</span></td><td><code>/api/stock-issues</code></td><td>—</td></tr>
+              <tr><td><span class="file">purchase_orders.py</span></td><td><code>/api/purchase-orders</code></td><td>—</td></tr>
+              <tr><td><span class="file">reports.py</span></td><td><code>/api/reports</code></td><td>—</td></tr>
+              <tr><td><span class="file">forecasting.py</span></td><td><code>/api/forecasting</code></td><td>—</td></tr>
+              <tr><td><span class="file">forecast_api.py</span></td><td><code>/api/forecast</code></td><td>—</td></tr>
+              <tr><td><span class="file">reorder.py</span></td><td><code>/api/reorder</code></td><td>—</td></tr>
+              <tr><td><span class="file">transfer.py</span></td><td><code>/api/transfer</code> <code>/api/transfers</code></td><td>—</td></tr>
+              <tr><td><span class="file">lifetime.py</span></td><td><code>/api/lifetime</code></td><td>—</td></tr>
+              <tr><td><span class="file">assistant.py</span></td><td><code>/api/assistant</code></td><td>—</td></tr>
+              <tr><td><span class="file">demo.py</span></td><td><code>/api/demo</code></td>
+                  <td>reset: admin/owner · seluruhnya hanya pada
+                      penyewa demo</td></tr>
+              <tr><td><em>meta</em></td><td><code>/api/health</code></td>
+                  <td>Tanpa token. Melaporkan koneksi basis data dan status pemuatan model.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="aside">
+          <strong>Bentuk galat seragam.</strong> Setiap kegagalan terbit sebagai
+          <code>{"error": {"code", "message", "field"}}</code>. Galat validasi pydantic
+          disederhanakan menjadi satu kalimat yang bisa dibaca beserta nama field-nya; galat tak
+          terduga hanya menerbitkan pesan umum — “Terjadi kesalahan pada server. Tidak ada data
+          yang tersimpan.” — supaya struktur basis data tidak bocor keluar. Jejak aslinya tetap
+          lengkap di log server. Bahasa pesan mengikuti <code>?lang=</code>.
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="ambang">
+        <h2>Ambang &amp; konstanta</h2>
+        <p class="lede">
+          Setiap angka di bawah punya sumber, dan sumbernya ditulis di sebelah angkanya. Itu
+          aturan yang ditegakkan berulang kali di kode: <strong>ambang tanpa sumber data adalah
+          tebakan yang menyamar sebagai aturan bisnis</strong>. Seluruhnya dapat digeser lewat
+          variabel lingkungan tanpa menyentuh kode.
+        </p>
+
+        <div class="panel panel-scroll">
+          <table class="dense">
+            <thead>
+              <tr><th>Konstanta</th><th class="num">Bawaan</th><th>Kenapa angka itu</th></tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="3"><strong>Prakiraan</strong></td></tr>
+              <tr><td><code>FORECAST_MIN_HISTORY_DAYS</code></td><td class="num">14 hari</td>
+                  <td>Agar prakiraan mencakup setidaknya dua siklus mingguan; di bawah itu pola
+                      akhir pekan belum terwakili.</td></tr>
+              <tr><td><code>FORECAST_MIN_OUTFLOW_DAYS</code></td><td class="num">3 hari</td>
+                  <td>Agar rata-rata tidak ditentukan satu kejadian tunggal.</td></tr>
+              <tr><td><code>FORECAST_ATTENTION_BAND</code></td><td class="num">1,25×</td>
+                  <td>Lebar pita “mendekati titik pesan”. Tanpanya status melompat dari SAFE
+                      langsung ke CRITICAL tanpa peringatan.</td></tr>
+              <tr><td><code>HISTORICAL_DAYS_DEFAULT</code></td><td class="num">90 hari</td>
+                  <td>Jendela riwayat bawaan; memanjang sendiri sampai 20 tahun bila hari
+                      pengeluaran di dalamnya belum cukup.</td></tr>
+              <tr><td><code>MAKS_TITIK_GRAFIK</code></td><td class="num">365</td>
+                  <td>Dipilih supaya satu tahun terakhir selalu utuh tanpa mengirim ribuan titik
+                      ke peramban.</td></tr>
+              <tr><td><code>TOLERANSI_JEDA_HARI</code></td><td class="num">14 hari</td>
+                  <td>Sampai berapa lama jeda sesudah pergerakan terakhir masih dianggap
+                      keterlambatan pencatatan, bukan berhentinya pemakaian.</td></tr>
+
+              <tr><td colspan="3"><strong>Keputusan</strong></td></tr>
+              <tr><td><code>HORIZON_KEPUTUSAN</code></td><td class="num">14 hari</td>
+                  <td>Dipatok supaya mengganti periode tampilan tidak pernah menggeser jumlah
+                      pesanan. Nilainya sama dengan batas atas jendela uji pada adu model.</td></tr>
+              <tr><td><code>FALLBACK_HARI_PANTAU</code></td><td class="num">14 hari</td>
+                  <td>Dipakai saat <code>lead_time_days</code> belum diisi: tenggat yang cukup
+                      umum untuk mulai menyiapkan permintaan pembelian.</td></tr>
+              <tr><td><code>AMBANG_LUMPY</code></td><td class="num">0,15</td>
+                  <td>Di bawah 15% hari yang ada pengeluaran, rata-rata harian menyembunyikan
+                      bentuk sebenarnya: barang diambil sekaligus, bukan menetes tiap hari.</td></tr>
+              <tr><td><code>BUCKET_1/2/3_MINGGU</code></td><td class="num">7 / 14 / 21</td>
+                  <td>Batas rentang “±1 minggu”, “±2 minggu”, “±3 minggu”. Estimasi waktu
+                      dinyatakan sebagai rentang, bukan tanggal palsu.</td></tr>
+              <tr><td><code>BATAS_BARIS</code> (reorder &amp; transfer)</td><td class="num">400</td>
+                  <td>Tiap baris menjalankan rantai prakiraan penuh. Katalog yang membesar harus
+                      memperlambat halaman secara terukur, bukan menggantungkannya.</td></tr>
+              <tr><td><code>BATAS_PERHATIAN</code> (dasbor)</td><td class="num">6 baris</td>
+                  <td>Dasbor bukan daftar kerja — ia hanya membuat pembacanya tahu ada apa.</td></tr>
+
+              <tr><td colspan="3"><strong>Model</strong></td></tr>
+              <tr><td><code>MIN_RIWAYAT_ADU</code></td><td class="num">28 hari</td>
+                  <td>Di bawah ini, pemenang lomba hanya mencerminkan keberuntungan pada
+                      beberapa titik.</td></tr>
+              <tr><td><code>LIPATAN</code></td><td class="num">4</td>
+                  <td>Banyaknya lipatan backtest berjalan.</td></tr>
+              <tr><td><code>MIN_HISTORY</code> (fitur ML)</td><td class="num">28 hari</td>
+                  <td>Jendela terpanjang fitur 28 hari, ditambah satu karena fitur dihitung dari
+                      data <em>sebelum</em> hari yang diramal.</td></tr>
+
+              <tr><td colspan="3"><strong>Umur pakai</strong></td></tr>
+              <tr><td><code>OPERATING_HOURS_PER_DAY</code></td><td class="num">16 jam</td>
+                  <td>Dua shift — keputusan pengguna pada 1 September 2026. Angka yang sama
+                      dipakai saat <em>membangun</em> riwayat penggantiannya, diimpor dari sini
+                      supaya tidak ada dua angka yang bisa berselisih.</td></tr>
+              <tr><td><code>LIFETIME_TOLERANSI</code></td><td class="num">0,15</td>
+                  <td>Bukan angka selera: riwayat penggantian dibangun dengan ragam ±15%
+                      terhadap umur pakai spesifikasi, jadi itulah sebaran yang memisahkan
+                      “wajar” dari “menyimpang”.</td></tr>
+              <tr><td><code>LIFETIME_MIN_INTERVAL_TREN</code></td><td class="num">6 jarak</td>
+                  <td>Menamai arah atas dua atau tiga angka berarti menamai kebetulan.</td></tr>
+              <tr><td><code>BATAS_KEJADIAN_DETAIL</code></td><td class="num">60</td>
+                  <td>Satu filter oli dapat punya 93 penggantian sepanjang dua puluh tahun; yang
+                      dibaca orang adalah yang terakhir.</td></tr>
+
+              <tr><td colspan="3"><strong>Transfer</strong></td></tr>
+              <tr><td><code>TRANSFER_BOBOT_*</code></td><td class="num">0,40 / 0,25 / 0,20 / 0,15</td>
+                  <td>Kecukupan, jarak, surplus, waktu. Jumlahnya satu; tidak dinormalkan ulang
+                      supaya setelan yang salah ketik tidak tersembunyi.</td></tr>
+              <tr><td><code>TRANSFER_JARAK_MAKS_KM</code></td><td class="num">1.000 km</td>
+                  <td>Kira-kira Surabaya–Jakarta pulang pergi. Di luar itu transfer sudah
+                      bersaing langsung dengan pembelian.</td></tr>
+              <tr><td><code>TRANSFER_WAKTU_MAKS_HARI</code></td><td class="num">14 hari</td>
+                  <td>Masa tunggu pembelian yang khas pada data ini.</td></tr>
+              <tr><td><code>TRANSFER_KEMIRIPAN_MIN</code></td><td class="num">0,88</td>
+                  <td>Tinggi, dan sengaja: yang ditanggung kesalahan di sini adalah barang fisik
+                      yang salah naik truk antar kota.</td></tr>
+              <tr><td><code>TRANSFER_FUZZY_BAWAAN</code></td><td class="num">mati</td>
+                  <td>Katalog yang bersih tidak punya barang kembar; bagi mereka fuzzy hanya
+                      menambah kemungkinan salah.</td></tr>
+
+              <tr><td colspan="3"><strong>Keamanan &amp; asisten</strong></td></tr>
+              <tr><td><code>SANDI_MINIMAL</code></td><td class="num">10 karakter</td>
+                  <td>Bukan delapan — delapan sudah menjadi angka bawaan di mana-mana sehingga
+                      daftar kata sandi bocoran pun disusun untuk panjang itu.</td></tr>
+              <tr><td><code>ASSISTANT_HISTORY_LIMIT</code></td><td class="num">12 giliran</td>
+                  <td>Supaya konteks tidak membengkak dan biaya token tetap terkendali.</td></tr>
+              <tr><td><code>ASSISTANT_MAX_TOOL_ROUNDS</code></td><td class="num">5</td>
+                  <td>Batas putaran pemanggilan tool dalam satu pertanyaan.</td></tr>
+              <tr><td><code>APP_UTC_OFFSET_HOURS</code></td><td class="num">+7</td>
+                  <td>Offset tetap, bukan nama zona — WIB tidak mengenal daylight saving,
+                      sehingga tidak bergantung pada basis data tzdata sistem operasi.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="glosarium">
+        <h2>Glosarium</h2>
+        <p class="lede">
+          Nama field pada layar memakai istilah Inggris karena itulah standar yang dipakai
+          dokumen pengadaan. Di bawah, tiap istilah dipasangkan dengan arti kerjanya di dalam
+          sistem ini — bukan arti umumnya.
+        </p>
+
+        <div class="glossary">
+          <div class="term">
+            <div class="term-name">
+              <span class="term-en">Reorder Point</span>
+              <span class="term-id">Titik Pemesanan Ulang</span>
+            </div>
+            <div class="term-def">
+              <p>
+                Batas stok yang, bila disentuh, berarti barang <strong>harus dipesan ulang saat
+                itu juga</strong>. Ia bukan batas “stok hampir habis”, melainkan batas “kalau
+                memesan lebih lambat dari ini, barang akan habis sebelum kiriman datang”.
+              </p>
+            </div>
+          </div>
+          <div class="term">
+            <div class="term-name">
+              <span class="term-en">Effective Reorder Point</span>
+              <span class="term-id">Titik Pesan Efektif</span>
+            </div>
+            <div class="term-def">
+              <p>
+                <code>max(ROP master, D × lead time + safety stock)</code>. Inilah ambang yang
+                benar-benar dipakai seluruh keputusan — dasbor, daftar reorder, dan transfer.
+                Angka master tidak pernah <em>diturunkan</em> olehnya, hanya dinaikkan bila
+                perhitungan menuntut.
+              </p>
+            </div>
+          </div>
+          <div class="term">
+            <div class="term-name">
+              <span class="term-en">Safety Stock</span>
+              <span class="term-id">Stok Pengaman</span>
+            </div>
+            <div class="term-def">
+              <p>
+                Cadangan untuk menyerap yang tidak terduga. Di sistem ini ia
+                <strong>dihitung</strong>, bukan sekadar dibaca dari master:
+                <code>Z × sebaran × √(lead time)</code>, dengan sebaran berupa simpangan baku
+                permintaan harian (jalur bawaan) atau RMSE backtest model (jalur model). Field
+                <code>safety_stock_basis</code> menyebut mana yang dipakai.
+              </p>
+            </div>
+          </div>
+          <div class="term">
+            <div class="term-name">
+              <span class="term-en">Lead Time</span>
+              <span class="term-id">Masa Tunggu</span>
+            </div>
+            <div class="term-def">
+              <p>
+                Berapa lama sejak pesanan dibuat sampai barang tiba. <strong>Jangan tertukar
+                dengan umur pakai</strong> — keduanya sama-sama “durasi” dan karena itu justru
+                mudah tertukar, tetapi mengisi lead time dengan 12.500 jam akan membuat titik
+                pesan meledak menjadi puluhan ribu unit tanpa satu galat pun.
+              </p>
+            </div>
+          </div>
+          <div class="term">
+            <div class="term-name">
+              <span class="term-en">Service Life</span>
+              <span class="term-id">Umur Pakai</span>
+            </div>
+            <div class="term-def">
+              <p>
+                Berapa lama satu unit bertahan setelah terpasang, dalam <code>jam</code> operasi
+                atau <code>tahun</code> kalender. Datang dari spesifikasi pabrikan atau catatan
+                pemeliharaan — bukan dari pergerakan stok, sehingga tidak ada tabel transaksi
+                yang dapat menurunkannya sendiri. <strong>Tidak menggerakkan apa pun hari ini</strong>;
+                ia hanya dibaca <a href="#umur">Analisis Umur Pakai</a>.
+              </p>
+            </div>
+          </div>
+          <div class="term">
+            <div class="term-name">
+              <span class="term-en">Available Stock</span>
+              <span class="term-id">Stok Tersedia</span>
+            </div>
+            <div class="term-def">
+              <p>
+                Stok fisik dikurangi bagian yang sudah dikomitmenkan keluar
+                (<code>reserved_stock</code>). Inilah yang dipakai seluruh keputusan
+                pengadaan — bukan <code>current_stock</code>.
+              </p>
+            </div>
+          </div>
+          <div class="term">
+            <div class="term-name">
+              <span class="term-en">MASE / RMSE</span>
+              <span class="term-id">Galat terskala / galat akar rata-rata kuadrat</span>
+            </div>
+            <div class="term-def">
+              <p>
+                Keduanya dihitung dari backtest yang sama. <strong>MASE memilih model</strong> —
+                ia rasio tanpa satuan, jadi dapat membandingkan barang yang skalanya berbeda.
+                <strong>RMSE menentukan cadangan</strong> — ia bersatuan unit barang, dan safety
+                stock dinyatakan dalam unit.
+              </p>
+            </div>
+          </div>
+          <div class="term">
+            <div class="term-name">
+              <span class="term-en">Intermittent demand</span>
+              <span class="term-id">Permintaan intermiten</span>
+            </div>
+            <div class="term-def">
+              <p>
+                Deret permintaan yang banyak hari nolnya dan sesekali melonjak — bentuk khas
+                sparepart. Ia alasan model klasik seperti Croston SBA ada di sistem ini, dan
+                alasan <code>AMBANG_LUMPY</code> memberi penanda saat proyeksi garis lurus
+                menyembunyikan bentuk sebenarnya.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <p class="footnote">
+          Dokumen ini disusun dari kode yang berjalan pada 7 September 2026, bukan dari rencana.
+          Setiap angka, ambang, dan batas yang disebut di sini dapat ditelusuri ke berkas yang
+          namanya tercetak di sebelahnya. Bila keduanya berselisih, <strong>kodelah yang
+          benar</strong> — dan dokumen ini yang perlu diperbaiki.
+        </p>
+      </section>
+
+    </main>
+  </div>
+</div>

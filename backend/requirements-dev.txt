@@ -1,0 +1,7 @@
+# Dependensi pengujian saja -- SENGAJA tidak masuk requirements.txt supaya
+# tidak ikut terpasang di image produksi.
+#
+#   .venv/bin/pip install -r backend/requirements-dev.txt
+#   .venv/bin/python -m pytest backend/tests -q
+-r requirements.txt
+pytest>=8.0

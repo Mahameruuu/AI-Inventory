@@ -1,0 +1,23 @@
+# Berkas yang tidak ikut ke dalam image.
+#
+# models/ SENGAJA TIDAK IKUT. Isinya 1,7 GB, di antaranya satu berkas 757 MB
+# yang dimuat saat proses menyala dan satu berkas 926 MB yang merupakan bentuk
+# JSON dari model yang sama. Tidak satu pun berubah ketika kode berubah,
+# sehingga membawanya ke dalam image berarti setiap build dan setiap versi
+# image yang disimpan sebagai jalan pulang membawa salinannya sendiri.
+#
+# Sebagai gantinya direktori itu DIPASANG dari host saat kontainer dijalankan,
+# dan alamatnya diberitahukan lewat FORECAST_MODEL_DIR. Menguji model kandidat
+# berdampingan dengan yang sedang berjalan justru menjadi lebih mudah: berkas
+# kandidat cukup disalin ke direktori host, lalu FORECAST_MODEL_FILE diarahkan
+# ke sana -- tanpa build ulang sama sekali.
+#
+# app/main.py menolak menyala bila direktori itu tidak terpasang, supaya
+# kelalaian memasangnya tidak berakhir sebagai prakiraan yang diam-diam
+# memburuk.
+models/
+
+tests/
+.pytest_cache/
+__pycache__/
+*.pyc

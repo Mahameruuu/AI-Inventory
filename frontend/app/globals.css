@@ -1,0 +1,1845 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * SISTEM DESAIN / DESIGN SYSTEM
+ *
+ * Seluruh warna, bayangan, dan gradien ditulis sebagai variabel CSS supaya
+ * nilai terang/gelap ditukar di satu tempat, dan komponen memakai PERAN
+ * (brand, series-1, status-critical, elev-2) bukan hex mentah.
+ *
+ * All colors, shadows and gradients live here as CSS variables so light/dark
+ * swap in one place and components reference ROLES, never raw hex.
+ *
+ * Palet kategorikal divalidasi untuk buta warna (biru/jingga/ungu/teal),
+ * kontras terhadap latar, dan rentang terang pada kedua mode.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* --- permukaan / surfaces ------------------------------------- */
+  --plane: #eef2f9;
+  --plane-2: #e4eaf5;
+  --surface-1: #ffffff;
+  --surface-2: #f7f9fc;
+  --surface-sunken: #f1f4fa;
+
+  /* --- teks / text ---------------------------------------------- */
+  --text-primary: #0d1526;
+  --text-secondary: #48546c;
+  --text-muted: #7a8698;
+  --text-inverse: #ffffff;
+
+  /* --- garis / lines -------------------------------------------- */
+  --gridline: #e6eaf3;
+  --axis: #c2ccdc;
+  --border: rgba(13, 21, 38, 0.09);
+  --border-strong: rgba(13, 21, 38, 0.16);
+
+  /* --- merek / brand -------------------------------------------- */
+  --brand: #2563eb;
+  --brand-2: #7c3aed;
+  --brand-3: #06b6d4;
+  --brand-ink: #1e3a8a;
+
+  /* --- deret data / data series --------------------------------- */
+  --series-1: #2563eb; /* biru   -- deret utama       | primary series   */
+  --series-2: #f97316; /* jingga -- deret pembanding  | comparison       */
+  --series-3: #7c3aed; /* ungu   -- deret ketiga      | third series     */
+  --series-4: #0d9488; /* teal   -- deret keempat     | fourth series    */
+
+  /* --- status --------------------------------------------------- */
+  --status-good: #16a34a;
+  --status-warning: #f59e0b;
+  --status-serious: #f97316;
+  --status-critical: #dc2626;
+  --status-neutral: #7a8698;
+
+  /* --- ramp sekuensial / sequential ramp ------------------------ */
+  --seq-100: #dbe8fd;
+  --seq-250: #93b8f5;
+  --seq-450: #2563eb;
+  --seq-600: #1a3f8f;
+
+  /* Ramp ordinal untuk kategori BERURUTAN (bucket umur, kelas
+     perputaran): satu warna, terang -> gelap.
+     Ordinal ramp for SEQUENCED categories: one hue, light -> dark. */
+  --ord-1: #93b8f5;
+  --ord-2: #5f95ef;
+  --ord-3: #2563eb;
+  --ord-4: #1d4fb8;
+  --ord-5: #16357d;
+
+  /* --- kedalaman / depth ---------------------------------------- */
+  --elev-1: 0 1px 2px rgba(13, 21, 38, 0.05), 0 2px 8px -4px rgba(13, 21, 38, 0.1);
+  --elev-2: 0 1px 3px rgba(13, 21, 38, 0.06), 0 14px 28px -18px rgba(13, 21, 38, 0.28);
+  --elev-3: 0 2px 6px rgba(13, 21, 38, 0.07), 0 32px 64px -28px rgba(13, 21, 38, 0.4);
+  --glow-brand: 0 10px 30px -12px color-mix(in srgb, var(--brand) 55%, transparent);
+
+  /* --- kilau 3D / 3D shading ------------------------------------ */
+  --sheen: rgba(255, 255, 255, 0.9);
+  --sheen-soft: rgba(255, 255, 255, 0.45);
+  --shade: rgba(2, 6, 23, 0.22);
+  --shade-soft: rgba(2, 6, 23, 0.08);
+  --hairline-top: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+
+  /* --- gradien / gradients -------------------------------------- */
+  --grad-brand: linear-gradient(135deg, #2563eb 0%, #4f46e5 45%, #7c3aed 100%);
+  --grad-plane: radial-gradient(1200px 620px at 12% -8%, rgba(37, 99, 235, 0.12), transparent 62%),
+    radial-gradient(900px 520px at 92% 4%, rgba(124, 58, 237, 0.1), transparent 58%),
+    radial-gradient(760px 620px at 60% 108%, rgba(6, 182, 212, 0.09), transparent 62%);
+  --glass: rgba(255, 255, 255, 0.78);
+
+  --radius: 14px;
+  --font-display: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* ---------------------------------------------------------------- */
+/* Mode gelap / dark mode                                            */
+/* ---------------------------------------------------------------- */
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+
+    --plane: #070b14;
+    --plane-2: #0a101d;
+    --surface-1: #101828;
+    --surface-2: #162034;
+    --surface-sunken: #0b1220;
+
+    --text-primary: #f2f6fc;
+    --text-secondary: #a8b6cd;
+    --text-muted: #71809a;
+    --text-inverse: #08111f;
+
+    --gridline: #1e293b;
+    --axis: #35455f;
+    --border: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.2);
+
+    --brand: #3b82f6;
+    --brand-2: #a78bfa;
+    --brand-3: #22d3ee;
+    --brand-ink: #bfdbfe;
+
+    --series-1: #3b82f6;
+    --series-2: #fb923c;
+    --series-3: #a78bfa;
+    --series-4: #2dd4bf;
+
+    --status-good: #22c55e;
+    --status-warning: #fbbf24;
+    --status-serious: #fb923c;
+    --status-critical: #f87171;
+    --status-neutral: #8494ad;
+
+    --seq-100: #1a3f8f;
+    --seq-250: #2563eb;
+    --seq-450: #60a5fa;
+    --seq-600: #bfdbfe;
+
+    /* pada latar gelap arahnya dibalik: makin tua makin TERANG
+       on dark ground the ramp inverts: later steps are brighter */
+    --ord-1: #1a3f8f;
+    --ord-2: #2563eb;
+    --ord-3: #60a5fa;
+    --ord-4: #93c5fd;
+    --ord-5: #dbe8fd;
+
+    --elev-1: 0 1px 2px rgba(0, 0, 0, 0.45), 0 2px 10px -6px rgba(0, 0, 0, 0.6);
+    --elev-2: 0 1px 3px rgba(0, 0, 0, 0.5), 0 16px 32px -20px rgba(0, 0, 0, 0.85);
+    --elev-3: 0 2px 8px rgba(0, 0, 0, 0.55), 0 36px 70px -30px rgba(0, 0, 0, 0.9);
+    --glow-brand: 0 12px 34px -12px color-mix(in srgb, var(--brand) 65%, transparent);
+
+    --sheen: rgba(255, 255, 255, 0.34);
+    --sheen-soft: rgba(255, 255, 255, 0.14);
+    --shade: rgba(0, 0, 0, 0.5);
+    --shade-soft: rgba(0, 0, 0, 0.28);
+    --hairline-top: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+    --grad-brand: linear-gradient(135deg, #3b82f6 0%, #6366f1 45%, #a78bfa 100%);
+    --grad-plane: radial-gradient(1200px 620px at 12% -8%, rgba(59, 130, 246, 0.16), transparent 62%),
+      radial-gradient(900px 520px at 92% 4%, rgba(167, 139, 250, 0.13), transparent 58%),
+      radial-gradient(760px 620px at 60% 108%, rgba(34, 211, 238, 0.1), transparent 62%);
+    --glass: rgba(16, 24, 40, 0.72);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --plane: #070b14;
+  --plane-2: #0a101d;
+  --surface-1: #101828;
+  --surface-2: #162034;
+  --surface-sunken: #0b1220;
+
+  --text-primary: #f2f6fc;
+  --text-secondary: #a8b6cd;
+  --text-muted: #71809a;
+  --text-inverse: #08111f;
+
+  --gridline: #1e293b;
+  --axis: #35455f;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.2);
+
+  --brand: #3b82f6;
+  --brand-2: #a78bfa;
+  --brand-3: #22d3ee;
+  --brand-ink: #bfdbfe;
+
+  --series-1: #3b82f6;
+  --series-2: #fb923c;
+  --series-3: #a78bfa;
+  --series-4: #2dd4bf;
+
+  --status-good: #22c55e;
+  --status-warning: #fbbf24;
+  --status-serious: #fb923c;
+  --status-critical: #f87171;
+  --status-neutral: #8494ad;
+
+  --seq-100: #1a3f8f;
+  --seq-250: #2563eb;
+  --seq-450: #60a5fa;
+  --seq-600: #bfdbfe;
+
+  --ord-1: #1a3f8f;
+  --ord-2: #2563eb;
+  --ord-3: #60a5fa;
+  --ord-4: #93c5fd;
+  --ord-5: #dbe8fd;
+
+  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.45), 0 2px 10px -6px rgba(0, 0, 0, 0.6);
+  --elev-2: 0 1px 3px rgba(0, 0, 0, 0.5), 0 16px 32px -20px rgba(0, 0, 0, 0.85);
+  --elev-3: 0 2px 8px rgba(0, 0, 0, 0.55), 0 36px 70px -30px rgba(0, 0, 0, 0.9);
+  --glow-brand: 0 12px 34px -12px color-mix(in srgb, var(--brand) 65%, transparent);
+
+  --sheen: rgba(255, 255, 255, 0.34);
+  --sheen-soft: rgba(255, 255, 255, 0.14);
+  --shade: rgba(0, 0, 0, 0.5);
+  --shade-soft: rgba(0, 0, 0, 0.28);
+  --hairline-top: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  --grad-brand: linear-gradient(135deg, #3b82f6 0%, #6366f1 45%, #a78bfa 100%);
+  --grad-plane: radial-gradient(1200px 620px at 12% -8%, rgba(59, 130, 246, 0.16), transparent 62%),
+    radial-gradient(900px 520px at 92% 4%, rgba(167, 139, 250, 0.13), transparent 58%),
+    radial-gradient(760px 620px at 60% 108%, rgba(34, 211, 238, 0.1), transparent 62%);
+  --glass: rgba(16, 24, 40, 0.72);
+}
+
+/* ---------------------------------------------------------------- */
+/* Dasar / base                                                      */
+/* ---------------------------------------------------------------- */
+
+html,
+body {
+  background: var(--plane);
+  color: var(--text-primary);
+}
+
+body {
+  position: relative;
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Lapisan cahaya latar. Tetap di belakang seluruh isi, tidak ikut menggulir,
+   dan tidak pernah menangkap klik.
+   Ambient light layer: fixed behind everything, never intercepts clicks. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--grad-plane);
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+
+/* ---------------------------------------------------------------- */
+/* Cincin fokus papan ketik / keyboard focus ring                     */
+/* ---------------------------------------------------------------- */
+/*
+ * SATU ATURAN UNTUK SELURUH APLIKASI, dan sebelumnya tidak ada satu pun.
+ *
+ * Hampir setiap kendali di aplikasi ini memakai latar dan bayangan sendiri,
+ * yang pada banyak peramban menimpa garis fokus bawaan. Akibatnya orang yang
+ * menelusuri layar dengan Tab tidak punya cara mengetahui di mana ia berada --
+ * dan itu tidak akan pernah terlihat oleh siapa pun yang mengujinya dengan
+ * tetikus.
+ *
+ * `:focus-visible`, BUKAN `:focus`: cincin hanya terbit untuk navigasi papan
+ * ketik, sehingga klik tetikus pada tombol tidak meninggalkan cincin yang
+ * menempel dan terlihat seperti cacat.
+ *
+ * `outline` dengan `outline-offset`, BUKAN `box-shadow`: outline tidak ikut
+ * terpotong oleh `overflow: hidden` milik kartu dan tabel yang menggulir.
+ */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* ---------------------------------------------------------------- */
+/* Skala tipografi / type scale                                       */
+/* ---------------------------------------------------------------- */
+/*
+ * Sembilan belas ukuran huruf arbitrer tersebar di layar sebelum ini --
+ * 10; 10,5; 11; 11,5; 12; 12,5; 13; 13,5; 14; 14,5; 15; 15,5 dan seterusnya.
+ * Selisih setengah piksel tidak terbaca sebagai hierarki oleh siapa pun; yang
+ * dihasilkannya hanyalah dua label bersebelahan yang terlihat "hampir sama
+ * tetapi tidak persis", dan itulah yang membuat sebuah layar terasa seperti
+ * purwarupa.
+ *
+ * Tujuh langkah, masing-masing punya SATU tugas. Ukuran arbitrer di luar ini
+ * masih boleh dipakai untuk angka display yang memang unik pada satu kartu,
+ * tetapi teks yang berulang -- label, isi tabel, keterangan -- memakai skala.
+ */
+:root {
+  --t-micro: 10px;    /* label bagian, eyebrow; SELALU uppercase + tracking */
+  --t-caption: 11px;  /* keterangan di bawah angka, satuan, meta */
+  --t-small: 12px;    /* teks sekunder, keterangan kartu */
+  --t-body: 13px;     /* isi tabel, tautan navigasi, kendali form */
+  --t-base: 14px;     /* paragraf, kalimat kesimpulan */
+  --t-lead: 16px;     /* judul kartu, kalimat pembuka */
+  --t-title: 20px;    /* judul bagian besar */
+  --t-display: 26px;  /* judul halaman dan angka KPI */
+}
+
+/* HANYA ukuran. Sebuah kelas ukuran yang diam-diam ikut membawa `uppercase`
+   akan mengubah setiap label yang memakainya menjadi huruf besar -- termasuk
+   nama orang dan nama perusahaan di kaki sidebar. Yang memang perlu huruf
+   besar memakai .t-eyebrow, dan menyatakannya di tempat pemakaian. */
+.t-micro   { font-size: var(--t-micro); }
+.t-eyebrow { font-size: var(--t-micro); letter-spacing: 0.11em; text-transform: uppercase; font-weight: 600; }
+.t-caption { font-size: var(--t-caption); }
+.t-small   { font-size: var(--t-small); }
+.t-body    { font-size: var(--t-body); }
+.t-base    { font-size: var(--t-base); }
+.t-lead    { font-size: var(--t-lead); }
+.t-title   { font-size: var(--t-title); }
+
+/* ---------------------------------------------------------------- */
+/* Radius / corner radius                                             */
+/* ---------------------------------------------------------------- */
+/* Tiga langkah saja. Enam nilai radius yang dipakai sebelumnya membuat kartu,
+   tombol, dan lencana yang bersebelahan tampak berasal dari tiga rancangan
+   berbeda. */
+:root {
+  --r-sm: 8px;   /* lencana, kendali kecil */
+  --r-md: 10px;  /* tombol, kolom isian, tautan navigasi */
+  --r-lg: 14px;  /* kartu, panel */
+}
+
+/* Angka pada kolom tabel harus lurus / tabular figures for table columns. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Angka besar: figur proporsional dengan spasi rapat.
+   Display figures: proportional, tightly tracked. */
+.stat-figure {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+/* Panah bawaan <summary> diganti ikon sendiri / native marker removed */
+summary::-webkit-details-marker,
+summary::marker {
+  display: none;
+  content: "";
+}
+summary {
+  list-style: none;
+}
+summary:hover {
+  background: color-mix(in srgb, var(--brand) 5%, transparent);
+}
+
+.recharts-surface:focus {
+  outline: none;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--axis) 70%, transparent);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--axis);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------------------------------------------------------------- */
+/* Komponen / components                                             */
+/* ---------------------------------------------------------------- */
+
+@layer components {
+  /* Kartu: satu hairline + kedalaman lembut + kilau tepi atas.
+     Card: hairline border, soft depth, top edge highlight. */
+  .surface-card {
+    background: linear-gradient(180deg, var(--surface-1) 0%, var(--surface-2) 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--elev-1), var(--hairline-top);
+    transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+  }
+
+  .surface-card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--elev-2), var(--hairline-top);
+    border-color: color-mix(in srgb, var(--brand) 26%, var(--border));
+  }
+
+  /* Panel kaca untuk bilah atas / glass bar for the top header */
+  .glass-bar {
+    background: var(--glass);
+    backdrop-filter: saturate(160%) blur(14px);
+    -webkit-backdrop-filter: saturate(160%) blur(14px);
+  }
+
+  /* Lencana merek / brand mark */
+  .brand-mark {
+    background: var(--grad-brand);
+    box-shadow: var(--glow-brand), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+
+  /* Tombol utama / primary button */
+  .btn-brand {
+    background: var(--grad-brand);
+    color: #fff;
+    box-shadow: var(--glow-brand), inset 0 1px 0 rgba(255, 255, 255, 0.32);
+    border: 1px solid transparent;
+  }
+  .btn-brand:hover:not(:disabled) {
+    filter: brightness(1.06);
+  }
+  .btn-brand:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  /*
+   * BATANG 3D. Silinder: kilau di sisi atas, bayangan di sisi bawah, tudung
+   * membulat, dan bayang jatuh di bawah batang.
+   * 3D BAR. A cylinder: highlight on top, shade underneath, rounded cap and a
+   * cast shadow below the bar.
+   */
+  .bar3d {
+    position: relative;
+    border-radius: 999px;
+    background-image: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--bar-color) 45%, #fff) 0%,
+      var(--bar-color) 46%,
+      color-mix(in srgb, var(--bar-color) 74%, #000) 100%
+    );
+    box-shadow: 0 6px 12px -6px color-mix(in srgb, var(--bar-color) 70%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5), inset 0 -1px 0 rgba(0, 0, 0, 0.14);
+    transform-origin: left center;
+    animation: bar-grow 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .bar3d::after {
+    content: "";
+    position: absolute;
+    inset: 1px 6% auto 1px;
+    height: 34%;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0));
+    pointer-events: none;
+  }
+
+  .bar-track {
+    background: var(--surface-sunken);
+    border-radius: 999px;
+    box-shadow: inset 0 1px 2px var(--shade-soft), inset 0 0 0 1px var(--border);
+  }
+}
+
+/* ---------------------------------------------------------------- */
+/* Gerak / motion                                                    */
+/* ---------------------------------------------------------------- */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Muncul berurutan; jeda per elemen lewat --d.
+   Staggered entrance; per-element delay through --d. */
+.rise {
+  animation: rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes bar-grow {
+  from {
+    transform: scaleX(0.02);
+    opacity: 0.35;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+@keyframes ring-draw {
+  from {
+    stroke-dashoffset: var(--ring-len, 1000);
+  }
+}
+
+@keyframes sheen-sweep {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+}
+.pulse-soft {
+  animation: pulse-soft 2.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-sunken);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--sheen-soft), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+/*
+ * Kolom tulis AI Assistant. Cincin fokus memakai variabel tema -- satu
+ * definisi yang ikut berubah sendiri di mode terang maupun gelap.
+ * Assistant composer focus ring: one themed definition for both modes.
+ */
+.composer:focus-within {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 14%, transparent);
+}
+
+/* Titik "sedang mengetik" / typing dots. */
+@keyframes dot-bounce {
+  0%,
+  70%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  35% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+.dot-bounce {
+  animation: dot-bounce 1.1s ease-in-out infinite;
+}
+
+/* ---------------------------------------------------------------- */
+/* Perpindahan halaman / route transitions                           */
+/* ---------------------------------------------------------------- */
+
+/*
+ * Bilah kemajuan navigasi.
+ *
+ * Melaju cepat di awal lalu melambat mendekati ujung, dan BERHENTI di 90% --
+ * sisanya baru terisi ketika halamannya benar-benar siap. Bilah yang mencapai
+ * 100% sebelum halaman muncul adalah kebohongan kecil yang langsung terasa.
+ */
+@keyframes nav-progress {
+  0% {
+    width: 0%;
+  }
+  25% {
+    width: 42%;
+  }
+  55% {
+    width: 68%;
+  }
+  100% {
+    width: 90%;
+  }
+}
+.nav-progress-run {
+  animation: nav-progress 2.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.nav-progress-done {
+  width: 100%;
+  opacity: 0;
+  transition: width 0.18s ease-out, opacity 0.3s ease 0.12s;
+}
+
+/*
+ * Isi halaman yang baru masuk.
+ *
+ * Hanya pudar dan naik sedikit. Geseran besar antarhalaman membuat aplikasi
+ * kerja terasa seperti presentasi: menarik pada klik pertama, melelahkan pada
+ * klik kelima puluh.
+ */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.page-enter {
+  animation: page-enter 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/*
+ * Bilah takberujung untuk kartu yang sedang memuat ulang.
+ * Dipakai saat panjang pekerjaannya memang tidak diketahui.
+ */
+@keyframes indeterminate {
+  0% {
+    transform: translateX(-100%) scaleX(0.35);
+  }
+  50% {
+    transform: translateX(20%) scaleX(0.6);
+  }
+  100% {
+    transform: translateX(150%) scaleX(0.35);
+  }
+}
+.indeterminate {
+  transform-origin: left center;
+  animation: indeterminate 1.25s ease-in-out infinite;
+}
+
+/* Panel yang menggeser masuk dari tepi kanan + latar yang memudar. */
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(26px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.panel-in {
+  animation: panel-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.fade-in {
+  animation: fade-in 0.22s ease-out both;
+}
+
+/*
+ * Laci navigasi layar sempit: panel menggeser masuk dari tepi kiri, tirai
+ * memudar di belakangnya. Keduanya dipisah supaya tirai tidak ikut bergeser --
+ * tirai yang bergeser terlihat seperti selembar kertas kedua, bukan seperti
+ * ruang yang meredup.
+ */
+@keyframes laci-masuk {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: none;
+  }
+}
+.laci-masuk {
+  animation: laci-masuk 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+  box-shadow: var(--elev-3);
+}
+.laci-tirai {
+  animation: fade-in 0.2s ease-out both;
+  /* Peramban seluler menunda klik 300ms pada elemen yang dapat digulir
+     halamannya; tirai harus menutup pada sentuhan, bukan seperempat detik
+     sesudahnya. */
+  touch-action: none;
+}
+
+/* Panel kecil (dropdown penyaring): memudar sambil turun sedikit. */
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.pop-in {
+  animation: pop-in 0.16s ease-out both;
+  transform-origin: top left;
+}
+
+/* Baris tabel yang dapat diklik / clickable table rows */
+.row-hover tbody tr {
+  transition: background 0.15s ease;
+}
+.row-hover tbody tr:hover {
+  background: color-mix(in srgb, var(--brand) 4%, transparent);
+}
+
+/* Lebar minimum isi tabel, disetel dari komponen lewat `--tabel-min`. */
+.tabel-lebar {
+  min-width: var(--tabel-min);
+}
+
+/* Baris kepala yang membeku saat isi tabel digulir.
+   Latarnya WAJIB pekat: kepala yang tembus pandang membuat baris data
+   tergambar menembusnya dan tidak ada yang terbaca. */
+.tabel-lekat thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface-1);
+}
+
+/* Hormati preferensi gerak minimal / respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ---------------------------------------------------------------- */
+/* Layar sempit / small screens                                      */
+/* ---------------------------------------------------------------- */
+
+/*
+ * KENDALI ISIAN BERUKURAN 16px DI PONSEL, dan itu bukan pilihan rasa.
+ *
+ * Safari iOS MEMPERBESAR seluruh halaman begitu fokus jatuh pada kolom isian
+ * yang hurufnya lebih kecil dari 16px -- dan tidak pernah mengembalikannya
+ * sendiri. Skala tipografi aplikasi ini memberi kendali ukuran 13px (--t-body),
+ * sehingga setiap kali seseorang menyentuh kolom pencarian atau dropdown
+ * gudang, layarnya melompat membesar dan bilah atas terdorong keluar. Yang
+ * terlihat seperti "tata letaknya rusak" sebenarnya adalah halaman yang
+ * di-zoom dan tidak pernah kembali.
+ *
+ * Tingginya ikut dinaikkan menjadi 40px: huruf 16px di dalam kotak setinggi
+ * 36px duduk terlalu rapat ke tepinya, dan 40px sekaligus mendekatkan sasaran
+ * sentuhnya ke ambang yang dipakai pedoman sentuh Apple maupun Google.
+ */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  :is(input:not([type="checkbox"]):not([type="radio"]), select) {
+    min-height: 40px;
+  }
+
+  /* Tabel tetap padat: kolomnya sudah menggulir mendatar, dan sel setinggi
+     40px membuat tabel sepuluh baris memenuhi dua layar penuh.
+
+     Pemilihnya MENGULANG bentuk `:not()` di atas dengan sengaja. Ditulis
+     pendek sebagai `table :is(input, select)`, kekhususannya justru lebih
+     rendah daripada aturan umumnya -- sehingga aturan yang ditulis belakangan
+     ini tetap kalah, dan baris tabel diam-diam ikut meninggi. */
+  table :is(input:not([type="checkbox"]):not([type="radio"]), select) {
+    min-height: 36px;
+  }
+}
+
+/*
+ * Baris penyaring: satu kendali satu baris penuh di ponsel.
+ *
+ * Kendali penyaring membawa lebar minimum yang disetel untuk layar lebar
+ * (190-230px, supaya nama gudang terpanjang tidak terpotong). Pada layar 360px
+ * lebar itu menyisakan ruang yang terlalu sempit untuk kendali berikutnya,
+ * sehingga barisnya patah menjadi tangga: satu kendali selebar 210px, satu
+ * lagi selebar 150px, satu lagi selebar sisa -- rapi di desktop, berantakan di
+ * ponsel. Di bawah `md` lebar minimumnya dibatalkan dan semuanya memenuhi
+ * lebar yang ada.
+ *
+ * Aturan ini menang atas kelas Tailwind `min-w-[210px]` karena pemilihnya
+ * lebih spesifik (kelas + elemen), bukan karena urutannya di berkas -- jadi
+ * ia tetap benar berapa pun urutan keluaran Tailwind kelak.
+ */
+@media (max-width: 767px) {
+  .baris-saring {
+    /* `width` DIPAKSA, bukan diserahkan pada tata letaknya. Satu baris
+       penyaring duduk di dalam kepala halaman Prakiraan, yang berupa flex
+       row -- di sana lebar bawaannya adalah lebar isi, dan lebar isi sebuah
+       <select> adalah panjang pilihan terpanjangnya ("GDG-SBY — Gudang
+       Surabaya Pusat"). Tanpa baris ini, penyaring yang seharusnya menyempit
+       justru melebar melewati tepi layar. */
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .baris-saring > * {
+    width: 100%;
+    min-width: 0;
+  }
+  .baris-saring :is(input, select) {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* ---------------------------------------------------------------- */
+/* Tabel yang menjadi kartu di ponsel / tables as cards on phones     */
+/* ---------------------------------------------------------------- */
+
+/*
+ * Di bawah `md`, tabel bertanda `.tabel-kartu` berhenti menjadi tabel.
+ *
+ * Tiap BARIS menjadi satu kartu, tiap SEL menjadi satu baris "NAMA KOLOM
+ * ..... nilai", dan baris kepala dibuang karena namanya sudah menempel pada
+ * tiap nilai. Yang hilang adalah kemampuan membandingkan satu kolom menurun
+ * antar barang -- yang di layar 360px memang tidak pernah ada, karena hanya
+ * seperlima tabel terlihat sekali pandang.
+ *
+ * Nama kolom datang dari atribut `data-kolom`, yang disalin komponen Table
+ * dari <th> pada kolom yang sama. Sel tanpa `data-kolom` -- kolom tombol yang
+ * judulnya memang kosong -- tampil tanpa label.
+ */
+@media (max-width: 767px) {
+  .tabel-kartu {
+    display: block;
+    width: 100%;
+  }
+
+  /* Lebar minimum untuk layar lebar dilepas; tidak ada lagi yang digulir. */
+  .tabel-kartu.tabel-lebar {
+    min-width: 0;
+  }
+
+  /*
+   * Baris kepala tidak dibuang seluruhnya, melainkan menyusut menjadi SEDERET
+   * CHIP PENGURUT.
+   *
+   * Nama kolom sudah menempel pada tiap nilai lewat `data-kolom`, jadi kepala
+   * kolom tidak lagi diperlukan untuk membaca. Tetapi pada dua tabel --
+   * Pemesanan Ulang dan Umur Pakai -- kepala kolom JUGA tombol pengurut, dan
+   * menyembunyikannya seluruhnya berarti mengurutkan daftar mustahil di
+   * ponsel: satu fungsi lenyap tanpa penjelasan, hanya di satu ukuran layar.
+   *
+   * Yang tersisa karena itu hanya kolom yang memang dapat diurutkan -- yang
+   * dikenali dari adanya <button> di dalamnya. Kolom yang tidak dapat diurutkan
+   * tidak menyisakan apa pun.
+   */
+  .tabel-kartu > thead {
+    display: block;
+  }
+  .tabel-kartu > thead > tr {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+  /* Napas di bawah chip HANYA bila memang ada chipnya. Sebagian besar tabel
+     tidak punya kolom yang dapat diurutkan sama sekali, dan pengurutan pun
+     dimatikan begitu hasilnya lebih panjang dari satu halaman -- tanpa syarat
+     ini, tabel-tabel itu menyisakan dua belas piksel kosong yang tak berasal
+     dari apa pun yang terlihat. */
+  .tabel-kartu > thead > tr:has(th button) {
+    padding-bottom: 0.75rem;
+  }
+  .tabel-kartu > thead th {
+    display: none;
+  }
+  .tabel-kartu > thead th:has(button) {
+    display: block;
+    /* Kepala yang membeku tidak punya arti pada tabel yang sudah bukan tabel. */
+    position: static;
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--border);
+    border-bottom-width: 1px;
+    border-radius: 999px;
+    background: var(--surface-1);
+  }
+
+  .tabel-kartu > tbody {
+    display: block;
+  }
+
+  .tabel-kartu > tbody > tr {
+    display: block;
+    margin-bottom: 0.625rem;
+    padding: 0 0.875rem 0.25rem;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--surface-1);
+  }
+
+  /*
+   * `flex-start`, BUKAN `baseline`.
+   *
+   * Sebagian nilai bukan sebaris teks melainkan tumpukan -- dua lencana
+   * status di atas-bawah, nama barang di atas SKU-nya. Garis dasar sebuah
+   * blok adalah garis dasar BARIS TERAKHIRNYA, sehingga dengan `baseline`
+   * label "STATUS" akan melorot sejajar dengan lencana kedua dan terlihat
+   * seperti milik baris di bawahnya.
+   */
+  .tabel-kartu > tbody > tr > td {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tabel-kartu > tbody > tr > td:last-child {
+    border-bottom: 0;
+  }
+
+  .tabel-kartu > tbody > tr > td[data-kolom]::before {
+    content: attr(data-kolom);
+    /*
+     * `0 1 auto`: label boleh MENYUSUT dan membungkus. Dengan `0 0 auto`
+     * ditambah `nowrap`, kolom bernama panjang ("Prakiraan 30 hari" di
+     * Pemesanan Ulang) mendorong nilainya keluar tepi kartu -- dan yang
+     * terdorong keluar justru angka yang menjadi alasan kolomnya ada.
+     */
+    flex: 0 1 auto;
+    font-size: var(--t-micro);
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    /* Kotak barisnya disamakan tingginya dengan nilai 13px di seberangnya,
+       supaya keduanya rata di atas meski ukuran hurufnya berbeda. */
+    line-height: 1.9;
+    /* Sel yang rata kanan mewariskan `text-align: right` ke label ini; label
+       selalu rata kiri, berapa pun rata nilainya. */
+    text-align: left;
+  }
+
+  /*
+   * Sel pertama menjadi JUDUL kartu: melebar penuh, tanpa label, dan tanpa
+   * nilai di seberangnya. Di setiap tabel di aplikasi ini kolom pertama memang
+   * yang menamai barisnya -- nama barang, tanggal kejadian -- dan menyempitkan
+   * nama barang menjadi separuh lebar demi label "BARANG" di sebelahnya
+   * membuang ruang untuk mengulang hal yang sudah jelas.
+   */
+  .tabel-kartu > tbody > tr > td:first-child {
+    display: block;
+    padding-top: 0.75rem;
+  }
+  .tabel-kartu > tbody > tr > td:first-child::before {
+    content: none;
+  }
+
+  /* Kendali isian mengisi sisa lebar setelah labelnya, dan boleh menyusut:
+     lebar alami sebuah <select> adalah panjang pilihan terpanjangnya. */
+  .tabel-kartu > tbody > tr > td > :is(input, select) {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  /*
+   * Baris detail yang membentang seluruh kolom (baris Pemesanan Ulang yang
+   * dapat dibuka). Ia menjadi kartunya sendiri, tanpa napas dalam, dengan isi
+   * yang dipangkas mengikuti sudut membulatnya.
+   */
+  .tabel-kartu > tbody > tr > td[colspan] {
+    display: block;
+    padding: 0;
+    border-bottom: 0;
+  }
+  .tabel-kartu > tbody > tr:has(> td[colspan]) {
+    padding: 0;
+    overflow: hidden;
+  }
+}
+
+/* ---------------------------------------------------------------- */
+/* Peta Transfer Antar Gudang / inter-warehouse transfer map          */
+/* ---------------------------------------------------------------- */
+
+/*
+ * SELURUH WARNA PETA LEWAT CSS, BUKAN LEWAT OPSI LEAFLET.
+ *
+ * Leaflet menyetel warna garis sebagai ATRIBUT SVG (`stroke="#3388ff"`), dan
+ * atribut tidak mengenal `var(--status-good)` -- ia bukan deklarasi CSS. Bila
+ * warnanya diambil dengan getComputedStyle lalu disuntikkan sebagai atribut,
+ * seluruh peta harus digambar ulang setiap kali tema terang/gelap ditukar, dan
+ * setiap busur yang lupa digambar ulang tertinggal pada warna tema sebelumnya.
+ *
+ * Karena itu tiap busur hanya menerima NAMA KELAS, dan warnanya ditetapkan di
+ * sini. Deklarasi CSS selalu menang atas atribut presentasi, jadi bawaan
+ * Leaflet tergantikan tanpa perlu dimatikan, dan menukar tema mengganti seluruh
+ * warna peta tanpa satu baris JavaScript pun.
+ */
+
+.pt-warna--draft     { --pt-warna: var(--status-neutral); }
+.pt-warna--approved  { --pt-warna: var(--series-1); }
+.pt-warna--in_transit{ --pt-warna: var(--series-3); }
+.pt-warna--completed { --pt-warna: var(--status-good); }
+.pt-warna--cancelled { --pt-warna: var(--status-neutral); }
+
+/* Tinggi peta: cukup untuk membaca dua pulau sekaligus, dan cukup besar untuk
+   terbaca sebagai PETA alih-alih sebagai gambar pelengkap. Tidak pernah
+   setinggi layar penuh -- ujung daftar kartu di bawahnya harus tetap terlihat,
+   karena di sanalah rinciannya, dan peta yang menghabiskan layar
+   menyembunyikan bahwa halaman ini masih berlanjut. */
+.pt-tinggi {
+  height: 460px;
+}
+@media (min-width: 640px) {
+  .pt-tinggi { height: 520px; }
+}
+@media (min-width: 1280px) {
+  .pt-tinggi { height: 580px; }
+}
+
+/* Bingkai peta: satu bidang membulat tanpa kepala kartu, dengan kedalaman
+   sedikit lebih dalam daripada kartu biasa -- benda ini adalah isi utama
+   halaman, bukan salah satu kotak di antara kotak lain. */
+.pt-bingkai {
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+  box-shadow: var(--elev-2), var(--hairline-top);
+  min-height: 460px;
+}
+
+.leaflet-container {
+  font: inherit;
+  background: var(--surface-sunken);
+  outline-offset: 2px;
+}
+
+/*
+ * PETAKNYA DIREDAM, dan itu yang membuatnya terbaca sebagai LATAR alih-alih
+ * sebagai poster.
+ *
+ * Petak OSM baku digambar untuk membaca PETANYA: tutupan lahan hijau pekat,
+ * kawasan terbangun merah muda, setiap tag dicetak karena setiap tag ada yang
+ * mengurus. Di layar ini peta adalah latar, dan busur berwarna status harus
+ * berebut perhatian dengan hutan dan kawasan industri. Menurunkan saturasi
+ * sambil menaikkan sedikit kecerahannya mengembalikan latarnya ke krem-abu
+ * tenang -- jalan dan nama kota tetap terbaca, sementara yang paling berwarna
+ * di layar kembali menjadi rutenya.
+ *
+ * KONTRASNYA HAMPIR TIDAK DITURUNKAN. Nama tempat pada petak OSM adalah huruf
+ * gelap berukuran kecil; menurunkan kontras demi latar yang lebih lembut
+ * membuat Semarang dan Surabaya menghilang lebih dulu daripada hijaunya, dan
+ * peta yang nama kotanya tidak terbaca berhenti menjadi peta.
+ *
+ * Filternya mengenai LAPISAN PETAK saja, jadi busur, penanda, dan label yang
+ * digambar di atasnya tidak ikut teredam.
+ */
+.leaflet-tile-pane {
+  filter: saturate(0.58) brightness(1.07) contrast(0.97);
+}
+
+/* Pada tema gelap warnanya dibalik lalu diputar kembali supaya laut tetap
+   kebiruan dan daratan tetap teduh -- tanpa itu peta menjadi satu-satunya benda
+   putih menyilaukan di layar. */
+:root[data-theme="dark"] .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.94) contrast(0.86) saturate(0.55);
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) .leaflet-tile-pane {
+    filter: invert(1) hue-rotate(180deg) brightness(0.94) contrast(0.86) saturate(0.55);
+  }
+}
+
+.leaflet-control-attribution {
+  background: color-mix(in srgb, var(--surface-1) 88%, transparent) !important;
+  color: var(--text-muted) !important;
+  font-size: var(--t-micro);
+  border-radius: 6px 0 0 0;
+}
+.leaflet-control-attribution a {
+  color: var(--text-secondary) !important;
+}
+
+/* --- kendali melayang ---------------------------------------------
+   Judul di kiri atas, tombol di kanan bawah: letak yang sudah dikenal tangan
+   dari aplikasi peta mana pun, sehingga tidak ada yang perlu dicari. */
+
+.pt-kiri-atas {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  max-width: min(360px, calc(100% - 5.5rem));
+}
+
+.pt-judul {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 100%;
+  padding: 0.5rem 0.8rem;
+  border-radius: 10px;
+  font-size: var(--t-small);
+  background: var(--surface-1);
+  box-shadow: inset 0 0 0 1px var(--border), var(--elev-2);
+}
+
+/* Sakelar lapisan usulan. Saat MATI ia tetap terbaca sebagai sakelar -- redup,
+   bukan hilang -- karena yang mematikannya harus dapat menemukannya kembali. */
+.pt-lapis {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-size: var(--t-caption);
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface-1);
+  box-shadow: inset 0 0 0 1px var(--border), var(--elev-1);
+  transition: color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.pt-lapis:hover {
+  color: var(--text-secondary);
+}
+.pt-lapis.is-on {
+  color: var(--series-4);
+  background: color-mix(in srgb, var(--series-4) 12%, var(--surface-1));
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--series-4) 45%, transparent), var(--elev-1);
+}
+
+.pt-kendali {
+  position: absolute;
+  right: 0.75rem;
+  /* Di atas baris atribusi Leaflet, bukan menimpanya: atribusi OpenStreetMap
+     wajib tetap terbaca. */
+  bottom: 2.1rem;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pt-tombol-grup {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 1px var(--border), var(--elev-2);
+}
+.pt-tombol-grup > .pt-tombol {
+  border-radius: 0;
+  box-shadow: none;
+}
+.pt-tombol-grup > .pt-tombol + .pt-tombol {
+  border-top: 1px solid var(--border);
+}
+
+.pt-tombol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  color: var(--text-secondary);
+  background: var(--surface-1);
+  box-shadow: inset 0 0 0 1px var(--border), var(--elev-2);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.pt-tombol:hover {
+  color: var(--text-primary);
+  background: var(--surface-2);
+}
+.pt-tombol:active {
+  background: var(--surface-sunken);
+}
+
+/* Petunjuk Ctrl + gulir: terbit hanya saat orangnya benar-benar menggulung di
+   atas peta, lalu hilang sendiri. */
+.pt-gulir {
+  position: absolute;
+  inset: 0;
+  z-index: 880;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  text-align: center;
+  font-size: var(--t-body);
+  font-weight: 600;
+  color: #fff;
+  background: rgba(13, 21, 38, 0.42);
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+.pt-gulir.is-tampak {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* --- busur rute -------------------------------------------------- */
+
+.pt-busur {
+  stroke: var(--pt-warna);
+  stroke-width: 2.6;
+  stroke-opacity: 0.85;
+  stroke-linecap: round;
+  fill: none;
+  transition: stroke-width 0.18s ease, stroke-opacity 0.18s ease;
+}
+.pt-busur.is-aktif {
+  stroke-width: 4.4;
+  stroke-opacity: 1;
+}
+/* Tiga jenis jalur: laut sedikit lebih tebal, udara lebih tipis dan membusur tinggi. */
+.pt-busur.pt-moda--laut { stroke-width: 3.2; }
+.pt-busur.pt-moda--udara { stroke-width: 2.2; }
+.pt-busur.pt-moda--laut.is-aktif { stroke-width: 5; }
+.pt-busur.pt-moda--udara.is-aktif { stroke-width: 3.6; }
+
+/* "Diajukan" digambar PUTUS-PUTUS, bukan sekadar berwarna lain: ia satu-satunya
+   tahap yang belum menggerakkan barang apa pun, dan bentuk garis mengatakannya
+   bahkan pada layar yang warnanya tidak terbaca. */
+.pt-busur.pt-warna--draft {
+  stroke-dasharray: 7 6;
+  stroke-opacity: 0.75;
+}
+.pt-busur.pt-warna--cancelled {
+  stroke-dasharray: 2 7;
+  stroke-opacity: 0.5;
+}
+
+/* "Dikirim" adalah satu-satunya tahap yang barangnya sedang BERGERAK saat ini
+   juga, dan garisnya ikut bergerak ke arah yang sama dengan panahnya. */
+.pt-busur.pt-warna--in_transit {
+  stroke-dasharray: 10 7;
+  animation: pt-jalan 1.4s linear infinite;
+}
+@keyframes pt-jalan {
+  to { stroke-dashoffset: -17; }
+}
+
+.pt-halo {
+  stroke: var(--pt-warna);
+  stroke-width: 13;
+  stroke-opacity: 0.18;
+  stroke-linecap: round;
+  fill: none;
+}
+.pt-halo--usul {
+  stroke: var(--series-4);
+}
+
+/*
+ * BUSUR USULAN MESIN: teal, bertitik, tipis.
+ *
+ * TIGA SUMBU PEMBEDA SEKALIGUS, dan ketiganya diperlukan. Warna saja tidak
+ * cukup -- sebagian pembaca tidak membedakan teal dari biru, dan layar gudang
+ * sering terang. Bentuk saja juga tidak cukup: tahap "Diajukan" sudah memakai
+ * garis putus-putus, jadi usulan memakai TITIK BULAT rapat, bukan strip.
+ * Ketebalannya pun lebih tipis daripada busur dokumen mana pun.
+ *
+ * Yang dibedakan bukan status melainkan JENIS BENDA: keempat warna status
+ * menandai tahap satu dokumen yang sudah ada, sedangkan yang ini belum menjadi
+ * dokumen sama sekali. Karena itu ia tidak mengambil satu pun warna status --
+ * teal tidak dipakai tahap mana pun -- dan tidak pernah tampil sepekat mereka.
+ */
+.pt-usul {
+  stroke: var(--series-4);
+  stroke-width: 2;
+  stroke-opacity: 0.72;
+  stroke-linecap: round;
+  stroke-dasharray: 0.1 7;
+  fill: none;
+  transition: stroke-width 0.18s ease, stroke-opacity 0.18s ease;
+}
+.pt-usul.is-aktif {
+  stroke-width: 3;
+  stroke-opacity: 1;
+}
+
+/* Garis bidik: tidak terlihat, tetapi selebar jari. `pointer-events: stroke`
+   menangkap sentuhan di sepanjang perimeternya tanpa peduli garisnya dicat
+   atau tidak, sehingga busur setebal tiga piksel tetap dapat ditunjuk di
+   tablet tanpa menebalkan apa pun yang terlihat. */
+.pt-bidik {
+  stroke: var(--text-primary);
+  stroke-width: 22;
+  stroke-opacity: 0;
+  fill: none;
+  cursor: pointer;
+  pointer-events: stroke;
+}
+
+/* --- kepala panah ------------------------------------------------ */
+
+.pt-panah-wrap,
+.pt-label-wrap,
+.pt-pin-wrap {
+  background: none;
+  border: 0;
+}
+
+.pt-panah {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  color: var(--pt-warna);
+  transform: translate(-50%, -50%) rotate(var(--pt-sudut, 0deg));
+  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--surface-1) 85%, transparent));
+  opacity: 0.95;
+}
+.pt-panah.is-aktif {
+  transform: translate(-50%, -50%) rotate(var(--pt-sudut, 0deg)) scale(1.35);
+  opacity: 1;
+}
+.pt-panah--usul {
+  color: var(--series-4);
+  opacity: 0.85;
+}
+
+/* --- selubung jalan, truk, jejak tahap ----------------------------- */
+
+/* Selubung putih di bawah garis berwarna: yang membuat rute terbaca seperti
+   navigasi di atas jalan. Selalu satu warna permukaan, jadi ia ikut tema tanpa
+   perlu diwarnai ulang per status. */
+.pt-casing {
+  stroke: var(--surface-1);
+  stroke-width: 7;
+  stroke-opacity: 0.92;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+.pt-casing.is-aktif {
+  stroke-width: 9;
+}
+.pt-busur {
+  stroke-linejoin: round;
+}
+
+/* Rincian biaya pada kartu jalur: dua komponen dan totalnya, sebaris. */
+.pt-biaya {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.pt-biaya b {
+  margin-left: 4px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.pt-biaya-total b {
+  font-weight: 800;
+}
+
+/* Pilihan jalur: satu warna tetap per nomor pilihan (0 = tercepat), sama pada
+   garis peta dan penanda di daftar. Sengaja tidak memakai warna status. */
+.pt-jalur--0 { --pt-jalur: #0ea5e9; }
+.pt-jalur--1 { --pt-jalur: #f97316; }
+.pt-jalur--2 { --pt-jalur: #db2777; }
+.pt-jalur--3 { --pt-jalur: #65a30d; }
+:root[data-theme="dark"] .pt-jalur--0 { --pt-jalur: #38bdf8; }
+:root[data-theme="dark"] .pt-jalur--1 { --pt-jalur: #fb923c; }
+:root[data-theme="dark"] .pt-jalur--2 { --pt-jalur: #f472b6; }
+:root[data-theme="dark"] .pt-jalur--3 { --pt-jalur: #a3e635; }
+
+/* Jalur alternatif: berwarna, di bawah jalur terpilih. */
+.pt-alt {
+  stroke: var(--pt-jalur, var(--text-muted));
+  stroke-width: 4;
+  stroke-opacity: 0.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+.pt-alt.is-aktif {
+  stroke-width: 4.5;
+  stroke-opacity: 0.9;
+}
+/* Garis tepi berwarna pada jalur terpilih. */
+.pt-pilih {
+  stroke: var(--pt-jalur);
+  stroke-width: 14;
+  stroke-opacity: 0.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+.pt-chip-jalur {
+  display: inline-block;
+  width: 14px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 3px;
+  vertical-align: middle;
+  background: var(--pt-jalur);
+}
+
+.pt-truk-wrap {
+  background: none;
+  border: 0;
+}
+.pt-truk {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  color: var(--pt-warna);
+  /* Dibalik cermin, bukan diputar: lihat ikonTruk(). */
+  transform: translate(-50%, -62%) scaleX(var(--pt-arah, 1));
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.35));
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.pt-truk.is-aktif {
+  transform: translate(-50%, -62%) scaleX(var(--pt-arah, 1)) scale(1.25);
+}
+/* "Diajukan": belum ada barang yang bergerak, truknya dipudarkan. */
+.pt-truk.pt-warna--draft {
+  opacity: 0.6;
+}
+/* Truk yang melaju bergoyang tipis, seperti roda di atas jalan. */
+.pt-truk-jalan .pt-truk svg {
+  animation: pt-goyang 0.5s ease-in-out infinite alternate;
+}
+@keyframes pt-goyang {
+  from { transform: translateY(0); }
+  to { transform: translateY(-1.2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pt-truk-jalan .pt-truk svg { animation: none; }
+}
+
+.pt-jejak {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pt-jejak-baris {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+}
+/* Garis penyambung antar titik; yang sudah dilewati berwarna, sisanya pudar. */
+.pt-jejak-baris:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 100%;
+  width: 2px;
+  height: 100%;
+  margin-top: -5px;
+  background: var(--border);
+}
+.pt-jejak-baris.is-lewat:not(:last-child)::after {
+  background: currentColor;
+}
+.pt-jejak-titik {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--surface-1);
+  box-shadow: inset 0 0 0 1.5px currentColor;
+}
+.pt-jejak-baris.is-lewat .pt-jejak-titik {
+  background: currentColor;
+  color: inherit;
+}
+.pt-jejak-baris.is-lewat .pt-jejak-titik svg {
+  color: var(--surface-1);
+}
+.pt-jejak-baris.is-kini .pt-jejak-titik {
+  box-shadow: inset 0 0 0 1.5px currentColor,
+    0 0 0 4px color-mix(in srgb, currentColor 20%, transparent);
+}
+
+/* --- label jumlah ------------------------------------------------ */
+
+.pt-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  white-space: nowrap;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: var(--t-caption);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--pt-warna) 16%, var(--surface-1));
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--pt-warna) 55%, transparent),
+    var(--elev-1);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+/* Label dua baris: jumlah di atas, lalu lama tempuh + total, lalu solar + tol.
+   Berbentuk kartu kecil, bukan pil, karena tiga baris tidak muat dalam pil. */
+.pt-label--dua {
+  flex-direction: column;
+  align-items: center;
+  gap: 0.05rem;
+  border-radius: 0.7rem;
+  padding: 0.2rem 0.55rem 0.25rem;
+}
+.pt-label-baris {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+.pt-label-sub {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text-primary);
+}
+.pt-label-sub--rinci {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.pt-label:hover,
+.pt-label.is-aktif {
+  transform: translate(-50%, -50%) scale(1.08);
+  box-shadow: inset 0 0 0 2px var(--pt-warna), var(--elev-2);
+}
+/* Label usulan: BERBINGKAI PUTUS-PUTUS dan berlatar tipis, supaya bahkan
+   labelnya pun terbaca sebagai "belum jadi" tanpa perlu dibandingkan dengan
+   label di sebelahnya. */
+.pt-label--usul {
+  gap: 0.3rem;
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--surface-1) 92%, transparent);
+  box-shadow: none;
+  border: 1.5px dashed color-mix(in srgb, var(--series-4) 65%, transparent);
+}
+.pt-label--usul > svg {
+  color: var(--series-4);
+}
+.pt-label--usul:hover,
+.pt-label--usul.is-aktif {
+  border-style: solid;
+  border-color: var(--series-4);
+  box-shadow: var(--elev-2);
+}
+
+/* Cacah dokumen pada rute yang sama; kecil dan redup, karena yang dicari mata
+   lebih dulu adalah jumlah unitnya. */
+.pt-label-n {
+  font-size: var(--t-micro);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* --- penanda gudang ---------------------------------------------- */
+
+.pt-pin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  cursor: pointer;
+}
+.pt-pin-badan {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 27px;
+  height: 27px;
+  border-radius: 50% 50% 50% 4px;
+  transform: rotate(-45deg);
+  color: var(--text-inverse);
+  background: var(--grad-brand);
+  box-shadow: var(--elev-2), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.pt-pin-badan > svg {
+  transform: rotate(45deg);
+}
+.pt-pin:hover .pt-pin-badan {
+  transform: rotate(-45deg) scale(1.1);
+}
+.pt-pin.is-aktif .pt-pin-badan {
+  box-shadow: var(--elev-2), 0 0 0 4px color-mix(in srgb, var(--brand) 30%, transparent);
+}
+/* Gudang yang tidak menyentuh satu pun transfer pada halaman ini tetap
+   digambar, hanya lebih tenang: "tidak ada kiriman minggu ini" adalah jawaban,
+   dan menyembunyikannya membuatnya tidak dapat dibedakan dari "gudangnya tidak
+   ada". */
+.pt-pin.is-sepi .pt-pin-badan {
+  background: var(--surface-1);
+  color: var(--text-muted);
+  box-shadow: var(--elev-1), inset 0 0 0 1.5px var(--border-strong);
+}
+.pt-pin-nama {
+  margin-top: 0.2rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 5px;
+  font-size: var(--t-micro);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--surface-1) 92%, transparent);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+/* --- legenda ----------------------------------------------------- */
+
+.pt-legenda {
+  position: absolute;
+  left: 0.6rem;
+  bottom: 0.6rem;
+  z-index: 900;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  max-width: calc(100% - 1.2rem);
+  padding: 0.4rem 0.6rem;
+  border-radius: 10px;
+  background: var(--glass);
+  backdrop-filter: saturate(160%) blur(10px);
+  -webkit-backdrop-filter: saturate(160%) blur(10px);
+  box-shadow: inset 0 0 0 1px var(--border), var(--elev-1);
+  font-size: var(--t-micro);
+  font-weight: 600;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+.pt-legenda-baris {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+.pt-legenda-garis {
+  width: 20px;
+  height: 0;
+  border-top: 2.6px solid var(--pt-warna);
+  border-radius: 999px;
+}
+.pt-legenda-garis--draft {
+  border-top-style: dashed;
+}
+.pt-legenda-garis--in_transit {
+  border-top-style: dotted;
+  border-top-width: 3px;
+}
+.pt-legenda-garis--usul {
+  border-top: 2px dotted var(--series-4);
+}
+/* Pemisah menegaskan bahwa yang di seberangnya bukan tahap kelima melainkan
+   benda yang berbeda jenisnya. */
+.pt-legenda-baris--pisah {
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--border-strong);
+}
+
+/* --- pesan melayang ---------------------------------------------- */
+
+.pt-pesan {
+  position: absolute;
+  left: 50%;
+  z-index: 900;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  max-width: min(560px, calc(100% - 1.5rem));
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  background: var(--surface-1);
+  box-shadow: inset 0 0 0 1px var(--border), var(--elev-1);
+  font-size: var(--t-caption);
+  line-height: 1.45;
+  color: var(--text-secondary);
+  text-align: center;
+  pointer-events: none;
+}
+.pt-pesan--atas {
+  top: 0.75rem;
+}
+/* Catatan koordinat yang kurang duduk di tepi bawah dan tidak boleh menabrak
+   legenda di kiri maupun tombol di kanan; ia menepi ke tengah bawah. */
+.pt-pesan--bawah {
+  bottom: 0.75rem;
+  max-width: min(460px, calc(100% - 13rem));
+  text-align: left;
+}
+@media (max-width: 767px) {
+  .pt-pesan--bawah {
+    position: static;
+    transform: none;
+    display: flex;
+    max-width: none;
+    margin: 0.6rem 0.6rem 0;
+    border-radius: 12px;
+  }
+}
+
+/* --- panel rincian ----------------------------------------------- */
+
+/*
+ * DI BAWAH 1024px PANEL BERDIRI DI BAWAH PETA, bukan di atasnya.
+ *
+ * Pada lebar itu peta hanya setinggi 380-460px, dan lembar melayang yang
+ * memuat rincian satu rute menutup lebih dari separuhnya -- termasuk garis
+ * yang baru saja ditunjuk untuk memunculkannya. Diturunkan ke bawah peta,
+ * keduanya terbaca sekaligus, dan panelnya bebas setinggi isinya.
+ *
+ * Mulai 1024px ruangnya cukup untuk kolom di sisi kanan, dan di sana panel
+ * melayang di atas peta -- dengan sela fitBounds yang menyisihkan lebarnya
+ * (lihat `sela()` pada peta-transfer.tsx) supaya tidak ada ujung rute yang
+ * tertutup olehnya.
+ */
+.pt-panel {
+  position: relative;
+  z-index: 950;
+  margin: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  background: var(--surface-1);
+  box-shadow: inset 0 0 0 1px var(--border), var(--elev-1);
+}
+@media (min-width: 1024px) {
+  .pt-panel {
+    position: absolute;
+    margin: 0;
+    right: 0.75rem;
+    top: 0.75rem;
+    /* Tingginya MENGIKUTI ISINYA, tidak dipaksa setinggi peta. Rincian satu
+       gudang hanya enam baris; kotak setinggi peta di sekelilingnya berarti
+       menutup separuh Jawa demi ruang kosong. */
+    bottom: auto;
+    width: 336px;
+    max-height: calc(100% - 1.5rem);
+    background: var(--glass);
+    backdrop-filter: saturate(170%) blur(16px);
+    -webkit-backdrop-filter: saturate(170%) blur(16px);
+    box-shadow: inset 0 0 0 1px var(--border), var(--elev-3);
+  }
+}
+.pt-panel-isi {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.9rem 1rem 1rem;
+}
+.pt-panel-tutup {
+  position: absolute;
+  right: 0.45rem;
+  top: 0.45rem;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  color: var(--text-muted);
+  background: var(--surface-1);
+  box-shadow: inset 0 0 0 1px var(--border);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.pt-panel-tutup:hover {
+  color: var(--text-primary);
+  background: var(--surface-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pt-busur.pt-warna--in_transit {
+    animation: none;
+  }
+}

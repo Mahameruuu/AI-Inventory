@@ -1,0 +1,1329 @@
+<title>Anatomi Prakiraan Stok</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap">
+
+<style>
+/* ------------------------------------------------------------------ *
+ * Token — palet diambil dari globals.css aplikasi Inventory System
+ * supaya dokumen ini dan halaman Forecasting terbaca sebagai satu
+ * keluarga. Warna status SENGAJA identik: chip di sini harus bisa
+ * dicocokkan langsung dengan lencana di layar.
+ * ------------------------------------------------------------------ */
+:root {
+  color-scheme: light;
+
+  --ground:    #f9f9f7;
+  --surface:   #fcfcfb;
+  --surface-2: #f2f1ec;
+  --ink:       #0b0b0b;
+  --ink-2:     #52514e;
+  --ink-3:     #898781;
+  --rule:      #e1e0d9;
+  --rule-firm: #c3c2b7;
+
+  --accent:      #2a78d6;
+  --accent-soft: rgba(42, 120, 214, 0.10);
+  --accent-line: rgba(42, 120, 214, 0.30);
+
+  --safe:     #0ca30c;
+  --attn:     #fab219;
+  --critical: #d03b3b;
+  --neutral:  #898781;
+
+  --safe-bg:     rgba(12, 163, 12, 0.10);
+  --attn-bg:     rgba(250, 178, 25, 0.14);
+  --critical-bg: rgba(208, 59, 59, 0.10);
+  --neutral-bg:  rgba(137, 135, 129, 0.12);
+
+  --shadow: 0 1px 2px rgba(11, 11, 11, 0.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground:    #0d0d0d;
+    --surface:   #1a1a19;
+    --surface-2: #232322;
+    --ink:       #ffffff;
+    --ink-2:     #c3c2b7;
+    --ink-3:     #898781;
+    --rule:      #2c2c2a;
+    --rule-firm: #45443f;
+
+    --accent:      #5c9ceb;
+    --accent-soft: rgba(92, 156, 235, 0.13);
+    --accent-line: rgba(92, 156, 235, 0.36);
+
+    --safe:     #3fc23f;
+    --attn:     #fbc34c;
+    --critical: #e86a6a;
+    --neutral:  #a3a19a;
+
+    --safe-bg:     rgba(63, 194, 63, 0.13);
+    --attn-bg:     rgba(251, 195, 76, 0.14);
+    --critical-bg: rgba(232, 106, 106, 0.13);
+    --neutral-bg:  rgba(163, 161, 154, 0.14);
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground:    #0d0d0d;
+  --surface:   #1a1a19;
+  --surface-2: #232322;
+  --ink:       #ffffff;
+  --ink-2:     #c3c2b7;
+  --ink-3:     #898781;
+  --rule:      #2c2c2a;
+  --rule-firm: #45443f;
+
+  --accent:      #5c9ceb;
+  --accent-soft: rgba(92, 156, 235, 0.13);
+  --accent-line: rgba(92, 156, 235, 0.36);
+
+  --safe:     #3fc23f;
+  --attn:     #fbc34c;
+  --critical: #e86a6a;
+  --neutral:  #a3a19a;
+
+  --safe-bg:     rgba(63, 194, 63, 0.13);
+  --attn-bg:     rgba(251, 195, 76, 0.14);
+  --critical-bg: rgba(232, 106, 106, 0.13);
+  --neutral-bg:  rgba(163, 161, 154, 0.14);
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+/* ------------------------------------------------------------------ */
+
+body {
+  /* Saat diterbitkan sebagai Artifact, reset bawaannya sudah menghapus margin
+     ini. Ditulis juga di sini supaya berkasnya tetap tampil benar ketika
+     dibuka langsung dari folder docs/ tanpa pembungkus apa pun. */
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink-2);
+  font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; }
+
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px 96px;
+}
+
+/* --- Kepala dokumen --- */
+
+.masthead {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 72px 0 40px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.eyebrow {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+h1 {
+  font-family: "IBM Plex Serif", Georgia, serif;
+  font-weight: 600;
+  font-size: clamp(2.15rem, 5.2vw, 3.1rem);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  margin: 0;
+  text-wrap: balance;
+}
+
+.standfirst {
+  font-size: 1.075rem;
+  line-height: 1.6;
+  max-width: 62ch;
+  color: var(--ink-2);
+  margin: 0;
+}
+
+.masthead-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  margin-top: 6px;
+}
+
+.tag {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  color: var(--ink-3);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 3px 9px;
+  background: var(--surface);
+}
+
+/* --- Kerangka: daftar isi + isi --- */
+
+.frame {
+  display: grid;
+  gap: 56px;
+  padding-top: 52px;
+}
+
+@media (min-width: 1040px) {
+  .frame {
+    grid-template-columns: 196px minmax(0, 1fr);
+    gap: 64px;
+  }
+}
+
+.toc { display: none; }
+
+@media (min-width: 1040px) {
+  .toc {
+    display: block;
+    position: sticky;
+    top: 40px;
+    align-self: start;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+  }
+}
+
+.toc-title {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.toc ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.toc a {
+  color: var(--ink-2);
+  text-decoration: none;
+  font-size: 13.5px;
+  line-height: 1.4;
+  display: block;
+  border-left: 2px solid transparent;
+  padding-left: 12px;
+  margin-left: -14px;
+  transition: color 0.12s, border-color 0.12s;
+}
+
+.toc a:hover,
+.toc a:focus-visible {
+  color: var(--accent);
+  border-left-color: var(--accent);
+}
+
+.body { display: flex; flex-direction: column; gap: 68px; min-width: 0; }
+
+section { display: flex; flex-direction: column; gap: 22px; scroll-margin-top: 28px; }
+
+h2 {
+  font-family: "IBM Plex Serif", Georgia, serif;
+  font-weight: 600;
+  font-size: 1.62rem;
+  line-height: 1.22;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0;
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--ink);
+  text-wrap: balance;
+}
+
+h3 {
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1.02rem;
+  line-height: 1.35;
+  color: var(--ink);
+  margin: 0;
+}
+
+p { margin: 0; max-width: 66ch; }
+
+.lede { font-size: 1.02rem; color: var(--ink-2); max-width: 64ch; }
+
+strong { color: var(--ink); font-weight: 600; }
+
+code, .mono {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.885em;
+  font-variant-ligatures: none;
+}
+
+code {
+  background: var(--surface-2);
+  border-radius: 3px;
+  padding: 1.5px 5px;
+  color: var(--ink);
+}
+
+a { color: var(--accent); }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* --- Panel instrumen: keluar sedikit lebih lebar dari kolom baca --- */
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 13px 20px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface-2);
+}
+
+.panel-head .label {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.panel-body { padding: 22px 20px; }
+.panel-scroll { overflow-x: auto; }
+
+/* --- Diagram --- */
+
+figure { margin: 0; display: flex; flex-direction: column; gap: 0; }
+
+.diagram { display: block; width: 100%; height: auto; min-width: 620px; }
+
+.d-label {
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+  fill: var(--ink-2);
+}
+.d-strong { fill: var(--ink); font-weight: 600; }
+.d-axis {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  fill: var(--ink-3);
+}
+
+figcaption {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-3);
+  padding: 14px 20px 0;
+  border-top: 1px solid var(--rule);
+  max-width: none;
+}
+
+/* --- Glosarium --- */
+
+.glossary { display: flex; flex-direction: column; gap: 0; }
+
+.term {
+  display: grid;
+  gap: 6px 28px;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.term:first-child { border-top: 1px solid var(--rule); }
+
+@media (min-width: 760px) {
+  .term { grid-template-columns: 205px minmax(0, 1fr); }
+}
+
+.term-name { display: flex; flex-direction: column; gap: 3px; }
+
+.term-en {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+}
+
+.term-id {
+  font-family: "IBM Plex Serif", Georgia, serif;
+  font-size: 1.06rem;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.term-def { display: flex; flex-direction: column; gap: 10px; }
+.term-def p { max-width: 62ch; }
+
+.aside {
+  border-left: 2px solid var(--accent-line);
+  background: var(--accent-soft);
+  padding: 10px 14px;
+  border-radius: 0 4px 4px 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 62ch;
+}
+
+.aside strong { color: var(--ink); }
+
+/* --- Rumus --- */
+
+.formula {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 13.5px;
+  line-height: 1.9;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  padding: 16px 18px;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.formula .dim { color: var(--ink-3); }
+.formula .hi  { color: var(--accent); font-weight: 500; }
+
+/* --- Tabel --- */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  min-width: 540px;
+}
+
+thead th {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--rule-firm);
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink-2);
+  vertical-align: top;
+}
+
+tbody tr:last-child td { border-bottom: none; }
+
+.num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+th.num { text-align: right; }
+
+.sku {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12.5px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* --- Chip status --- */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  padding: 3px 9px 3px 7px;
+  border-radius: 3px;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.chip::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.chip-safe     { background: var(--safe-bg); }
+.chip-safe::before     { background: var(--safe); }
+.chip-attn     { background: var(--attn-bg); }
+.chip-attn::before     { background: var(--attn); }
+.chip-critical { background: var(--critical-bg); }
+.chip-critical::before { background: var(--critical); }
+.chip-none     { background: var(--neutral-bg); }
+.chip-none::before     { background: var(--neutral); }
+
+/* --- Kartu status --- */
+
+.status-grid { display: grid; gap: 14px; }
+
+@media (min-width: 700px) {
+  .status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.status-card {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 18px 20px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--stripe, var(--rule-firm));
+  border-radius: 5px;
+  box-shadow: var(--shadow);
+}
+
+.status-card.s-safe     { --stripe: var(--safe); }
+.status-card.s-attn     { --stripe: var(--attn); }
+.status-card.s-critical { --stripe: var(--critical); }
+.status-card.s-none     { --stripe: var(--neutral); }
+
+.status-card p { font-size: 14px; max-width: none; }
+
+.rule-line {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ink);
+  background: var(--surface-2);
+  border-radius: 4px;
+  padding: 10px 12px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+/* --- Dua mesin --- */
+
+.engine-grid { display: grid; gap: 14px; }
+
+@media (min-width: 760px) {
+  .engine-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.engine {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  box-shadow: var(--shadow);
+}
+
+.engine dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 14px;
+  font-size: 13px;
+}
+
+.engine dt {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding-top: 3px;
+  white-space: nowrap;
+}
+
+.engine dd { margin: 0; color: var(--ink-2); }
+
+.engine p { font-size: 14px; max-width: none; }
+
+/* --- Alur peran --- */
+
+.roles { display: flex; flex-direction: column; gap: 0; }
+
+.role {
+  display: grid;
+  gap: 4px 20px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.role:first-child { border-top: 1px solid var(--rule); }
+
+@media (min-width: 700px) {
+  .role { grid-template-columns: 150px minmax(0, 1fr); }
+}
+
+.role-who {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  padding-top: 2px;
+}
+
+.role p { font-size: 14.5px; }
+
+/* --- Catatan kaki --- */
+
+.footnote {
+  margin-top: 4px;
+  padding-top: 22px;
+  border-top: 1px solid var(--rule);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-3);
+  max-width: 68ch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">Inventory System · Panduan Modul Forecasting</div>
+    <h1>Anatomi Prakiraan Stok</h1>
+    <p class="standfirst">
+      Halaman Forecasting menampilkan empat angka, satu grafik, dan satu status berwarna.
+      Dokumen ini menjelaskan arti masing-masing, dari mana angkanya datang, dan pada
+      titik mana kecerdasan buatan benar-benar ikut bekerja — serta pada titik mana ia
+      sengaja tidak dilibatkan.
+    </p>
+    <div class="masthead-meta">
+      <span class="tag">Untuk petugas gudang &amp; perencana</span>
+      <span class="tag">Ambang: 7 hari histori · 3 hari pengeluaran</span>
+      <span class="tag">Model: reg:tweedie · 1.850 pohon · 27 fitur</span>
+    </div>
+  </header>
+
+  <div class="frame">
+
+    <nav class="toc" aria-label="Daftar isi">
+      <div class="toc-title">Isi</div>
+      <ol>
+        <li><a href="#gambar">Satu gambar, tiga batas</a></li>
+        <li><a href="#istilah">Istilah pokok</a></li>
+        <li><a href="#hitung">Cara angkanya dihitung</a></li>
+        <li><a href="#status">Empat status</a></li>
+        <li><a href="#mesin">Dua mesin prakiraan</a></li>
+        <li><a href="#peran">Di mana AI bekerja</a></li>
+        <li><a href="#contoh">Enam contoh nyata</a></li>
+        <li><a href="#kurang">Saat data belum cukup</a></li>
+      </ol>
+    </nav>
+
+    <main class="body">
+
+      <!-- ============================================================ -->
+      <section id="gambar">
+        <h2>Satu gambar, tiga batas</h2>
+        <p class="lede">
+          Hampir seluruh istilah pada halaman Forecasting adalah <em>garis mendatar</em>
+          pada grafik yang sama: batas kapan harus memesan, batas cadangan darurat, dan
+          batas nol. Sekali gambar ini terbaca, sisanya tinggal penamaan.
+        </p>
+
+        <div class="panel">
+          <div class="panel-head">
+            <span class="label">Perjalanan stok satu barang</span>
+            <span class="label">Sumbu tegak: unit · Sumbu datar: hari</span>
+          </div>
+          <div class="panel-body panel-scroll">
+            <figure>
+              <svg class="diagram" viewBox="0 0 780 400" role="img"
+                   aria-labelledby="diagram-judul diagram-uraian">
+                <title id="diagram-judul">Grafik stok terhadap waktu</title>
+                <desc id="diagram-uraian">
+                  Stok menurun dari kiri ke kanan. Garis penuh menandai histori sampai
+                  hari ini, garis putus-putus menandai prakiraan. Stok memotong garis
+                  titik pemesanan ulang, lalu terus turun melewati stok pengaman menuju
+                  nol. Jarak antara kedua perpotongan itu adalah waktu tunggu kiriman.
+                </desc>
+
+                <!-- garis nol dan kisi -->
+                <line x1="70" y1="300" x2="716" y2="300" stroke="var(--rule-firm)" stroke-width="1"/>
+                <line x1="70" y1="40"  x2="70"  y2="300" stroke="var(--rule-firm)" stroke-width="1"/>
+
+                <!-- pita waktu tunggu -->
+                <rect x="470" y="40" width="120" height="260" fill="var(--attn-bg)"/>
+                <line x1="470" y1="40" x2="470" y2="300" stroke="var(--attn)" stroke-width="1" stroke-dasharray="2 3"/>
+                <line x1="590" y1="40" x2="590" y2="300" stroke="var(--attn)" stroke-width="1" stroke-dasharray="2 3"/>
+
+                <!-- area di bawah kurva -->
+                <path d="M70,40 L110,55 L150,68 L190,86 L230,99 L270,117 L310,130
+                         L350,148 L390,161 L430,179 L470,196 L510,213 L550,231
+                         L590,248 L630,266 L670,283 L700,296 L700,300 L70,300 Z"
+                      fill="var(--accent-soft)"/>
+
+                <!-- histori (garis penuh) -->
+                <polyline points="70,40 110,55 150,68 190,86 230,99 270,117 310,130"
+                          fill="none" stroke="var(--accent)" stroke-width="2.5"
+                          stroke-linejoin="round" stroke-linecap="round"/>
+
+                <!-- prakiraan (garis putus-putus) -->
+                <polyline points="310,130 350,148 390,161 430,179 470,196 510,213
+                                  550,231 590,248 630,266 670,283 700,296"
+                          fill="none" stroke="var(--accent)" stroke-width="2.5"
+                          stroke-dasharray="6 5" stroke-linejoin="round" stroke-linecap="round"/>
+
+                <!-- penanda hari ini -->
+                <line x1="310" y1="30" x2="310" y2="300" stroke="var(--ink-3)" stroke-width="1"/>
+                <circle cx="310" cy="130" r="4.5" fill="var(--accent)"/>
+                <text class="d-label d-strong" x="310" y="22" text-anchor="middle">Hari ini</text>
+
+                <!-- garis titik pemesanan ulang -->
+                <line x1="70" y1="196" x2="716" y2="196" stroke="var(--critical)"
+                      stroke-width="1.5" stroke-dasharray="7 4"/>
+                <text class="d-label" x="716" y="192" text-anchor="end" fill="var(--critical)">
+                  Reorder Point · 40
+                </text>
+
+                <!-- garis stok pengaman -->
+                <line x1="70" y1="261" x2="716" y2="261" stroke="var(--ink-3)"
+                      stroke-width="1.5" stroke-dasharray="3 4"/>
+                <text class="d-label" x="716" y="257" text-anchor="end">Safety Stock · 15</text>
+
+                <!-- perpotongan -->
+                <circle cx="470" cy="196" r="5" fill="var(--critical)"/>
+                <circle cx="590" cy="261" r="5" fill="var(--ink-3)"/>
+
+                <!-- anotasi: pesan sekarang -->
+                <line x1="470" y1="196" x2="470" y2="332" stroke="var(--rule-firm)" stroke-width="1"/>
+                <text class="d-label d-strong" x="470" y="350" text-anchor="middle">Pesan di sini</text>
+                <text class="d-label" x="470" y="368" text-anchor="middle">stok menyentuh titik pesan</text>
+
+                <!-- anotasi: kiriman tiba -->
+                <line x1="590" y1="261" x2="590" y2="332" stroke="var(--rule-firm)" stroke-width="1"/>
+                <text class="d-label d-strong" x="612" y="350">Kiriman tiba</text>
+                <text class="d-label" x="612" y="368">cadangan belum terpakai</text>
+
+                <!-- ukuran waktu tunggu -->
+                <line x1="470" y1="60" x2="590" y2="60" stroke="var(--attn)" stroke-width="1.5"/>
+                <line x1="470" y1="55" x2="470" y2="65" stroke="var(--attn)" stroke-width="1.5"/>
+                <line x1="590" y1="55" x2="590" y2="65" stroke="var(--attn)" stroke-width="1.5"/>
+                <text class="d-label d-strong" x="530" y="50" text-anchor="middle">Lead Time</text>
+
+                <!-- stok saat ini -->
+                <text class="d-label d-strong" x="298" y="126" text-anchor="end">Current Stock</text>
+
+                <!-- sumbu -->
+                <text class="d-axis" x="62" y="44"  text-anchor="end">100</text>
+                <text class="d-axis" x="62" y="200" text-anchor="end">40</text>
+                <text class="d-axis" x="62" y="265" text-anchor="end">15</text>
+                <text class="d-axis" x="62" y="304" text-anchor="end">0</text>
+              </svg>
+              <figcaption>
+                Titik pemesanan ulang bukan tanda bahaya — ia tanda <em>waktu</em>. Ia diletakkan
+                cukup tinggi supaya, selama menunggu kiriman datang, stok yang tersisa masih
+                sanggup melayani pemakaian. Kalau pemesanan dilakukan setelah garis itu terlewat,
+                barang akan habis sebelum kiriman sampai.
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="istilah">
+        <h2>Istilah pokok</h2>
+        <p class="lede">
+          Nama field pada layar memakai istilah Inggris karena itulah standar yang dipakai
+          dokumen pengadaan. Di bawah, tiap istilah dipasangkan dengan arti kerjanya.
+        </p>
+
+        <div class="glossary">
+
+          <div class="term">
+            <div class="term-name">
+              <span class="term-en">Current Stock</span>
+              <span class="term-id">Stok Saat Ini</span>
+            </div>
+            <div class="term-def">
+              <p>
+                Jumlah unit yang benar-benar ada di gudang itu sekarang. Angkanya bukan
+                catatan terpisah, melainkan hasil penjumlahan seluruh pergerakan masuk dan
+                keluar barang tersebut — jadi tidak mungkin berselisih dengan riwayat transaksi.
+              </p>
+            </div>
+          </div>
+
+          <div class="term">
+            <div class="term-name">
+              <span class="term-en">Reorder Point</span>
+              <span class="term-id">Titik Pemesanan Ulang</span>
+            </div>
+            <div class="term-def">
+              <p>
+                Batas stok yang, bila disentuh, berarti barang <strong>harus dipesan ulang saat
+                itu juga</strong>. Inilah istilah yang paling sering disalahpahami: ia bukan batas
+                “stok hampir habis”, melainkan batas “kalau memesan lebih lambat dari ini, barang
+                akan habis sebelum kiriman datang”.
+              </p>
+              <p>
+                Besarnya memperhitungkan dua hal: seberapa cepat barang terpakai, dan berapa lama
+                pemasok mengirim. Barang yang lead time-nya panjang wajar punya titik pesan tinggi
+                meski pemakaiannya sedikit.
+              </p>
+              <div class="aside">
+                Bila titik pemesanan ulang belum diisi pada master barang, sistem memakai
+                <strong>Stok Minimum</strong> sebagai gantinya — supaya barang tidak pernah luput
+                dari pengawasan hanya karena satu kolom belum terisi.
+              </div>
+            </div>
+          </div>
+
+          <div class="term">
+            <div class="term-name">
+              <span class="term-en">Minimum Stock</span>
+              <span class="term-id">Stok Minimum</span>
+            </div>
+            <div class="term-def">
+              <p>
+                Batas terendah yang masih dianggap wajar disimpan. Stok yang sudah berada di
+                bawahnya langsung berstatus <span class="chip chip-critical">CRITICAL</span>
+                apa pun hasil prakiraannya — kondisi hari ini lebih penting daripada perkiraan
+                minggu depan.
+              </p>
+            </div>
+          </div>
+
+          <div class="term">
+            <div class="term-name">
+              <span class="term-en">Safety Stock</span>
+              <span class="term-id">Stok Pengaman</span>
+            </div>
+            <div class="term-def">
+              <p>
+                Cadangan untuk menyerap hal yang tidak terduga: pemakaian mendadak melonjak, atau
+                kiriman pemasok terlambat. Pada grafik di atas, stok pengaman adalah bantalan yang
+                masih tersisa tepat ketika kiriman tiba.
+              </p>
+            </div>
+          </div>
+
+          <div class="term">
+            <div class="term-name">
+              <span class="term-en">Lead Time</span>
+              <span class="term-id">Waktu Tunggu</span>
+            </div>
+            <div class="term-def">
+              <p>
+                Jumlah hari sejak pesanan dibuat sampai barang diterima di gudang. Angka ini
+                menentukan seberapa jauh di depan titik pemesanan ulang harus diletakkan.
+              </p>
+            </div>
+          </div>
+
+          <div class="term">
+            <div class="term-name">
+              <span class="term-en">Average Daily Usage</span>
+              <span class="term-id">Rata-rata Pemakaian Harian</span>
+            </div>
+            <div class="term-def">
+              <p>
+                Berapa unit rata-rata keluar per hari. Hari tanpa transaksi <strong>ikut
+                dihitung sebagai nol</strong>, bukan dilewati. Barang yang keluar seminggu sekali
+                memang tidak boleh dianggap keluar tiap hari.
+              </p>
+            </div>
+          </div>
+
+          <div class="term">
+            <div class="term-name">
+              <span class="term-en">Forecast Usage</span>
+              <span class="term-id">Perkiraan Pemakaian</span>
+            </div>
+            <div class="term-def">
+              <p>
+                Total unit yang diperkirakan keluar sepanjang periode yang dipilih (7, 14, atau
+                30 hari). Mengganti periode mengubah angka ini — dan bisa mengubah statusnya juga,
+                karena risiko dinilai atas rentang waktu yang berbeda.
+              </p>
+            </div>
+          </div>
+
+          <div class="term">
+            <div class="term-name">
+              <span class="term-en">Expected Stock</span>
+              <span class="term-id">Perkiraan Sisa Stok</span>
+            </div>
+            <div class="term-def">
+              <p>
+                Stok saat ini dikurangi perkiraan pemakaian: berapa yang tersisa di akhir periode
+                bila tidak ada pemasukan sama sekali. Angka inilah yang dibandingkan dengan titik
+                pemesanan ulang untuk menentukan status.
+              </p>
+            </div>
+          </div>
+
+          <div class="term">
+            <div class="term-name">
+              <span class="term-en">Days Until Reorder Point</span>
+              <span class="term-id">Hari Menuju Titik Pesan</span>
+            </div>
+            <div class="term-def">
+              <p>
+                Berapa hari lagi stok diperkirakan menyentuh titik pemesanan ulang — yaitu tenggat
+                kapan pesanan paling lambat harus dibuat. Bernilai kosong bila hal itu tidak terjadi
+                dalam periode yang dipilih.
+              </p>
+            </div>
+          </div>
+
+          <div class="term">
+            <div class="term-name">
+              <span class="term-en">Days Until Stockout</span>
+              <span class="term-id">Hari Menuju Stok Habis</span>
+            </div>
+            <div class="term-def">
+              <p>
+                Berapa hari lagi stok diperkirakan mencapai nol. Kosong berarti tidak habis
+                sepanjang periode — bukan berarti aman selamanya.
+              </p>
+            </div>
+          </div>
+
+          <div class="term">
+            <div class="term-name">
+              <span class="term-en">Data Quality</span>
+              <span class="term-id">Kualitas Data</span>
+            </div>
+            <div class="term-def">
+              <p>
+                Seberapa layak angka prakiraan itu dipercaya, dinilai dari tiga hal: panjang
+                histori, banyaknya hari yang benar-benar ada pengeluaran, dan seberapa stabil
+                pemakaian hariannya.
+              </p>
+              <div class="aside">
+                Labelnya <strong>tinggi</strong> (skor ≥ 0,7), <strong>sedang</strong> (≥ 0,4),
+                atau <strong>rendah</strong>. Kualitas rendah tidak membatalkan prakiraan — ia
+                memberi tahu bahwa angkanya perlu dibaca dengan lebih hati-hati.
+              </div>
+            </div>
+          </div>
+
+          <div class="term">
+            <div class="term-name">
+              <span class="term-en">As Of</span>
+              <span class="term-id">Tanggal Acuan</span>
+            </div>
+            <div class="term-def">
+              <p>
+                Hari yang dijadikan titik nol prakiraan. Sistem memakai tanggal terbaru antara hari
+                ini dan pergerakan terakhir barang tersebut, supaya jendela historinya tetap masuk
+                akal walau data sempat lama tidak diperbarui.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="hitung">
+        <h2>Cara angkanya dihitung</h2>
+        <p class="lede">
+          Rata-rata pemakaian dihitung dengan <strong>rata-rata bergerak berbobot</strong>: hari
+          yang lebih baru diberi bobot lebih besar, sehingga perubahan pola pemakaian terbaru
+          lebih cepat terbaca dibanding rata-rata biasa.
+        </p>
+
+        <div class="formula"><span class="dim">bobot hari ke-i (dari yang terlama):</span>  i
+<span class="dim">rata-rata           :</span>  Σ (pemakaian<span class="dim">ᵢ</span> × i) ÷ Σ i</div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <span class="label">Contoh perhitungan</span>
+            <span class="label">BRU-000003 · Filter Oli Parker P-9540</span>
+          </div>
+          <div class="panel-body">
+            <div class="formula"><span class="dim">pemakaian 7 hari terakhir  </span>   0    5    4    6    5    4    5
+<span class="dim">bobot                     </span>  ×1   ×2   ×3   ×4   ×5   ×6   ×7
+<span class="dim">                          </span>  ───────────────────────────────
+<span class="dim">hasil kali                </span>   0   10   12   24   25   24   35
+
+<span class="dim">jumlah hasil kali         </span>  130
+<span class="dim">jumlah bobot              </span>   28
+
+<span class="hi">rata-rata pemakaian harian    4,643 unit/hari</span>
+<span class="dim">× 7 hari                  </span>  <span class="hi">32,5 unit</span>   <span class="dim">← Forecast Usage</span>
+<span class="dim">stok 71 − 32,5            </span>  <span class="hi">38,5 unit</span>   <span class="dim">← Expected Stock</span></div>
+          </div>
+        </div>
+
+        <div class="aside">
+          Perhatikan hari pertama bernilai <strong>0</strong> — hari itu barang baru diterima dan
+          belum ada pengeluaran. Hari nol tetap ikut membagi, sehingga rata-ratanya tidak
+          terlalu tinggi.
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="status">
+        <h2>Empat status</h2>
+        <p class="lede">
+          Status ditentukan oleh angka, bukan oleh kalimat AI. Aturannya tetap dan bisa diperiksa
+          ulang dengan tangan.
+        </p>
+
+        <div class="status-grid">
+
+          <div class="status-card s-safe">
+            <span class="chip chip-safe">SAFE</span>
+            <h3>Aman sepanjang periode</h3>
+            <p>
+              Perkiraan sisa stok masih cukup jauh di atas titik pemesanan ulang. Tidak ada
+              tindakan yang perlu diambil sekarang.
+            </p>
+          </div>
+
+          <div class="status-card s-attn">
+            <span class="chip chip-attn">ATTENTION</span>
+            <h3>Masih aman, tetapi tipis</h3>
+            <p>
+              Sisa stok memang masih di atas titik pesan, tetapi hanya sedikit — satu periode lagi
+              akan menembusnya. Saatnya menyiapkan permintaan pembelian, belum mendesak.
+            </p>
+            <div class="rule-line">sisa ≤ maksimum dari:
+  titik pesan × 1,25
+  titik pesan + (rata-rata × hari ÷ 2)</div>
+          </div>
+
+          <div class="status-card s-critical">
+            <span class="chip chip-critical">CRITICAL</span>
+            <h3>Perlu tindakan sekarang</h3>
+            <p>
+              Cukup salah satu dari tiga keadaan berikut terpenuhi:
+            </p>
+            <div class="rule-line">stok sekarang ≤ stok minimum
+atau  stok habis sebelum periode berakhir
+atau  perkiraan sisa ≤ titik pemesanan ulang</div>
+          </div>
+
+          <div class="status-card s-none">
+            <span class="chip chip-none">INSUFFICIENT DATA</span>
+            <h3>Belum bisa diprakirakan</h3>
+            <p>
+              Histori barang ini belum memenuhi syarat minimum, sehingga sistem menolak menebak.
+              Grafik histori tetap ditampilkan; hanya bagian prakiraannya yang kosong.
+            </p>
+          </div>
+
+        </div>
+
+        <div class="aside">
+          Pita <strong>ATTENTION</strong> diukur dua cara dan diambil yang lebih longgar. Persentase
+          saja tidak cukup: pada titik pesan 5 unit, pita 25% hanya selebar 1,25 unit dan praktis
+          tidak pernah sempat memberi peringatan dini.
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="mesin">
+        <h2>Dua mesin prakiraan</h2>
+        <p class="lede">
+          Sistem punya dua cara meramal, dan memilih sendiri mana yang boleh dipakai berdasarkan
+          panjang histori barang. Keduanya menghasilkan bentuk keluaran yang sama, jadi tampilan
+          halaman tidak berubah — yang berubah hanya label metodenya.
+        </p>
+
+        <div class="engine-grid">
+
+          <div class="engine">
+            <h3>Model pembelajaran mesin</h3>
+            <dl>
+              <dt>Metode</dt><dd><code>xgboost_tweedie</code></dd>
+              <dt>Syarat</dt><dd>histori minimal 29 hari</dd>
+              <dt>Ukuran</dt><dd>1.850 pohon, 27 fitur</dd>
+              <dt>Cakupan</dt><dd>8.000 barang dikenali</dd>
+            </dl>
+            <p>
+              Meramal <em>tiap hari secara terpisah</em>, sehingga kurva pemakaiannya tidak lurus
+              dan pola mingguan ikut terbaca. Fiturnya mencakup pemakaian beberapa hari dan minggu
+              ke belakang, rata-rata bergerak, hari dalam minggu, serta identitas barang dan gudang.
+            </p>
+          </div>
+
+          <div class="engine">
+            <h3>Rata-rata bergerak berbobot</h3>
+            <dl>
+              <dt>Metode</dt><dd><code>weighted_moving_average</code></dd>
+              <dt>Syarat</dt><dd>histori minimal 7 hari</dd>
+              <dt>Sifat</dt><dd>dapat dihitung tangan</dd>
+              <dt>Peran</dt><dd>cadangan &amp; pembanding</dd>
+            </dl>
+            <p>
+              Dipakai untuk barang yang belum cukup lama tercatat, dan sebagai jaring pengaman bila
+              model bermasalah. Hasilnya berupa garis lurus, tetapi setiap angkanya bisa dijelaskan
+              ke pengguna tanpa harus mengatakan “model bilang begitu”.
+            </p>
+          </div>
+
+        </div>
+
+        <div class="aside">
+          Barang baru <strong>selalu</strong> dimulai dengan rata-rata bergerak. Itu bukan
+          kekurangan: model butuh 29 hari untuk mengisi fitur riwayatnya, dan memaksakannya pada
+          data tujuh hari hanya akan menghasilkan angka yang terlihat meyakinkan tanpa dasar.
+          Begitu histori barang itu panjang, sistem berpindah ke model dengan sendirinya.
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="peran">
+        <h2>Di mana AI bekerja</h2>
+        <p class="lede">
+          “AI” pada modul ini merujuk ke dua hal berbeda yang sering tertukar. Pembagian tugasnya
+          tegas, dan itu disengaja.
+        </p>
+
+        <div class="roles">
+
+          <div class="role">
+            <div class="role-who">Basis data</div>
+            <p>
+              Menyediakan pergerakan stok harian yang sesungguhnya. Hari tanpa transaksi tetap
+              dihadirkan sebagai nol.
+            </p>
+          </div>
+
+          <div class="role">
+            <div class="role-who">Model prakiraan</div>
+            <p>
+              Meramal permintaan harian ke depan. Ia tidak menyentuh basis data dan tidak menulis
+              satu kalimat pun.
+            </p>
+          </div>
+
+          <div class="role">
+            <div class="role-who">Mesin status</div>
+            <p>
+              Menghitung sisa stok, hari menuju titik pesan, dan menetapkan status. Seluruhnya
+              aritmetika biasa dengan aturan tetap.
+            </p>
+          </div>
+
+          <div class="role">
+            <div class="role-who">Model bahasa</div>
+            <p>
+              Hanya menerjemahkan hasil di atas menjadi kalimat rekomendasi yang enak dibaca. Ia
+              <strong>tidak pernah</strong> menentukan angka maupun status — dan angkanya dihitung
+              ulang di server, bukan diterima dari layar, sehingga mustahil ia disuguhi angka
+              karangan lalu diminta membenarkannya.
+            </p>
+          </div>
+
+        </div>
+
+        <div class="aside">
+          Karena itu, bila layanan bahasa sedang mati, kartu dan grafik tetap tampil lengkap.
+          Yang hilang hanya paragraf rekomendasinya, digantikan ringkasan yang disusun dari
+          angka yang sama.
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="contoh">
+        <h2>Enam contoh nyata</h2>
+        <p class="lede">
+          Barang berikut ada di gudang <strong>WH-BRA-01 · Branch Warehouse Padang</strong> dengan
+          histori pendek, masing-masing sengaja mengarah ke satu status berbeda. Seluruhnya memakai
+          rata-rata bergerak, karena umurnya belum cukup untuk model.
+        </p>
+
+        <div class="panel">
+          <div class="panel-head">
+            <span class="label">Periode prakiraan: 7 hari</span>
+            <span class="label">Metode: weighted_moving_average</span>
+          </div>
+          <div class="panel-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Barang</th>
+                  <th class="num">Stok</th>
+                  <th class="num">Pakai 7 hr</th>
+                  <th class="num">Sisa</th>
+                  <th class="num">Titik pesan</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="sku">BRU-000001</td>
+                  <td>Pompa Sentrifugal Grundfos G-2200</td>
+                  <td class="num">156</td>
+                  <td class="num">48,75</td>
+                  <td class="num">107,25</td>
+                  <td class="num">40</td>
+                  <td><span class="chip chip-safe">SAFE</span></td>
+                </tr>
+                <tr>
+                  <td class="sku">BRU-000006</td>
+                  <td>Selang Hidrolik Gates 4SP-19</td>
+                  <td class="num">68</td>
+                  <td class="num">15,00</td>
+                  <td class="num">53,00</td>
+                  <td class="num">15</td>
+                  <td><span class="chip chip-safe">SAFE</span></td>
+                </tr>
+                <tr>
+                  <td class="sku">BRU-000003</td>
+                  <td>Filter Oli Parker P-9540</td>
+                  <td class="num">71</td>
+                  <td class="num">32,50</td>
+                  <td class="num">38,50</td>
+                  <td class="num">32</td>
+                  <td><span class="chip chip-attn">ATTENTION</span></td>
+                </tr>
+                <tr>
+                  <td class="sku">BRU-000002</td>
+                  <td>Bearing SKF 6312-2RS1</td>
+                  <td class="num">27</td>
+                  <td class="num">106,75</td>
+                  <td class="num">0</td>
+                  <td class="num">60</td>
+                  <td><span class="chip chip-critical">CRITICAL</span></td>
+                </tr>
+                <tr>
+                  <td class="sku">BRU-000005</td>
+                  <td>Kabel NYY Supreme 4x25mm</td>
+                  <td class="num">162</td>
+                  <td class="num">116,46</td>
+                  <td class="num">45,55</td>
+                  <td class="num">60</td>
+                  <td><span class="chip chip-critical">CRITICAL</span></td>
+                </tr>
+                <tr>
+                  <td class="sku">BRU-000004</td>
+                  <td>V-Belt Mitsuboshi B-75</td>
+                  <td class="num">53</td>
+                  <td class="num">—</td>
+                  <td class="num">—</td>
+                  <td class="num">20</td>
+                  <td><span class="chip chip-none">INSUFFICIENT</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <p>
+          Dua baris terakhir menarik dibandingkan. <span class="sku">BRU-000002</span> berstok kecil
+          dan langsung kritis. <span class="sku">BRU-000005</span> berstok besar — 162 unit — tetapi
+          tetap kritis, karena pemakaiannya menanjak cepat dan sisa 45,55 sudah berada di bawah titik
+          pesan 60. Stok banyak tidak sama dengan stok aman.
+        </p>
+      </section>
+
+      <!-- ============================================================ -->
+      <section id="kurang">
+        <h2>Saat data belum cukup</h2>
+        <p class="lede">
+          Sistem menolak memprakirakan bila salah satu dari dua syarat berikut tidak terpenuhi.
+          Keduanya diperiksa pada jendela histori barang tersebut, bukan pada seluruh umur sistem.
+        </p>
+
+        <div class="panel panel-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Syarat</th>
+                <th class="num">Minimum</th>
+                <th>Alasannya</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Panjang histori</strong></td>
+                <td class="num">7 hari</td>
+                <td>
+                  Satu minggu penuh memastikan seluruh hari dalam pekan pernah terwakili — termasuk
+                  akhir pekan, yang pola pemakaiannya berbeda.
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Hari dengan pengeluaran</strong></td>
+                <td class="num">3 hari</td>
+                <td>
+                  Inilah penjaga yang sebenarnya. Rentang panjang tanpa pengeluaran tidak membuat
+                  prakiraan jadi berdasar; tanpa syarat ini, rata-rata bisa ditentukan oleh satu
+                  kejadian tunggal.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          <span class="chip chip-none">INSUFFICIENT DATA</span> karena itu bukan kegagalan sistem.
+          Untuk barang yang memang jarang bergerak, itulah jawaban yang jujur — dan lebih berguna
+          daripada angka yang terlihat rapi tetapi tidak berdasar.
+        </p>
+
+        <p class="footnote">
+          Tabel contoh dan contoh perhitungan pada dokumen ini diambil langsung dari sistem yang
+          sedang berjalan, bukan angka karangan; grafik pada bagian pertama adalah skema, dengan
+          angka bulat agar mudah dibaca. Ambang minimum, lebar pita ATTENTION, dan pemilihan model
+          dapat disetel lewat konfigurasi lingkungan tanpa mengubah kode — nilai yang tercantum di
+          sini adalah yang sedang berlaku.
+        </p>
+      </section>
+
+    </main>
+  </div>
+</div>

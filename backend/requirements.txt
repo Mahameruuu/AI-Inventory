@@ -1,0 +1,42 @@
+fastapi>=0.115
+uvicorn[standard]>=0.32
+psycopg[binary]>=3.2
+psycopg-pool>=3.2
+pydantic>=2.9
+httpx>=0.27
+# Pembatas laju untuk endpoint prakiraan yang berat (app/limiter.py). Jatah
+# disimpan di memori proses -- cukup untuk satu proses uvicorn seperti
+# sekarang; bila kelak dijalankan multi-proses/multi-instance, jatahnya perlu
+# dipindah ke penyimpanan bersama (mis. Redis) lewat storage_uri Limiter.
+slowapi>=0.1.9
+xgboost
+scikit-learn
+# Dipakai app/ml/predict.py menyusun satu baris fitur berkategori
+# sebelum dikirim ke model. xgboost TIDAK menariknya sebagai
+# dependensi, sehingga tanpa baris ini model gagal dimuat di
+# lingkungan bersih meski berkas modelnya ada.
+pandas>=2.2
+
+# --- Autentikasi ---
+# Token akses bertanda tangan. Algoritmanya disebut secara tertutup saat
+# membaca token (app/auth.py); tanpa itu token dapat datang dengan header
+# alg pilihan penyerang, termasuk "none".
+PyJWT>=2.9
+# Hash kata sandi. bcrypt dipanggil langsung, tanpa passlib: passlib sudah
+# lama tidak dirilis dan lapisan tambahannya tidak memberi apa pun yang
+# dibutuhkan di sini.
+bcrypt>=4.2
+# Dipakai pydantic untuk memeriksa bentuk alamat email pada EmailStr. Pydantic
+# TIDAK menariknya sendiri, sehingga tanpa baris ini seluruh endpoint auth
+# gagal diimpor di lingkungan bersih.
+email-validator>=2.2
+
+# --- Impor berkas ---
+# Dibutuhkan FastAPI untuk membaca unggahan multipart. Tanpa baris ini,
+# endpoint impor gagal saat diimpor, bukan saat dipakai -- seluruh aplikasi
+# tidak menyala.
+python-multipart>=0.0.9
+# Pembaca .xlsx. Bersifat opsional dalam arti sebenarnya: bila tidak terpasang,
+# impor CSV tetap berjalan dan unggahan Excel dijawab dengan kalimat yang
+# menyarankan menyimpan sebagai CSV (lihat app/impor.py).
+openpyxl>=3.1
