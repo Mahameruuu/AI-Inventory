@@ -23,7 +23,7 @@
  */
 
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, CalendarDays, LineChart, TrendingUp } from "lucide-react";
+import { AlertTriangle, ArrowRight, CalendarDays, LineChart, ShoppingCart, TrendingUp } from "lucide-react";
 
 import { StockForecastChart } from "@/components/charts";
 import { Blok, KartuKeputusan, angka } from "@/components/forecast-ui";
@@ -122,13 +122,28 @@ export function BannerPrakiraan({ data }: { data: Forecast }) {
         <p className="mt-2 text-xs leading-relaxed text-muted">{t("fc.banner.order_note")}</p>
       ) : null}
 
-      <Link
-        href="/reorder"
-        className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold"
-        style={{ color: "var(--brand)" }}
-      >
-        {t("fc.banner.cta")} <ArrowRight size={13} />
-      </Link>
+      {/* TOMBOL saat stok kurang, tautan kecil saat tidak. Kekurangan adalah
+          satu-satunya keadaan di halaman ini yang menuntut tindakan, jadi
+          hanya di situ jalan keluarnya dibuat mencolok; pada stok yang cukup
+          tombol yang sama akan mengajak memesan barang yang tidak perlu
+          dipesan. Alamatnya membawa gudang dan SKU supaya halaman Pemesanan
+          Ulang terbuka langsung pada barang ini. */}
+      {r.kurang > 0 ? (
+        <Link
+          href={`/reorder?gudang=${data.warehouse.id}&cari=${encodeURIComponent(data.item.sku)}`}
+          className="btn-brand mt-3 inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg px-4 text-sm font-semibold transition"
+        >
+          <ShoppingCart size={15} /> {t("fc.banner.reorder_btn")} <ArrowRight size={14} />
+        </Link>
+      ) : (
+        <Link
+          href="/reorder"
+          className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold"
+          style={{ color: "var(--brand)" }}
+        >
+          {t("fc.banner.cta")} <ArrowRight size={13} />
+        </Link>
+      )}
     </Insight>
   );
 }

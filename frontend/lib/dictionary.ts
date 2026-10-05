@@ -1199,6 +1199,7 @@ export const DICT: Record<string, Entry> = {
   "fc.daily.short": { id: "Kurang {q}", en: "Short {q}" },
   "fc.daily.empty": { id: "Habis", en: "Out" },
   "fc.daily.total": { id: "Total {n} hari", en: "{n}-day total" },
+  "fc.banner.reorder_btn": { id: "Pesan ulang barang ini", en: "Reorder this item" },
   "fc.banner.stock": { id: "Stok saat ini", en: "Current stock" },
   "fc.banner.need": { id: "Perkiraan kebutuhan {n} hari", en: "{n}-day demand estimate" },
   "fc.banner.cta": { id: "Lihat saran pemesanan", en: "See the order suggestion" },

@@ -73,6 +73,26 @@ export default function ReorderPage() {
     return () => clearTimeout(id);
   }, [cari]);
 
+  /*
+   * Saringan awal dari alamat: /reorder?gudang=3&cari=SKU-001. Dipakai tombol
+   * "Pesan ulang" di halaman Prakiraan supaya pembaca mendarat langsung pada
+   * barang yang baru saja dilihatnya, bukan pada daftar seluruh gudang.
+   *
+   * Dibaca di dalam efek, bukan lewat useSearchParams: halaman ini dirender
+   * lebih dulu di server tanpa alamat, dan nilai awal yang berbeda antara
+   * server dan peramban menghasilkan galat hidrasi pada kotak pencarian.
+   */
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const g = p.get("gudang");
+    const c = p.get("cari");
+    if (g) setWarehouseId(g);
+    if (c) {
+      setCari(c);
+      setCariKirim(c.trim());
+    }
+  }, []);
+
   // Mengganti saringan mengembalikan ke halaman pertama. Tanpa ini, menyaring
   // dari 40 baris menjadi 3 sementara pembaca berada di halaman 2 menghasilkan
   // layar kosong yang terbaca seolah tidak ada hasilnya.
