@@ -18,14 +18,15 @@
  * belaka: apa pun yang dirender halaman INI boleh berubah saat Period diganti,
  * dan apa pun yang tidak boleh berubah tidak lagi berada di sini.
  *
- * EMPAT BLOK, DAN TIDAK LEBIH:
+ * LIMA BLOK, DAN TIDAK LEBIH:
  *
- *   1. Banner status  kesimpulan tentang stok dalam satu kalimat, dengan stok
- *                     saat ini dan perkiraan kebutuhan sebagai penopangnya.
- *                     CTA kecil ke /reorder mengakui pertanyaan berikutnya
- *                     tanpa menjawabnya di sini.
- *   2. Empat kartu    kebutuhan periode, laju pemakaian, sisa stok, dan
- *                     perkiraan kapan stok habis.
+ *   1. Banner status  cukup atau tidak untuk periode ini, dan kurang berapa.
+ *                     CTA kecil ke /reorder untuk jumlah pesanannya.
+ *   2. Tiga kartu     stok saat ini, kebutuhan periode, dan selisihnya --
+ *                     "perlu ditambah" bila kurang, "sisa stok" bila cukup.
+ *   2b. Tabel harian  pemakaian per hari dalam BILANGAN BULAT (per minggu di
+ *                     atas 14 hari). Menggantikan kartu rata-rata pemakaian,
+ *                     yang pecahannya ("0,3 PCS/hari") membingungkan.
  *   3. Grafik         stok historis, proyeksi, garis hari ini, garis titik
  *                     pesan sebagai referensi visual -- bukan tempat menentukan
  *                     jumlah pesanan.
@@ -67,6 +68,7 @@ import {
   ForecastChart,
   ForecastSummary,
   ForecastUnavailable,
+  RincianHarian,
 } from "@/components/forecast-sections";
 import {
   PemilihBarang,
@@ -146,6 +148,7 @@ export default function ForecastingPage() {
                   pertanyaan yang halaman ini jawab. */}
               <BannerPrakiraan data={data} />
               <ForecastSummary data={data} />
+              <RincianHarian data={data} />
               <ForecastChart data={data} />
               <ForecastCalculationDetail data={data} />
             </>

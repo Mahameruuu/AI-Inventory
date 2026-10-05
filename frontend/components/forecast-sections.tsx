@@ -3,10 +3,12 @@
 /**
  * Blok-blok halaman Prakiraan / Forecasting page blocks.
  *
- * SATU PERTANYAAN: apa yang kemungkinan terjadi pada stok barang ini. Bukan
- * "berapa yang harus dibeli" -- itu pertanyaan halaman Pemesanan Ulang, dan
- * tidak ada satu pun jumlah pesanan, titik pesan efektif, atau status
- * pengadaan yang dirender dari berkas ini.
+ * SATU PERTANYAAN: cukupkah stok barang ini untuk periode yang dipilih, dan
+ * bila tidak, kurang berapa. Sejak 6 Oktober 2026 kekurangan itu DICETAK di
+ * sini (kebutuhan periode dikurangi stok) atas permintaan pengguna. Jumlah
+ * PESANAN tetap milik halaman Pemesanan Ulang: tidak ada titik pesan efektif,
+ * stok pengaman yang ikut dihitung, atau status pengadaan yang dirender dari
+ * berkas ini.
  *
  * Konsekuensinya sengaja: apa pun yang dirender file ini BOLEH berubah ketika
  * Periode diganti. Satu-satunya kekecualian dinyatakan terang-terangan --
@@ -14,110 +16,110 @@
  * time dan diberi keterangan bahwa ia tidak ikut bergerak.
  *
  * Urutan bloknya mengikuti urutan orang membaca: kesimpulan (banner), angka
- * (empat kartu), bentuknya sepanjang waktu (grafik), lalu asal-usulnya (panel
- * detail yang tertutup). Pembaca yang berhenti di baris pertama tetap membawa
+ * (tiga kartu: stok, kebutuhan, selisihnya), pemakaian hari demi hari (tabel
+ * bilangan bulat), bentuknya sepanjang waktu (grafik), lalu asal-usulnya
+ * (panel detail yang tertutup). Pembaca yang berhenti di baris pertama tetap membawa
  * pulang jawaban yang benar.
  */
 
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, LineChart, TrendingUp } from "lucide-react";
+import { AlertTriangle, ArrowRight, CalendarDays, LineChart, TrendingUp } from "lucide-react";
 
 import { StockForecastChart } from "@/components/charts";
 import { Blok, KartuKeputusan, angka } from "@/components/forecast-ui";
-import { Card, Insight, Section, Table, Td } from "@/components/ui";
+import { Card, Insight, Section, Table, Td, Th } from "@/components/ui";
 import { Forecast } from "@/lib/forecast-types";
 import { useT } from "@/lib/i18n";
-import { num } from "@/lib/format";
+import { dateLabel, num, shortDate } from "@/lib/format";
 
 /* ------------------------------------------------------------------ */
-/* Banner status prakiraan                                             */
+/* Ringkasan periode: stok, kebutuhan, dan selisihnya                  */
 /* ------------------------------------------------------------------ */
 
 /**
- * Kondisi prakiraan dalam satu kalimat, dengan dua angka penopangnya.
+ * Tiga angka yang menopang seluruh halaman, dibaca dari SATU tempat.
  *
- * MENGGANTIKAN BLOK CERITA. Cerita disusun backend dari lapisan KEPUTUSAN:
- * judulnya berbunyi "Pesan 3 Meter" dan paragraf terakhirnya mengulang
- * `order_qty_reason`. Kalimat itu benar, tetapi ia menjawab pertanyaan halaman
- * sebelah -- dan begitu ia tercetak di sini, halaman Prakiraan kembali menjadi
- * layar keputusan pembelian, persis keadaan yang pemisahan kedua halaman ini
- * dibuat untuk mengakhiri. Yang tersisa di sini hanya kesimpulan tentang
- * STOK: kapan ia habis, atau kapan ia menyentuh titik pesan.
+ * Stok, kebutuhan, dan selisihnya harus genap di mata pembacanya: "stok 40,
+ * butuh 55, kurang 15". Ketiganya karena itu diambil dari `daily_plan`, yang
+ * membulatkan pemakaian kumulatif sekali lalu menurunkan sisa dan kekurangan
+ * dari bilangan bulat yang sama. Tiga field `*_int` yang dibulatkan
+ * sendiri-sendiri bisa berselisih satu ("40, 55, kurang 14"), dan selisih
+ * satu itulah yang membuat orang berhenti mempercayai seluruh layar.
  *
- * TIGA KEADAAN, DIURUT DARI YANG PALING MENDESAK. Ketiganya dibaca dari
- * lapisan prakiraan saja, bukan dari `action_status`:
+ * Basis stoknya stok TERSEDIA -- yang sudah dicadangkan keluar tidak ikut
+ * menutup kebutuhan baru. Tanpa stok tercadang ia sama dengan stok di rak.
+ */
+function ringkasPeriode(data: Forecast) {
+  const rencana = data.daily_plan ?? [];
+  const akhir = rencana.length ? rencana[rencana.length - 1] : null;
+  const kurang = akhir?.shortage_int ?? 0;
+  // Hari pertama stok menyentuh nol; hanya berarti bila memang ada pemakaian.
+  const habis = rencana.find((b) => b.stock_int <= 0 && b.usage_int + b.shortage_int > 0) ?? null;
+  return {
+    rencana,
+    stok: data.available_stock_int,
+    butuh: data.forecast_usage_int ?? 0,
+    sisa: akhir ? akhir.stock_int : data.available_stock_int,
+    kurang,
+    habis,
+  };
+}
+
+/**
+ * Kesimpulan dalam satu kalimat: cukup atau tidak, dan kurang berapa.
  *
- *   habis        `days_until_stockout` terisi -- proyeksi menyentuh nol di
- *                dalam periode yang dipilih.
- *   titik pesan  `days_until_reorder_point` terisi -- proyeksi memotong garis
- *                titik pesan, tetapi belum sampai nol.
- *   cukup        tidak keduanya.
+ * Kalimatnya menjawab pertanyaan yang benar-benar diajukan orang gudang --
+ * "stok saya cukup tidak untuk {n} hari ini?" -- dan bila tidak, langsung
+ * menyebut jumlah yang kurang. Angka penopangnya ada pada tiga kartu tepat di
+ * bawahnya, jadi tidak diulang di sini.
  *
- * Keduanya DIBATASI PANJANG PERIODE: kosong berarti "tidak terjadi di dalam
- * {n} hari ini", bukan "tidak akan pernah terjadi". Karena itu kalimat amannya
- * menyebut periodenya secara eksplisit ("sepanjang 90 hari ke depan") dan
- * tidak pernah berbunyi "stok aman" tanpa batas waktu.
- *
- * CTA-nya kecil dan satu-satunya. Ia mengakui bahwa pertanyaan berikutnya
- * memang "lalu pesan berapa", tanpa menjawabnya di sini.
+ * Selalu menyebut periodenya: "cukup" tanpa batas waktu adalah janji yang
+ * tidak pernah dibuat prakiraan.
  */
 export function BannerPrakiraan({ data }: { data: Forecast }) {
   const t = useT();
   const satuan = data.item.unit_code ?? "";
-
-  const habis = data.days_until_stockout;
-  const menyentuh = data.days_until_reorder_point;
-  const adaLaju = Boolean(data.average_daily_usage);
+  const n = data.forecast_days;
+  const r = ringkasPeriode(data);
 
   const nada: "neutral" | "warning" | "critical" =
-    habis !== null ? "critical" : menyentuh !== null ? "warning" : "neutral";
+    r.kurang > 0 ? "critical" : r.habis ? "warning" : "neutral";
 
   const judul =
-    habis !== null
-      ? t("fc.banner.stockout", { n: num(habis) })
-      : menyentuh !== null
-        ? t("fc.banner.rop", { n: num(menyentuh) })
-        : adaLaju
-          ? t("fc.banner.safe", { n: data.forecast_days })
-          : t("fc.banner.idle");
+    r.kurang > 0
+      ? t("fc.banner.short", { n, q: angka(r.kurang, satuan) })
+      : r.habis
+        ? t("fc.banner.exact", { n })
+        : r.butuh > 0
+          ? t("fc.banner.enough", { n, q: angka(r.sisa, satuan) })
+          : t("fc.banner.none", { n });
 
   return (
     <Insight tone={nada}>
       <p className="font-display t-lead font-bold leading-snug text-ink">{judul}</p>
 
-      {/* Dua angka penopang, bukan seluruh kartu diulang. Yang satu keadaan
-          sekarang, yang lain kebutuhan sepanjang periode -- selisih keduanya
-          persis yang membuat kalimat di atas berbunyi seperti itu. */}
-      <p className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1 t-body leading-relaxed text-ink-2">
-        <span>
-          {t("fc.banner.stock")}:{" "}
-          <span className="tnum font-semibold text-ink">
-            {angka(data.current_stock_int, satuan)}
-          </span>
-        </span>
-        <span>
-          {t("fc.banner.need", { n: data.forecast_days })}:{" "}
-          <span className="tnum font-semibold text-ink">
-            {angka(data.forecast_usage_int, satuan)}
-          </span>
-        </span>
-      </p>
+      {r.habis ? (
+        <p className="mt-2 t-body leading-relaxed text-ink-2">
+          {t("fc.banner.runout", { d: dateLabel(r.habis.date), h: r.habis.day })}
+        </p>
+      ) : null}
 
-      {/* Catatan mutu histori HANYA saat histori itu benar-benar membatasi.
-          Kalimatnya menyebut tiga angka sekaligus dan panjangnya nyaris
-          sebaris penuh; dicetak pada setiap barang ia menjadi hiasan tetap
-          yang berhenti dibaca justru sebelum barang yang memerlukannya tiba.
-          Pada mutu yang memadai, kartu grafik di bawah sudah menyebutkannya
-          dengan cara yang jauh lebih ringkas ("Histori 90 hari · mutu data
-          tinggi"), dan panel detail memuat alasan lengkapnya.
-
-          Kembaran LAPISAN PRAKIRAAN yang dipakai, bukan confidence_note milik
-          lapisan reorder: historinya satu dan sama, tetapi daftar angka yang
-          disebutnya harus angka yang benar-benar tercetak di halaman ini. */}
+      {/* Catatan mutu histori HANYA saat histori itu benar-benar membatasi;
+          dicetak pada setiap barang ia menjadi hiasan tetap yang berhenti
+          dibaca justru sebelum barang yang memerlukannya tiba. */}
       {data.low_confidence_estimate && data.confidence_note_forecast ? (
         <p className="mt-2 t-body leading-relaxed text-ink-2">
           {data.confidence_note_forecast}
         </p>
+      ) : null}
+
+      {/* Angka "kurang" di atas murni selisih kebutuhan periode dan stok.
+          Jumlah pesanan di halaman Pemesanan Ulang dihitung mesin lain yang
+          ikut menimbang masa tunggu dan stok pengaman, jadi boleh lebih besar
+          -- dan dikatakan terang-terangan supaya dua angka itu tidak dibaca
+          sebagai dua jawaban yang berselisih. */}
+      {r.kurang > 0 ? (
+        <p className="mt-2 text-xs leading-relaxed text-muted">{t("fc.banner.order_note")}</p>
       ) : null}
 
       <Link
@@ -132,115 +134,181 @@ export function BannerPrakiraan({ data }: { data: Forecast }) {
 }
 
 /**
- * Ambang di mana laju harian masih layak dicetak sebagai pecahan.
+ * Tiga kartu: stok saat ini, kebutuhan periode, dan selisihnya.
  *
- * Laju harian TIDAK boleh dicetak sebagai pecahan tanpa syarat. Pada barang
- * yang keluar sekali dalam dua bulan, "0,016 PCS/hari" dibulatkan menjadi
- * "0,0 PCS/hari" -- rapi, dan salah: kartunya lalu berbunyi nol untuk barang
- * yang jelas terpakai. Di atas ambang ini satu desimal masih membawa isi
- * ("0,1 METER/hari"); di bawahnya kartu jatuh ke label frekuensi, yang
- * membalik pertanyaannya menjadi "±1 PCS per 62 hari" -- tetap benar pada
- * laju serendah apa pun.
+ * Kartu ketiga BERGANTI WUJUD menurut jawabannya. Saat stok tidak cukup ia
+ * berbunyi "Perlu ditambah" dan diberi garis aksen; saat cukup ia berbunyi
+ * "Sisa stok". Satu kartu, bukan dua: keduanya adalah selisih yang sama
+ * dilihat dari dua sisi, dan mencetak "Kurang: 0" di sebelah "Sisa: 25"
+ * hanya menambah angka yang harus dibaca tanpa menambah yang diketahui.
  *
- * 0,05 karena itulah titik pembulatan satu desimal: di bawahnya hasilnya
- * "0,0", di atasnya paling kecil "0,1".
- */
-const AMBANG_LAJU_PECAHAN = 0.05;
-
-/**
- * Prediksi Kebutuhan / Demand Prediction.
- *
- * EMPAT KARTU, dan keempatnya menjawab pertanyaan yang sama dari empat arah:
- * berapa yang akan terpakai, seberapa cepat terpakainya, berapa yang tersisa,
- * dan kapan habisnya. Tidak satu pun menyebut jumlah yang harus dibeli.
- *
- * Ketiga kartu pertama berpatokan periode yang dipilih. Kartu keempat --
- * perkiraan stok habis -- juga: `days_until_stockout` dihitung DI DALAM
- * horizon prakiraan dan kosong bila stok tidak menyentuh nol sepanjang itu.
- * Kosong karena itu TIDAK dicetak sebagai "—" seolah tidak terhitung,
- * melainkan sebagai "> 90 hari": yang diketahui bukan ketiadaan jawaban,
- * melainkan bahwa jawabannya berada di luar jendela yang sedang dilihat.
- *
- * Pernah ada kartu "Potensi kekurangan" di posisi keempat, yang dibuang karena
- * hampir selalu berbunyi "Tidak ada" pada periode bawaan 7 hari. Kartu habis
- * stok tidak mengulanginya: ia menjawab KAPAN, bukan BERAPA, dan itulah satu-
- * satunya bentuk pertanyaan yang halaman ini memang berhak menjawab.
+ * TIDAK ADA KARTU RATA-RATA PEMAKAIAN. "0,3 PCS/hari" benar secara hitungan
+ * dan tidak terbaca oleh siapa pun -- tidak ada yang mengambil sepertiga
+ * barang. Pemakaian per hari kini dijawab tabel di bawah, dalam bilangan
+ * bulat, hari demi hari.
  */
 export function ForecastSummary({ data }: { data: Forecast }) {
   const t = useT();
   const satuan = data.item.unit_code ?? "";
-
-  /* --- kartu 2: laju pemakaian --- */
-  const laju = data.average_daily_usage;
-  const lajuPecahan = laju !== null && laju >= AMBANG_LAJU_PECAHAN;
-  // Label frekuensi backend dipakai sebagai keterangan saat lajunya di bawah
-  // satu unit per hari: di situlah "±1 METER per 10 hari" benar-benar
-  // menambah sesuatu yang tidak terbaca dari "0,1 METER/hari". Di atas satu
-  // unit per hari ia hanya mengulang angka yang sama dengan pembulatan lain,
-  // dan dua angka mirip berdampingan membuat pembaca memeriksa alih-alih
-  // membaca.
-  const lajuDiBawahSatu = laju !== null && laju > 0 && laju < 1;
-  const nilaiLaju = lajuPecahan
-    ? t("fc.need.per_day", { v: num(laju, 1), u: satuan })
-    : data.usage_frequency_label;
-  const detailLaju = !lajuPecahan
-    ? data.usage_frequency_detail
-    : lajuDiBawahSatu
-      ? `${data.usage_frequency_label} ${data.usage_frequency_detail}`.trim()
-      : t("fc.need.rate_detail", { n: data.data_quality.history_days });
-
-  /* --- kartu 4: perkiraan stok habis --- */
-  const habis = data.days_until_stockout;
-  const adaLaju = Boolean(laju);
-  const nilaiHabis =
-    habis !== null
-      ? t("fc.need.days_pm", { n: num(habis) })
-      : adaLaju
-        ? t("fc.need.stockout_beyond", { n: data.forecast_days })
-        : "—";
-  const detailHabis =
-    habis !== null
-      ? t("fc.need.stockout_detail")
-      : adaLaju
-        ? t("fc.need.stockout_beyond_detail", { n: data.forecast_days })
-        : t("fc.need.stockout_idle_detail");
+  const n = data.forecast_days;
+  const r = ringkasPeriode(data);
+  const hitungan = t("fc.need.math", {
+    a: num(r.butuh),
+    b: num(r.stok),
+  });
 
   return (
-    <Blok
-      Ikon={TrendingUp}
-      judul={t("fc.need.title")}
-      keterangan={t("fc.need.note", { n: data.forecast_days })}
-    >
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <Blok Ikon={TrendingUp} judul={t("fc.need.title")} keterangan={t("fc.need.note", { n })}>
+      <div className="grid gap-3 sm:grid-cols-3">
         <KartuKeputusan
-          label={t("fc.need.usage", { n: data.forecast_days })}
-          nilai={angka(data.forecast_usage_int, satuan)}
+          label={t("fc.banner.stock")}
+          nilai={angka(r.stok, satuan)}
+          detail={
+            data.reserved_stock_int > 0
+              ? t("fc.need.stock_reserved", {
+                  a: angka(data.current_stock_int, satuan),
+                  b: angka(data.reserved_stock_int, satuan),
+                })
+              : t("fc.need.stock_detail")
+          }
+        />
+        <KartuKeputusan
+          label={t("fc.need.usage", { n })}
+          nilai={angka(r.butuh, satuan)}
           detail={t("fc.need.usage_detail")}
           aksen="var(--brand)"
         />
-        <KartuKeputusan label={t("fc.need.rate")} nilai={nilaiLaju} detail={detailLaju} />
-        <KartuKeputusan
-          label={t("fc.need.left")}
-          nilai={angka(data.expected_stock_int, satuan)}
-          detail={t("fc.need.left_detail", { n: data.forecast_days })}
-        />
-        {/* Garis aksen HANYA saat stok benar-benar habis di dalam periode.
-            "> 90 hari" adalah kabar baik, dan memberinya warna status akan
-            membuat kartu yang tenang terbaca segenting kartu yang tidak.
-
-            KETERANGANNYA TIDAK IKUT DIMERAHKAN. Kalimat "dihitung dari hari
-            ini pada laju pemakaian saat ini" tidak membawa kabar buruk apa
-            pun -- ia menerangkan cara menghitung. Dicat merah, kartu ini
-            terbaca seperti galat, dan merahnya berhenti berarti "genting"
-            karena dipakai untuk dua hal sekaligus. Yang genting adalah
-            angkanya, dan itu sudah ditandai garis aksen di tepi atas. */}
-        <KartuKeputusan
-          label={t("fc.need.stockout")}
-          nilai={nilaiHabis}
-          detail={detailHabis}
-          aksen={habis !== null ? "var(--status-critical)" : undefined}
-        />
+        {r.kurang > 0 ? (
+          <KartuKeputusan
+            label={t("fc.need.short")}
+            nilai={angka(r.kurang, satuan)}
+            detail={hitungan}
+            aksen="var(--status-critical)"
+          />
+        ) : (
+          <KartuKeputusan
+            label={t("fc.need.left_after", { n })}
+            nilai={angka(r.sisa, satuan)}
+            detail={t("fc.need.left_math", { a: num(r.stok), b: num(r.butuh) })}
+          />
+        )}
       </div>
+    </Blok>
+  );
+}
+
+/**
+ * Di atas berapa hari tabel beralih dari per hari ke per minggu.
+ *
+ * Empat belas baris masih terbaca sekali pandang; sembilan puluh tidak.
+ * Di atas ambang ini baris dikelompokkan per tujuh hari -- tetap bilangan
+ * bulat, tetap berjumlah sama dengan kartu kebutuhan.
+ */
+const MAKS_BARIS_HARIAN = 14;
+
+/**
+ * Pemakaian per Hari / Daily usage.
+ *
+ * MENGGANTIKAN KARTU RATA-RATA. Tiap baris menyebut berapa yang diperkirakan
+ * terpakai pada hari itu dan berapa stok yang tersisa sesudahnya, seluruhnya
+ * bilangan bulat. Barang yang jarang keluar terbaca apa adanya -- 0, 0, 1,
+ * 0 -- alih-alih "0,3 per hari".
+ *
+ * Baris sejak stok habis ditandai, dan kolom sisanya berganti menyebut
+ * kekurangan yang sudah menumpuk: dari situlah angka "perlu ditambah" pada
+ * kartu berasal, dan pembaca dapat melihat sendiri hari ke berapa ia mulai.
+ */
+export function RincianHarian({ data }: { data: Forecast }) {
+  const t = useT();
+  const satuan = data.item.unit_code ?? "";
+  const rencana = data.daily_plan ?? [];
+  if (!rencana.length) return null;
+
+  const perMinggu = rencana.length > MAKS_BARIS_HARIAN;
+  const baris: { kunci: string; label: string; pakai: number; sisa: number; kurang: number }[] = [];
+  if (perMinggu) {
+    for (let i = 0; i < rencana.length; i += 7) {
+      const potong = rencana.slice(i, i + 7);
+      const awal = potong[0];
+      const ujung = potong[potong.length - 1];
+      baris.push({
+        kunci: awal.date,
+        label:
+          potong.length > 1
+            ? `${shortDate(awal.date)} – ${shortDate(ujung.date)}`
+            : shortDate(awal.date),
+        pakai: potong.reduce((s, b) => s + b.usage_int, 0),
+        sisa: ujung.stock_int,
+        kurang: ujung.shortage_int,
+      });
+    }
+  } else {
+    for (const b of rencana) {
+      baris.push({
+        kunci: b.date,
+        label: shortDate(b.date),
+        pakai: b.usage_int,
+        sisa: b.stock_int,
+        kurang: b.shortage_int,
+      });
+    }
+  }
+
+  return (
+    <Blok
+      Ikon={CalendarDays}
+      judul={t(perMinggu ? "fc.daily.title_week" : "fc.daily.title")}
+      keterangan={t(perMinggu ? "fc.daily.note_week" : "fc.daily.note")}
+    >
+      <Card>
+        <Table lekat tinggiMaks="26rem">
+          <thead>
+            <tr>
+              <Th>{t(perMinggu ? "fc.daily.col_week" : "fc.daily.col_date")}</Th>
+              <Th align="right">{t("fc.daily.col_usage", { u: satuan })}</Th>
+              <Th align="right">{t("fc.daily.col_left", { u: satuan })}</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {baris.map((b) => (
+              <tr key={b.kunci}>
+                <Td>{b.label}</Td>
+                <Td align="right" numeric>
+                  <span className={b.pakai === 0 ? "text-muted" : "font-semibold text-ink"}>
+                    {num(b.pakai)}
+                  </span>
+                </Td>
+                <Td align="right" numeric>
+                  {b.kurang > 0 ? (
+                    <span className="font-semibold" style={{ color: "var(--status-critical)" }}>
+                      {t("fc.daily.short", { q: num(b.kurang) })}
+                    </span>
+                  ) : b.sisa === 0 ? (
+                    <span className="font-semibold" style={{ color: "var(--status-serious)" }}>
+                      {t("fc.daily.empty")}
+                    </span>
+                  ) : (
+                    num(b.sisa)
+                  )}
+                </Td>
+              </tr>
+            ))}
+            <tr>
+              <Td>
+                <span className="font-semibold text-ink">
+                  {t("fc.daily.total", { n: data.forecast_days })}
+                </span>
+              </Td>
+              <Td align="right" numeric>
+                <span className="font-semibold text-ink">
+                  {num(baris.reduce((s, b) => s + b.pakai, 0))}
+                </span>
+              </Td>
+              <Td align="right">{""}</Td>
+            </tr>
+          </tbody>
+        </Table>
+      </Card>
     </Blok>
   );
 }

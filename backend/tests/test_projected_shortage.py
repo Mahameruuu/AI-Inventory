@@ -137,3 +137,33 @@ class TestFieldLamaTidakBerubah:
         cukup = _jalankan(stok=400, keluar_harian=[100.0] * 20, hari_prakiraan=10)
         # Cabang "belum cukup" tidak membawa kunci metode; selebihnya sama.
         assert set(cukup) - set(kurang) == {"method", "baseline_daily_outflow"}
+
+
+# ==========================================================================
+# 7. Rincian per hari dalam bilangan bulat
+# ==========================================================================
+
+class TestRencanaHarian:
+
+    def test_pecahan_harian_menjadi_bilangan_bulat_yang_jumlahnya_tetap(self):
+        # 0,3 per hari selama 10 hari = 3; tidak boleh terbaca nol tiap hari.
+        h = _jalankan(stok=10, keluar_harian=[0.3] * 20,
+                      hari_prakiraan=10, ramalan=[0.3] * 10)
+        pakai = [b["usage_int"] for b in h["daily_plan"]]
+        assert len(pakai) == 10
+        assert all(isinstance(x, int) and x >= 0 for x in pakai)
+        assert sum(pakai) == 3
+        assert h["daily_plan"][-1]["stock_int"] == 7
+        assert h["daily_plan"][-1]["shortage_int"] == 0
+
+    def test_kebutuhan_tidak_dipangkas_saat_stok_habis(self):
+        h = _jalankan(stok=25, keluar_harian=[10.0] * 20,
+                      hari_prakiraan=5, ramalan=[10.0] * 5)
+        rencana = h["daily_plan"]
+        assert [b["usage_int"] for b in rencana] == [10] * 5
+        assert [b["stock_int"] for b in rencana] == [15, 5, 0, 0, 0]
+        assert rencana[-1]["shortage_int"] == 25
+
+    def test_kosong_saat_histori_belum_cukup(self):
+        h = _jalankan(stok=400, keluar_harian=[5.0], hari_prakiraan=10)
+        assert h["daily_plan"] == []

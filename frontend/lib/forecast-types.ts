@@ -252,6 +252,13 @@ export interface Forecast {
   days_until_stockout: number | null;
   historical: { date: string; stock: number }[];
   forecast: { date: string; stock: number }[];
+  /**
+   * Pemakaian PER HARI dalam bilangan bulat. Jumlah `usage_int` tepat sama
+   * dengan forecast_usage_int; baris terakhir memuat sisa stok dan kekurangan
+   * pada akhir periode. Basis stoknya available_stock_int. Kosong bila
+   * histori belum cukup.
+   */
+  daily_plan: { day: number; date: string; usage_int: number; stock_int: number; shortage_int: number }[];
   reorder_crossing_date: string | null;
   historical_period: { days: number; start: string | null; end: string };
   baseline_daily_usage: number | null;

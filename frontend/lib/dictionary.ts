@@ -1100,8 +1100,8 @@ export const DICT: Record<string, Entry> = {
   },
   "fc.need.title": { id: "Prediksi Kebutuhan", en: "Demand Prediction" },
   "fc.need.note": {
-    id: "Perkiraan untuk {n} hari ke depan. Seluruh angka mengikuti periode yang dipilih dan hanya menjawab apa yang mungkin terjadi pada stok — berapa yang harus dibeli dijawab halaman Pemesanan Ulang.",
-    en: "An estimate for the next {n} days. Every figure follows the selected period and only answers what is likely to happen to stock — how much to buy is answered by the Reorder page.",
+    id: "Stok saat ini dibandingkan dengan perkiraan kebutuhan {n} hari ke depan. Seluruh angka mengikuti periode yang dipilih.",
+    en: "Current stock compared with estimated demand for the next {n} days. Every figure follows the selected period.",
   },
   "fc.need.usage": { id: "Kebutuhan {n} hari", en: "{n}-day demand" },
   "fc.need.usage_detail": {
@@ -1149,9 +1149,59 @@ export const DICT: Record<string, Entry> = {
     id: "Belum ada pemakaian tercatat — stok diperkirakan tidak bergerak",
     en: "No consumption on record — stock is projected to stay flat",
   },
+  "fc.banner.short": {
+    id: "Stok tidak cukup untuk {n} hari ke depan — kurang {q}",
+    en: "Stock will not cover the next {n} days — short by {q}",
+  },
+  "fc.banner.exact": {
+    id: "Stok hanya pas untuk {n} hari ke depan — tidak ada sisa",
+    en: "Stock only just covers the next {n} days — nothing left over",
+  },
+  "fc.banner.enough": {
+    id: "Stok cukup untuk {n} hari ke depan — masih tersisa {q}",
+    en: "Stock covers the next {n} days — {q} left over",
+  },
+  "fc.banner.none": {
+    id: "Tidak ada pemakaian yang diperkirakan dalam {n} hari ke depan",
+    en: "No consumption is expected in the next {n} days",
+  },
+  "fc.banner.runout": {
+    id: "Stok diperkirakan habis pada {d} (hari ke-{h}).",
+    en: "Stock is projected to run out on {d} (day {h}).",
+  },
+  "fc.banner.order_note": {
+    id: "Angka ini selisih kebutuhan dan stok saja. Jumlah pesanan di halaman Pemesanan Ulang bisa lebih besar karena ikut menghitung masa tunggu dan stok pengaman.",
+    en: "This is only demand minus stock. The order quantity on the Reorder page can be larger because it also accounts for lead time and safety stock.",
+  },
+  "fc.need.stock_detail": { id: "Yang tersedia di gudang hari ini", en: "Available in the warehouse today" },
+  "fc.need.stock_reserved": {
+    id: "Di rak {a}, sudah dicadangkan {b}",
+    en: "{a} on the shelf, {b} already reserved",
+  },
+  "fc.need.short": { id: "Perlu ditambah", en: "Needs to be added" },
+  "fc.need.math": { id: "Kebutuhan {a} − stok {b}", en: "Demand {a} − stock {b}" },
+  "fc.need.left_after": { id: "Sisa stok setelah {n} hari", en: "Stock left after {n} days" },
+  "fc.need.left_math": { id: "Stok {a} − kebutuhan {b}", en: "Stock {a} − demand {b}" },
+  "fc.daily.title": { id: "Pemakaian per Hari", en: "Daily Usage" },
+  "fc.daily.title_week": { id: "Pemakaian per Minggu", en: "Weekly Usage" },
+  "fc.daily.note": {
+    id: "Perkiraan jumlah yang terpakai tiap hari dan stok yang tersisa sesudahnya. Semua angka bilangan bulat; hari bertanda 0 berarti tidak ada pemakaian yang diperkirakan.",
+    en: "Estimated quantity used each day and the stock left afterwards. Every figure is a whole number; a day showing 0 means no consumption is expected.",
+  },
+  "fc.daily.note_week": {
+    id: "Periode di atas 14 hari diringkas per minggu: jumlah yang diperkirakan terpakai dan stok yang tersisa di akhir minggu itu. Semua angka bilangan bulat.",
+    en: "Periods longer than 14 days are summarised by week: the quantity expected to be used and the stock left at the end of that week. Every figure is a whole number.",
+  },
+  "fc.daily.col_date": { id: "Tanggal", en: "Date" },
+  "fc.daily.col_week": { id: "Minggu", en: "Week" },
+  "fc.daily.col_usage": { id: "Perkiraan pemakaian ({u})", en: "Expected usage ({u})" },
+  "fc.daily.col_left": { id: "Sisa stok ({u})", en: "Stock left ({u})" },
+  "fc.daily.short": { id: "Kurang {q}", en: "Short {q}" },
+  "fc.daily.empty": { id: "Habis", en: "Out" },
+  "fc.daily.total": { id: "Total {n} hari", en: "{n}-day total" },
   "fc.banner.stock": { id: "Stok saat ini", en: "Current stock" },
   "fc.banner.need": { id: "Perkiraan kebutuhan {n} hari", en: "{n}-day demand estimate" },
-  "fc.banner.cta": { id: "Lihat rekomendasi reorder", en: "See the reorder recommendation" },
+  "fc.banner.cta": { id: "Lihat saran pemesanan", en: "See the order suggestion" },
   "fc.proj.title": { id: "Proyeksi Stok", en: "Stock Projection" },
   "fc.proj.note": {
     id: "Garis penuh adalah stok aktual, garis putus-putus adalah proyeksi hasil prakiraan. Garis titik pesan hanya referensi visual — keputusan pemesanan ada di halaman Pemesanan Ulang.",

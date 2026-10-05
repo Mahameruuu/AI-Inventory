@@ -242,6 +242,13 @@ def forecast(
         "days_until_stockout": h["days_until_stockout"],
         "historical": h["historical_data"],
         "forecast": h["forecast_data"],
+        # Pemakaian per hari dalam bilangan bulat. Jumlah kolom pemakaiannya
+        # tepat sama dengan forecast_usage_int, dan baris terakhirnya memuat
+        # sisa stok serta kekurangan pada akhir periode -- layar membaca
+        # ketiganya dari sini supaya "stok - kebutuhan = kurang" selalu genap
+        # di mata pembacanya, tanpa selisih satu akibat tiga pembulatan
+        # terpisah.
+        "daily_plan": h.get("daily_plan", []),
         "data_quality": h["data_quality"],
         "requirements": h["requirements"],
         "method": h["method"],

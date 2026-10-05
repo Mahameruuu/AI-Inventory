@@ -71,6 +71,49 @@ def _f_laju(v) -> float:
     return float(round(_d(v), 6))
 
 
+def _bulat(v) -> int:
+    """Setengah dibulatkan ke atas -- aturan yang sama dengan decision.bulat."""
+    return int((_d(v) + Decimal("0.5")).to_integral_value(rounding="ROUND_FLOOR"))
+
+
+def rencana_harian(as_of: date, tersedia: Decimal, harian: list[Decimal]) -> list[dict]:
+    """
+    Pemakaian PER HARI dalam bilangan bulat, beserta sisa stoknya.
+
+    Ramalan harian hampir selalu pecahan ("0,3 PCS/hari"), dan pecahan itulah
+    yang membingungkan pembacanya: tidak ada yang mengambil sepertiga baut.
+    Membulatkan tiap hari sendiri-sendiri bukan jawabannya -- 0,3 menjadi nol
+    setiap hari, dan barang yang jelas terpakai lalu terbaca tidak pernah
+    keluar. Yang dibulatkan di sini adalah pemakaian KUMULATIF; pemakaian satu
+    hari adalah selisih dua kumulatif bulat yang berurutan. Laju 0,3 per hari
+    lalu terbaca 0, 1, 0, 0, 1, ... -- bilangan bulat tiap harinya, dan
+    jumlahnya tepat sama dengan kebutuhan periode yang tercetak di kartu.
+
+    Basisnya stok TERSEDIA, sama dengan projected_shortage: barang yang sudah
+    dikomitmenkan keluar tidak ikut menutup kebutuhan baru. Pemakaian TIDAK
+    dipangkas saat stok habis -- kolomnya menyatakan kebutuhan, dan kebutuhan
+    tetap ada walau raknya kosong; hanya sisa stok yang berhenti di nol.
+    """
+    stok_bulat = _bulat(tersedia)
+    baris: list[dict] = []
+    kumulatif = Decimal("0")
+    bulat_lalu = 0
+    for i, pakai in enumerate(harian, start=1):
+        kumulatif += pakai
+        # Tidak pernah mundur, walau model sesekali meramal nilai negatif.
+        bulat_kini = max(bulat_lalu, _bulat(round(kumulatif, 3)))
+        baris.append({
+            "day": i,
+            "date": (as_of + timedelta(days=i)).isoformat(),
+            "usage_int": bulat_kini - bulat_lalu,
+            "stock_int": max(0, stok_bulat - bulat_kini),
+            # Berapa kebutuhan yang sudah tidak tertutup stok sampai hari ini.
+            "shortage_int": max(0, bulat_kini - stok_bulat),
+        })
+        bulat_lalu = bulat_kini
+    return baris
+
+
 def wma(nilai: list[Decimal]) -> Decimal:
     """
     Rata-rata bergerak berbobot. Hari terbaru berbobot paling besar.
@@ -229,6 +272,7 @@ def hitung(
             },
             "historical_data": historis,
             "forecast_data": [],
+            "daily_plan": [],
         }
 
     # --- prakiraan ---
@@ -352,4 +396,6 @@ def hitung(
         },
         "historical_data": historis,
         "forecast_data": prakiraan,
+        # Pemakaian per hari dalam bilangan bulat; lihat rencana_harian().
+        "daily_plan": rencana_harian(as_of, tersedia, harian),
     }
