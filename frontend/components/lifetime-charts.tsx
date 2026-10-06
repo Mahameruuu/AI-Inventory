@@ -5,16 +5,17 @@
  *
  * SATU PERTANYAAN, DUA SKALA: apakah komponen bertahan sesuai standarnya.
  *
- *   GrafikUmurPakai           seluruh komponen sekaligus -- umur aktual tiap
- *                             komponen terhadap standarnya sendiri.
+ *   GrafikUmurPakai           seluruh komponen sekaligus -- dua garis, umur
+ *                             standar dan umur aktual, pada satu sumbu hari.
  *   GrafikRiwayatPenggantian  satu komponen -- umur tiap unit yang pernah
  *                             terpasang, terhadap standar dan pita wajarnya.
  *
  * TIDAK ADA RUMUS DI SINI. Simpangan, batas pita, dan status seluruhnya datang
- * jadi dari /api/lifetime; berkas ini hanya menempatkannya pada sumbu.
+ * jadi dari /api/lifetime; berkas ini hanya menempatkannya pada sumbu (dan
+ * mengurutkan komponen menurut standarnya supaya garisnya terbaca).
  */
 
-import { Fragment, ReactNode } from "react";
+import { ReactNode } from "react";
 import {
   CartesianGrid,
   ComposedChart,
@@ -36,226 +37,194 @@ import { BarisUmurPakai, KejadianPenggantian, StatusUmur } from "@/lib/lifetime-
 /* Standar vs aktual, seluruh komponen                                 */
 /* ------------------------------------------------------------------ */
 
-/** Lebar sumbu paling sempit (±%): pita wajar tidak boleh memenuhi seluruh lajur. */
-const SUMBU_MIN = 30;
-/** Lebar sumbu paling lebar (±%); yang melampauinya ditempel di tepi. */
-const SUMBU_MAKS = 100;
+const SUMBU_TEKS = { fontSize: 11, fill: "var(--text-muted)" };
+const WARNA_STANDAR = "var(--text-muted)";
+const WARNA_AKTUAL = "var(--brand)";
+
+/** Di atas nisbah ini sumbu hari memakai skala logaritmik. */
+const NISBAH_LOG = 20;
+const NAMA_MAKS = 18;
 
 /**
- * Umur aktual tiap komponen sebagai SIMPANGAN dari standarnya sendiri.
+ * Dua garis pada satu sumbu hari: umur STANDAR dan umur AKTUAL tiap komponen.
  *
- * SUMBUNYA PERSEN, BUKAN HARI, dan itu yang membuat grafik ini mungkin: filter
- * oli berstandar 78 hari dan bantalan berstandar 20 tahun tidak dapat berbagi
- * sumbu hari -- yang pertama akan menjadi titik di tepi kiri. Terhadap
- * standarnya masing-masing keduanya sebanding: garis tengah adalah "tepat
- * sesuai standar" untuk setiap baris, kiri berarti diganti lebih cepat, kanan
- * berarti bertahan lebih lama. Angka harinya tetap tercetak di kanan baris.
+ * Komponen diurutkan menurut standarnya, dari yang terpendek. Garis standar
+ * karena itu selalu menanjak, dan yang dibaca adalah garis aktual terhadapnya:
+ * di bawah berarti diganti lebih cepat, di atas berarti bertahan lebih lama.
  *
- * Pita di tengah adalah rentang wajar (± toleransi). Titik di dalamnya tidak
- * menuntut apa-apa; yang layak dibaca adalah titik di luarnya, dan seberapa
- * jauh.
+ * SUMBUNYA LOGARITMIK bila rentangnya lebar. Filter berstandar 78 hari dan
+ * bantalan berstandar 20 tahun berbagi sumbu ini; pada skala linear yang
+ * pertama rata dengan dasar grafik dan selisihnya tak terlihat. Pada skala
+ * logaritmik jarak tegak yang sama berarti selisih PERSEN yang sama, di mana
+ * pun letaknya.
+ *
+ * Komponen tanpa standar tidak digambar (tidak ada yang dibandingkan); yang
+ * belum terukur hanya punya titik standar, dan garis aktualnya putus di sana.
  */
 export function GrafikUmurPakai({
   baris,
-  toleransi,
   terpilih,
   onPilih,
   rincian = null,
 }: {
-  /** isi yang terbuka tepat di bawah baris terpilih */
+  /** isi yang terbuka di bawah grafik untuk komponen terpilih */
   rincian?: ReactNode;
   baris: BarisUmurPakai[];
-  /** setengah lebar pita wajar, dalam persen (15 berarti ±15%) */
-  toleransi: number;
   terpilih: string | null;
   onPilih: (b: BarisUmurPakai) => void;
 }) {
   const t = useT();
 
-  const terjauh = Math.max(
-    0,
-    ...baris.map((b) => Math.abs(b.deviation_percentage ?? 0)),
-  );
-  const sumbu = Math.min(
-    SUMBU_MAKS,
-    Math.max(SUMBU_MIN, Math.ceil((terjauh + 5) / 10) * 10),
-  );
-  const pos = (persen: number) =>
-    50 + (Math.max(-sumbu, Math.min(sumbu, persen)) / sumbu) * 50;
-  const tik = [-sumbu, -sumbu / 2, 0, sumbu / 2, sumbu];
+  const kunci = (b: BarisUmurPakai) => `${b.item.id}-${b.warehouse.id}`;
+  const titik = baris
+    .filter((b) => b.expected_lifetime_days !== null)
+    .slice()
+    .sort((a, b) => a.expected_lifetime_days! - b.expected_lifetime_days!)
+    .map((b) => ({
+      kunci: kunci(b),
+      standar: b.expected_lifetime_days,
+      aktual: b.actual_lifetime_days,
+      b,
+    }));
+  const tanpaStandar = baris.length - titik.length;
+  const cari = (k: unknown) => titik.find((p) => p.kunci === k)?.b;
 
-  const kisi = "grid items-center gap-x-5 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)_9.5rem_9.5rem]";
+  const nilai = titik
+    .flatMap((p) => [p.standar, p.aktual])
+    .filter((v): v is number => v !== null && v > 0);
+  const min = nilai.length ? Math.min(...nilai) : 1;
+  const maks = nilai.length ? Math.max(...nilai) : 1;
+  const log = maks / min > NISBAH_LOG;
+  const tikLog: number[] = [];
+  if (log) {
+    for (let p = Math.floor(Math.log10(min)); p <= Math.ceil(Math.log10(maks)); p++) {
+      for (const m of [1, 2, 5]) {
+        const v = m * 10 ** p;
+        if (v >= min * 0.75 && v <= maks * 1.3) tikLog.push(v);
+      }
+    }
+  }
+
+  const namaPendek = (k: string) => {
+    const nama = cari(k)?.item.name ?? "";
+    return nama.length > NAMA_MAKS ? `${nama.slice(0, NAMA_MAKS - 1)}…` : nama;
+  };
 
   return (
     <div>
-      {/* --- kepala sumbu --- */}
-      <div className={`${kisi} pb-1`}>
-        <div className="hidden sm:block" />
-        <div>
-          <div className="flex justify-between t-caption text-muted">
-            <span>← {t("lt.chart.faster")}</span>
-            <span>{t("lt.chart.longer")} →</span>
-          </div>
-          <div className="relative mt-1 h-4">
-            {tik.map((v) => (
-              <span
-                key={v}
-                className="tnum absolute -translate-x-1/2 whitespace-nowrap t-caption"
-                style={{
-                  left: `${pos(v)}%`,
-                  color: v === 0 ? "var(--text-secondary)" : "var(--text-muted)",
-                  fontWeight: v === 0 ? 600 : 400,
-                  // Label tepi ditarik ke dalam supaya tidak terpotong.
-                  transform:
-                    v === -sumbu ? "translateX(0)" : v === sumbu ? "translateX(-100%)" : undefined,
-                }}
-              >
-                {v === 0 ? t("lt.chart.standard") : `${v > 0 ? "+" : "−"}${Math.abs(v)}%`}
-              </span>
-            ))}
-          </div>
-        </div>
-        <div className="hidden sm:col-span-2 sm:block" />
-      </div>
-
-      {/* --- satu lajur per komponen --- */}
-      <div>
-        {baris.map((b) => {
-          const kunci = `${b.item.id}-${b.warehouse.id}`;
-          const dev = b.deviation_percentage;
-          const terukur = dev !== null && b.actual_lifetime_days !== null;
-          const warna = WARNA_STATUS[b.status];
-          const keluar = terukur && Math.abs(dev!) > sumbu;
-          const x = terukur ? pos(dev!) : 50;
-
-          return (
-            <Fragment key={kunci}>
-            <button
-              type="button"
-              onClick={() => onPilih(b)}
-              title={b.basis}
-              aria-pressed={terpilih === kunci}
-              className={`${kisi} w-full rounded-lg border-t px-2 py-2 text-left transition hover:bg-[var(--surface-sunken)]`}
-              style={{
-                borderColor: "var(--border)",
-                background:
-                  terpilih === kunci
-                    ? "color-mix(in srgb, var(--brand) 7%, transparent)"
-                    : undefined,
-              }}
-            >
-              <div className="min-w-0">
-                <div className="truncate font-medium text-ink">{b.item.name}</div>
-                <div className="truncate text-xs text-muted">
-                  {b.item.sku} · {b.warehouse.code}
-                </div>
-              </div>
-
-              {/* lajur */}
-              <div
-                className="relative my-1 h-8 overflow-hidden rounded-md sm:my-0"
-                style={{ background: "color-mix(in srgb, var(--text-muted) 7%, transparent)" }}
-              >
-                {/* pita wajar */}
-                <div
-                  className="absolute inset-y-0"
-                  style={{
-                    left: `${pos(-toleransi)}%`,
-                    width: `${pos(toleransi) - pos(-toleransi)}%`,
-                    background: `color-mix(in srgb, ${WARNA_STATUS.NORMAL} 13%, transparent)`,
-                  }}
-                />
-                {/* garis bantu */}
-                {[-sumbu / 2, sumbu / 2].map((v) => (
+      {titik.length > 0 && (
+        <ResponsiveContainer width="100%" height={380}>
+          <ComposedChart
+            data={titik}
+            margin={{ top: 14, right: 16, bottom: 0, left: 0 }}
+            style={{ cursor: "pointer" }}
+            onClick={(s: any) => {
+              const b = cari(s?.activeLabel);
+              if (b) onPilih(b);
+            }}
+          >
+            <CartesianGrid stroke="var(--border)" vertical={false} />
+            <XAxis
+              dataKey="kunci"
+              tick={SUMBU_TEKS}
+              tickLine={false}
+              axisLine={{ stroke: "var(--border)" }}
+              tickFormatter={namaPendek}
+              interval={0}
+              angle={-35}
+              textAnchor="end"
+              height={92}
+              padding={{ left: 18, right: 18 }}
+            />
+            <YAxis
+              tick={SUMBU_TEKS}
+              tickLine={false}
+              axisLine={false}
+              width={52}
+              scale={log ? "log" : "auto"}
+              domain={log ? [min * 0.75, maks * 1.3] : [0, "auto"]}
+              ticks={log ? tikLog : undefined}
+              allowDataOverflow={log}
+              tickFormatter={(v: number) => num(v)}
+            />
+            {terpilih && cari(terpilih) && (
+              <ReferenceLine x={terpilih} stroke="var(--brand)" strokeOpacity={0.35} strokeWidth={2} />
+            )}
+            <Tooltip
+              cursor={{ stroke: "var(--border)" }}
+              content={({ active, payload }) => {
+                if (!active || !payload?.length) return null;
+                const b = (payload[0].payload as (typeof titik)[number]).b;
+                return (
                   <div
-                    key={v}
-                    className="absolute inset-y-0 w-px"
-                    style={{ left: `${pos(v)}%`, background: "var(--border)" }}
-                  />
-                ))}
-                {/* standar */}
-                <div
-                  className="absolute inset-y-0 w-[2px] -translate-x-1/2"
-                  style={{ left: "50%", background: "var(--text-muted)" }}
-                />
-                {terukur ? (
-                  <>
-                    {/* tangkai: dari standar ke aktual */}
-                    <div
-                      className="absolute top-1/2 h-[4px] -translate-y-1/2 rounded-full"
-                      style={{
-                        left: `${Math.min(50, x)}%`,
-                        width: `${Math.abs(x - 50)}%`,
-                        background: warna,
-                        opacity: 0.55,
-                      }}
-                    />
-                    {/* aktual */}
-                    <span
-                      className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full"
-                      style={{
-                        left: `${x}%`,
-                        background: warna,
-                        boxShadow: "0 0 0 2px var(--surface-1)",
-                      }}
-                    />
-                    {/* di luar sumbu: titiknya di tepi, panahnya mengakuinya */}
-                    {keluar && (
-                      <span
-                        className="absolute top-1/2 -translate-y-1/2 t-caption font-bold"
-                        style={{ [dev! > 0 ? "right" : "left"]: "10px", color: warna }}
-                        aria-hidden
-                      >
-                        {dev! > 0 ? "»" : "«"}
-                      </span>
-                    )}
-                  </>
-                ) : (
-                  <span
-                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded px-1.5 t-caption text-muted"
-                    style={{ background: "var(--surface-1)" }}
+                    className="rounded-xl px-3.5 py-2.5 text-xs"
+                    style={{
+                      background: "var(--surface-1)",
+                      boxShadow: "var(--elev-2), inset 0 0 0 1px var(--border)",
+                      color: "var(--text-primary)",
+                    }}
                   >
-                    {t("lt.unmeasured")}
-                  </span>
-                )}
-              </div>
-
-              {/* angka: aktual, standar, simpangan */}
-              <div className="sm:text-right">
-                {terukur ? (
-                  <div className="leading-tight">
-                    <span className="tnum font-semibold text-ink">
-                      {num(b.actual_lifetime_days)} {t("lt.unit.days")}
-                    </span>{" "}
-                    <Simpangan nilai={dev} status={b.status} />
-                    <div className="tnum t-caption text-muted">
-                      {t("lt.chart.of_standard", { n: num(b.expected_lifetime_days) })}
+                    <div className="font-semibold">{b.item.name}</div>
+                    <div className="text-muted">
+                      {b.item.sku} · {b.warehouse.code}
+                    </div>
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <span className="h-[2px] w-3" style={{ background: WARNA_STANDAR }} />
+                      {t("lt.chart.standard")}: {num(b.expected_lifetime_days)} {t("lt.unit.days")}
+                    </div>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="h-[2px] w-3" style={{ background: WARNA_AKTUAL }} />
+                      {t("lt.chart.actual")}:{" "}
+                      {b.actual_lifetime_days !== null
+                        ? `${num(b.actual_lifetime_days)} ${t("lt.unit.days")}`
+                        : t("lt.unmeasured")}
+                      {b.actual_lifetime_days !== null && (
+                        <Simpangan nilai={b.deviation_percentage} status={b.status} />
+                      )}
+                    </div>
+                    <div className="mt-1.5">
+                      <LencanaStatus status={b.status} label={b.status_label} />
                     </div>
                   </div>
-                ) : (
-                  <div className="tnum t-caption text-muted">
-                    {b.has_reference
-                      ? t("lt.chart.of_standard", { n: num(b.expected_lifetime_days) })
-                      : t("lt.chart.no_standard")}
-                  </div>
-                )}
-              </div>
-              <div className="mt-1 sm:mt-0">
-                <LencanaStatus status={b.status} label={b.status_label} />
-              </div>
-            </button>
-            {terpilih === kunci && rincian && (
-              <div
-                className="mb-2 rounded-xl px-4 py-5 sm:px-6"
-                style={{ background: "var(--surface-sunken)" }}
-              >
-                {rincian}
-              </div>
-            )}
-            </Fragment>
-          );
-        })}
-      </div>
+                );
+              }}
+            />
+            <Line
+              type="linear"
+              dataKey="standar"
+              stroke={WARNA_STANDAR}
+              strokeWidth={2}
+              strokeDasharray="5 4"
+              isAnimationActive={false}
+              dot={{ r: 2.5, fill: WARNA_STANDAR, stroke: "none" }}
+              activeDot={false}
+            />
+            <Line
+              type="linear"
+              dataKey="aktual"
+              stroke={WARNA_AKTUAL}
+              strokeWidth={2}
+              isAnimationActive={false}
+              dot={(p: any) => {
+                if (p.cy == null || p.payload.aktual === null) return <g key={p.payload.kunci} />;
+                const b = p.payload.b as BarisUmurPakai;
+                return (
+                  <circle
+                    key={p.payload.kunci}
+                    cx={p.cx}
+                    cy={p.cy}
+                    r={p.payload.kunci === terpilih ? 6 : 4.5}
+                    fill={WARNA_STATUS[b.status]}
+                    stroke="var(--surface-1)"
+                    strokeWidth={2}
+                  />
+                );
+              }}
+              activeDot={{ r: 6, stroke: "var(--surface-1)", strokeWidth: 2 }}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      )}
 
       {/* --- legenda --- */}
       <div
@@ -263,15 +232,12 @@ export function GrafikUmurPakai({
         style={{ borderColor: "var(--border)" }}
       >
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-3 w-[2px]" style={{ background: "var(--text-muted)" }} />
+          <span className="w-5 border-t-2 border-dashed" style={{ borderColor: WARNA_STANDAR }} />
           {t("lt.chart.legend_standard")}
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span
-            className="h-3 w-5 rounded-sm"
-            style={{ background: `color-mix(in srgb, ${WARNA_STATUS.NORMAL} 22%, transparent)` }}
-          />
-          {t("lt.chart.legend_band", { n: num(toleransi) })}
+          <span className="h-[2px] w-5" style={{ background: WARNA_AKTUAL }} />
+          {t("lt.chart.legend_actual")}
         </span>
         {(["PREMATURE", "NORMAL", "EXTENDED"] as StatusUmur[]).map((s) => (
           <span key={s} className="inline-flex items-center gap-1.5">
@@ -280,6 +246,20 @@ export function GrafikUmurPakai({
           </span>
         ))}
       </div>
+      <p className="mt-2 t-caption text-muted">
+        {t("lt.chart.axis_note")}
+        {log ? ` ${t("lt.chart.log_note")}` : ""}
+        {tanpaStandar > 0 ? ` ${t("lt.chart.omitted", { n: num(tanpaStandar) })}` : ""}
+      </p>
+
+      {terpilih && rincian && (
+        <div
+          className="mt-3 rounded-xl px-4 py-5 sm:px-6"
+          style={{ background: "var(--surface-sunken)" }}
+        >
+          {rincian}
+        </div>
+      )}
     </div>
   );
 }
@@ -287,8 +267,6 @@ export function GrafikUmurPakai({
 /* ------------------------------------------------------------------ */
 /* Riwayat satu komponen                                               */
 /* ------------------------------------------------------------------ */
-
-const SUMBU_TEKS = { fontSize: 11, fill: "var(--text-muted)" };
 
 /**
  * Umur tiap unit yang pernah terpasang, berurutan waktu.

@@ -168,10 +168,9 @@ export default function LifetimePage() {
       <RingkasanUmurPakai ringkas={d.summary} />
 
       {/*
-        GRAFIK MEMAKAI SELURUH LEBAR, dan rinciannya terbuka DI BAWAH baris
-        yang dipilih. Di kolom 3/5 lajur grafiknya tinggal selebar ibu jari --
-        nama dan angka di kiri-kanannya memakan sisanya -- padahal lajur itulah
-        yang seharusnya dibaca. Tampilan tabel tetap memakai panel samping.
+        GRAFIK MEMAKAI SELURUH LEBAR, dan rinciannya terbuka DI BAWAHNYA untuk
+        komponen yang dipilih: dua puluh lima nama komponen pada sumbu datar
+        tidak muat di kolom 3/5. Tampilan tabel tetap memakai panel samping.
       */}
       <div className={samping ? "mt-4 grid gap-4 xl:grid-cols-5" : "mt-4"}>
         <Card
@@ -217,7 +216,6 @@ export default function LifetimePage() {
               {tampilan === "grafik" ? (
                 <GrafikUmurPakai
                   baris={d.items}
-                  toleransi={d.assumptions.tolerance_percentage}
                   terpilih={terpilih ? `${terpilih.item.id}-${terpilih.warehouse.id}` : null}
                   onPilih={pilih}
                   rincian={
@@ -307,9 +305,9 @@ function PanelDetail({ detail, lebar = false }: { detail: DetailUmurPakai; lebar
         <p className="mt-1.5 t-body leading-relaxed text-ink-2">{detail.basis}</p>
       </div>
 
-      {/* Pada tampilan lebar pitanya sudah tergambar dua kali -- lajur baris
-          di atasnya dan grafik riwayat di sebelahnya -- jadi yang dicetak di
-          sini cukup ketiga batasnya dalam hari. */}
+      {/* Pada tampilan lebar pitanya sudah tergambar pada grafik riwayat di
+          sebelahnya, jadi yang dicetak di sini cukup ketiga batasnya dalam
+          hari. */}
       {punyaPita && lebar && (
         <div className="grid grid-cols-3 gap-4">
           <Ruas label={t("lt.detail.lower")}>
