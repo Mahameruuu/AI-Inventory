@@ -17,11 +17,12 @@ import {
   DateInput,
   Empty,
   ErrorBox,
+  JendelaFormulir,
+  PesanBerhasil,
   Field,
   SkeletonRows,
   PageHeader,
   Pager,
-  Section,
   Select,
   Table,
   Td,
@@ -53,6 +54,19 @@ export default function StockReceiptPage() {
   const [baris, setBaris] = useState<Baris[]>([{ ...BARIS_KOSONG }]);
   const [kirim, setKirim] = useState(false);
   const [pesan, setPesan] = useState<{ ok: boolean; teks: string } | null>(null);
+  /** formulir penerimaan baru tampil sebagai jendela di atas halaman */
+  const [formBuka, setFormBuka] = useState(false);
+
+  function bukaForm() {
+    setPesan(null);
+    setFormBuka(true);
+  }
+  function tutupForm() {
+    setFormBuka(false);
+    setBaris([{ ...BARIS_KOSONG }]);
+    setReferensi("");
+    setPesan((p) => (p && !p.ok ? null : p));
+  }
 
   const { data: gudang } = useApi<any>("/api/warehouses", { page_size: 200, only_active: true });
   const { data: barang } = useApi<any>("/api/items", { page_size: 200, only_active: true });
@@ -93,6 +107,7 @@ export default function StockReceiptPage() {
       });
       setBaris([{ ...BARIS_KOSONG }]);
       setReferensi("");
+      setFormBuka(false);
       daftar.reload();
     } catch (e) {
       setPesan({ ok: false, teks: (e as Error).message });
@@ -118,9 +133,39 @@ export default function StockReceiptPage() {
         description={t("rc.desc")}
       />
 
-      <Section title={t("rc.new")} subtitle={t("rc.new_sub")} defaultOpen>
-        <div className="baris-saring flex flex-wrap items-end gap-3">
-          <Field label={t("c.warehouse")}>
+      {pesan?.ok && !formBuka && (
+        <div className="mb-4">
+          <PesanBerhasil>{pesan.teks}</PesanBerhasil>
+        </div>
+      )}
+
+      <JendelaFormulir
+        terbuka={formBuka}
+        judul={t("rc.add")}
+        keterangan={t("rc.new_sub")}
+        labelTutup={t("md.cancel")}
+        onTutup={tutupForm}
+        lebar="lebar"
+        kaki={
+          <>
+            {!siap && <span className="mr-auto t-small text-muted">{t("rc.need")}</span>}
+            <Button onClick={tutupForm} disabled={kirim}>
+              {t("md.cancel")}
+            </Button>
+            <Button variant="solid" onClick={simpan} disabled={!siap || kirim}>
+              {kirim ? t("c.saving") : t("rc.save")}
+            </Button>
+          </>
+        }
+      >
+        {pesan && !pesan.ok && (
+          <div className="mb-4">
+            <ErrorBox message={pesan.teks} />
+          </div>
+        )}
+        <h3 className="mb-2.5 t-body font-semibold text-ink">{t("tx.step_doc")}</h3>
+        <div className="grid gap-3.5 sm:grid-cols-2">
+          <Field label={t("c.warehouse")} wajib>
             <Select
               value={warehouseId}
               onChange={setWarehouseId}
@@ -131,10 +176,10 @@ export default function StockReceiptPage() {
                   label: `${w.code} — ${w.name}`,
                 })),
               ]}
-              className="min-w-[210px]"
+              className="w-full"
             />
           </Field>
-          <Field label={t("c.supplier")}>
+          <Field label={t("c.supplier")} wajib>
             <Select
               value={supplierId}
               onChange={setSupplierId}
@@ -145,23 +190,25 @@ export default function StockReceiptPage() {
                   label: `${s.code} — ${s.name}`,
                 })),
               ]}
-              className="min-w-[190px]"
+              className="w-full"
             />
           </Field>
-          <Field label={t("rc.received_date")}>
-            <DateInput value={receivedDate} onChange={setReceivedDate} />
+          <Field label={t("rc.received_date")} wajib>
+            <DateInput value={receivedDate} onChange={setReceivedDate} className="w-full" />
           </Field>
           <Field label={t("rc.reference")}>
             <TextInput
               value={referensi}
               onChange={setReferensi}
-              placeholder="PO-…"
-              className="w-40"
+              placeholder={`PO-… (${t("c.optional")})`}
+              className="w-full"
             />
           </Field>
         </div>
 
-        <div className="mt-4">
+        <h3 className="mb-1 mt-6 t-body font-semibold text-ink">{t("tx.step_items")}</h3>
+        <p className="mb-2 t-small text-muted">{t("tx.step_items_sub")}</p>
+        <div>
           <Table kartuPonsel>
             <thead>
               <tr>
@@ -229,38 +276,36 @@ export default function StockReceiptPage() {
           </Table>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+        <div className="mt-3">
           <Button onClick={() => setBaris((b) => [...b, { ...BARIS_KOSONG }])}>
             <Plus size={13} />
             {t("c.add_row")}
           </Button>
-          <Button variant="solid" onClick={simpan} disabled={!siap || kirim}>
-            {kirim ? t("c.saving") : t("rc.save")}
-          </Button>
-          {pesan && (
-            <span
-              className="text-sm font-medium"
-              style={{ color: pesan.ok ? "var(--status-good)" : "var(--status-critical)" }}
-            >
-              {pesan.teks}
-            </span>
-          )}
         </div>
-      </Section>
+      </JendelaFormulir>
 
-      <div className="mt-4">
+      <div>
         <Card
+          icon={<ArrowDownToLine size={15} />}
           title={t("rc.history")}
           right={
-            <TextInput
-              value={q}
-              onChange={(v) => {
-                setQ(v);
-                setPage(1);
-              }}
-              placeholder={t("rc.search")}
-              className="w-48"
-            />
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+              <div className="min-w-0 flex-1 sm:w-48 sm:flex-none">
+                <TextInput
+                  value={q}
+                  onChange={(v) => {
+                    setQ(v);
+                    setPage(1);
+                  }}
+                  placeholder={t("rc.search")}
+                  className="w-full"
+                />
+              </div>
+              <Button variant="solid" onClick={bukaForm}>
+                <Plus size={14} aria-hidden />
+                {t("rc.add")}
+              </Button>
+            </div>
           }
           dim={daftar.refreshing}
         >

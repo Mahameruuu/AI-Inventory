@@ -17,11 +17,12 @@ import {
   DateInput,
   Empty,
   ErrorBox,
+  JendelaFormulir,
+  PesanBerhasil,
   Field,
   SkeletonRows,
   PageHeader,
   Pager,
-  Section,
   Select,
   Table,
   Td,
@@ -51,6 +52,20 @@ export default function StockIssuePage() {
   const [baris, setBaris] = useState<Baris[]>([{ ...BARIS_KOSONG }]);
   const [kirim, setKirim] = useState(false);
   const [pesan, setPesan] = useState<{ ok: boolean; teks: string } | null>(null);
+  /** formulir pengeluaran baru tampil sebagai jendela di atas halaman */
+  const [formBuka, setFormBuka] = useState(false);
+
+  function bukaForm() {
+    setPesan(null);
+    setFormBuka(true);
+  }
+  function tutupForm() {
+    setFormBuka(false);
+    setBaris([{ ...BARIS_KOSONG }]);
+    setKeperluan("");
+    setReferensi("");
+    setPesan((p) => (p && !p.ok ? null : p));
+  }
 
   const { data: gudang } = useApi<any>("/api/warehouses", { page_size: 200, only_active: true });
   // Stok di gudang terpilih dipakai untuk menampilkan sisa pada tiap baris.
@@ -89,6 +104,7 @@ export default function StockIssuePage() {
       setBaris([{ ...BARIS_KOSONG }]);
       setKeperluan("");
       setReferensi("");
+      setFormBuka(false);
       daftar.reload();
     } catch (e) {
       setPesan({ ok: false, teks: (e as Error).message });
@@ -110,9 +126,39 @@ export default function StockIssuePage() {
         description={t("is.desc")}
       />
 
-      <Section title={t("is.new")} subtitle={t("rc.new_sub")} defaultOpen>
-        <div className="baris-saring flex flex-wrap items-end gap-3">
-          <Field label={t("c.warehouse")}>
+      {pesan?.ok && !formBuka && (
+        <div className="mb-4">
+          <PesanBerhasil>{pesan.teks}</PesanBerhasil>
+        </div>
+      )}
+
+      <JendelaFormulir
+        terbuka={formBuka}
+        judul={t("is.add")}
+        keterangan={t("rc.new_sub")}
+        labelTutup={t("md.cancel")}
+        onTutup={tutupForm}
+        lebar="lebar"
+        kaki={
+          <>
+            {!siap && <span className="mr-auto t-small text-muted">{t("is.need")}</span>}
+            <Button onClick={tutupForm} disabled={kirim}>
+              {t("md.cancel")}
+            </Button>
+            <Button variant="solid" onClick={simpan} disabled={!siap || kirim}>
+              {kirim ? t("c.saving") : t("is.save")}
+            </Button>
+          </>
+        }
+      >
+        {pesan && !pesan.ok && (
+          <div className="mb-4">
+            <ErrorBox message={pesan.teks} />
+          </div>
+        )}
+        <h3 className="mb-2.5 t-body font-semibold text-ink">{t("tx.step_doc")}</h3>
+        <div className="grid gap-3.5 sm:grid-cols-2">
+          <Field label={t("c.warehouse")} wajib>
             <Select
               value={warehouseId}
               onChange={(v) => {
@@ -126,34 +172,36 @@ export default function StockIssuePage() {
                   label: `${w.code} — ${w.name}`,
                 })),
               ]}
-              className="min-w-[210px]"
+              className="w-full"
             />
           </Field>
-          <Field label={t("is.issue_date")}>
-            <DateInput value={issueDate} onChange={setIssueDate} />
+          <Field label={t("is.issue_date")} wajib>
+            <DateInput value={issueDate} onChange={setIssueDate} className="w-full" />
           </Field>
           <Field label={t("c.purpose")}>
             <TextInput
               value={keperluan}
               onChange={setKeperluan}
-              placeholder={t("is.purpose_ph")}
-              className="w-52"
+              placeholder={`${t("is.purpose_ph")} (${t("c.optional")})`}
+              className="w-full"
             />
           </Field>
           <Field label={t("rc.reference")}>
             <TextInput
               value={referensi}
               onChange={setReferensi}
-              placeholder="WO-…"
-              className="w-40"
+              placeholder={`WO-… (${t("c.optional")})`}
+              className="w-full"
             />
           </Field>
         </div>
 
+        <h3 className="mb-1 mt-6 t-body font-semibold text-ink">{t("tx.step_items")}</h3>
+        <p className="mb-2 t-small text-muted">{t("tx.step_items_sub")}</p>
         {!warehouseId ? (
-          <p className="mt-4 text-sm text-muted">{t("is.pick_wh_first")}</p>
+          <p className="t-small text-muted">{t("is.pick_wh_first")}</p>
         ) : (
-          <div className="mt-4">
+          <div>
             <Table kartuPonsel>
               <thead>
                 <tr>
@@ -222,41 +270,38 @@ export default function StockIssuePage() {
           </div>
         )}
 
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Button
-            onClick={() => setBaris((b) => [...b, { ...BARIS_KOSONG }])}
-            disabled={!warehouseId}
-          >
-            <Plus size={13} />
-            {t("c.add_row")}
-          </Button>
-          <Button variant="solid" onClick={simpan} disabled={!siap || kirim}>
-            {kirim ? t("c.saving") : t("is.save")}
-          </Button>
-          {pesan && (
-            <span
-              className="text-sm font-medium"
-              style={{ color: pesan.ok ? "var(--status-good)" : "var(--status-critical)" }}
-            >
-              {pesan.teks}
-            </span>
-          )}
-        </div>
-      </Section>
+        {warehouseId && (
+          <div className="mt-3">
+            <Button onClick={() => setBaris((b) => [...b, { ...BARIS_KOSONG }])}>
+              <Plus size={13} />
+              {t("c.add_row")}
+            </Button>
+          </div>
+        )}
+      </JendelaFormulir>
 
-      <div className="mt-4">
+      <div>
         <Card
+          icon={<ArrowUpFromLine size={15} />}
           title={t("is.history")}
           right={
-            <TextInput
-              value={q}
-              onChange={(v) => {
-                setQ(v);
-                setPage(1);
-              }}
-              placeholder={t("is.search")}
-              className="w-56"
-            />
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+              <div className="min-w-0 flex-1 sm:w-56 sm:flex-none">
+                <TextInput
+                  value={q}
+                  onChange={(v) => {
+                    setQ(v);
+                    setPage(1);
+                  }}
+                  placeholder={t("is.search")}
+                  className="w-full"
+                />
+              </div>
+              <Button variant="solid" onClick={bukaForm}>
+                <Plus size={14} aria-hidden />
+                {t("is.add")}
+              </Button>
+            </div>
           }
           dim={daftar.refreshing}
         >

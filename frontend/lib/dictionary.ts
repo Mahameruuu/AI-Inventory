@@ -992,7 +992,17 @@ export const DICT: Record<string, Entry> = {
     id: "Pencatatan barang masuk. Setiap penerimaan otomatis membuat catatan pergerakan dan menambah stok.",
     en: "Inbound recording. Every receipt writes a movement record and raises stock.",
   },
-  "rc.new": { id: "Buat penerimaan baru", en: "New receipt" },
+  "rc.add": { id: "Tambah Penerimaan", en: "Add receipt" },
+  "rc.need": {
+    id: "Isi gudang, pemasok, tanggal, dan minimal satu barang beserta jumlahnya.",
+    en: "Fill in warehouse, supplier, date, and at least one item with a quantity.",
+  },
+  "tx.step_doc": { id: "1. Data dokumen", en: "1. Document details" },
+  "tx.step_items": { id: "2. Daftar barang", en: "2. Items" },
+  "tx.step_items_sub": {
+    id: "Satu baris untuk satu barang. Tekan Tambah baris bila barangnya lebih dari satu.",
+    en: "One line per item. Press Add line for more than one item.",
+  },
   "rc.new_sub": {
     id: "Semua baris disimpan dalam satu transaksi",
     en: "All lines are saved in a single transaction",
@@ -1014,11 +1024,15 @@ export const DICT: Record<string, Entry> = {
     id: "Pencatatan barang keluar. Backend menolak pengeluaran yang melebihi stok tersedia.",
     en: "Outbound recording. The backend rejects any issue beyond available stock.",
   },
-  "is.new": { id: "Buat pengeluaran baru", en: "New issue" },
+  "is.add": { id: "Tambah Pengeluaran", en: "Add issue" },
+  "is.need": {
+    id: "Isi gudang, tanggal, dan minimal satu barang beserta jumlahnya.",
+    en: "Fill in warehouse, date, and at least one item with a quantity.",
+  },
   "is.issue_date": { id: "Tanggal keluar", en: "Issue date" },
   "is.purpose_ph": { id: "Pemakaian produksi…", en: "Production consumption…" },
   "is.pick_wh_first": {
-    id: "Pilih gudang lebih dulu untuk melihat stok tersedia.",
+    id: "Pilih gudang lebih dulu; daftar barang dan stok tersedianya muncul setelah itu.",
     en: "Pick a warehouse first to see available stock.",
   },
   "is.over_stock": { id: "melebihi stok tersedia", en: "exceeds available stock" },

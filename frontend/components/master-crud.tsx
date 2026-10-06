@@ -23,7 +23,6 @@
  */
 
 import { ReactNode, useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 
 import {
@@ -33,6 +32,8 @@ import {
   DialogKonfirmasi,
   Empty,
   ErrorBox,
+  JendelaFormulir,
+  PesanBerhasil,
   Field,
   PageHeader,
   Pager,
@@ -217,22 +218,6 @@ export default function MasterCrud({
     setFormBuka(true);
   }
 
-  // Esc menutup formulir; latar tidak ikut menggulir selama ia terbuka.
-  useEffect(() => {
-    if (!formBuka) return;
-    const esc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") batal();
-    };
-    document.addEventListener("keydown", esc);
-    const sebelum = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", esc);
-      document.body.style.overflow = sebelum;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formBuka]);
-
   function mulaiUbah(baris: Record<string, any>) {
     const isi: Isian = {};
     for (const r of ruas) {
@@ -337,16 +322,7 @@ export default function MasterCrud({
       {pesan && !(formBuka && !pesan.ok) && (
         <div className="mb-4">
           {pesan.ok ? (
-            <div
-              className="flex items-center gap-2 rounded-xl border px-3.5 py-2.5 t-small"
-              style={{
-                borderColor: "color-mix(in srgb, var(--status-good) 40%, var(--border))",
-                background: "color-mix(in srgb, var(--status-good) 8%, var(--surface-1))",
-              }}
-            >
-              <Check size={14} aria-hidden />
-              {pesan.teks}
-            </div>
+            <PesanBerhasil>{pesan.teks}</PesanBerhasil>
           ) : (
             <ErrorBox message={pesan.teks} />
           )}
@@ -458,92 +434,46 @@ export default function MasterCrud({
 
       </div>
 
-      {/*
-        FORMULIR SEBAGAI JENDELA. Dulu ia kartu tetap di samping tabel dan
-        memakan sepertiga lebar halaman walau tidak sedang dipakai. Diportalkan
-        ke <body> dengan alasan yang sama seperti DialogKonfirmasi. Klik pada
-        latar SENGAJA tidak menutupnya: isian yang sudah diketik tidak boleh
-        hilang karena salah klik.
-      */}
-      {formBuka &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6"
-            style={{ background: "color-mix(in srgb, var(--text-primary) 45%, transparent)" }}
-          >
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="md-form-judul"
-              className="flex max-h-full w-full max-w-2xl flex-col rounded-[var(--r-lg)]"
-              style={{
-                background: "var(--surface-1)",
-                boxShadow: "var(--elev-3), inset 0 0 0 1px var(--border)",
-              }}
-            >
-              <div
-                className="flex items-start justify-between gap-3 border-b px-5 py-4"
-                style={{ borderColor: "var(--border)" }}
-              >
-                <div className="min-w-0">
-                  <h2 id="md-form-judul" className="font-display t-lead font-bold text-ink">
-                    {sedangUbah === null ? t(labelTambah) : t("md.edit_title")}
-                  </h2>
-                  <p className="mt-0.5 t-small text-muted">
-                    {sedangUbah === null ? t("md.add_sub") : t("md.edit_sub")}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={batal}
-                  title={t("md.cancel")}
-                  aria-label={t("md.cancel")}
-                  className="rounded-lg p-1.5 text-muted transition hover:bg-[var(--surface-sunken)]"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-
-              <div className="overflow-y-auto px-5 py-4">
-                {pesan && !pesan.ok && (
-                  <div className="mb-4">
-                    <ErrorBox message={pesan.teks} />
-                  </div>
-                )}
-                <div className="grid gap-3.5 sm:grid-cols-2">
-                  {ruas.map((r) => (
-                    <IsianRuas
-                      key={r.key}
-                      r={r}
-                      nilai={isian[r.key] ?? ""}
-                      galat={galatRuas[r.key]}
-                      ubah={(v) => {
-                        setIsian((s) => ({ ...s, [r.key]: v }));
-                        // Penolakan hilang begitu kolomnya disentuh: membiarkannya
-                        // menempel setelah diperbaiki membuat formulir terlihat
-                        // masih salah padahal sudah benar.
-                        setGalatRuas((g) => (g[r.key] ? { ...g, [r.key]: "" } : g));
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div
-                className="flex justify-end gap-2 border-t px-5 py-3.5"
-                style={{ borderColor: "var(--border)" }}
-              >
-                <Button onClick={batal} disabled={sibuk}>
-                  {t("md.cancel")}
-                </Button>
-                <Button variant="solid" onClick={simpan} disabled={sibuk}>
-                  {sibuk ? t("md.saving") : t("md.save")}
-                </Button>
-              </div>
-            </div>
-          </div>,
-          document.body,
+      <JendelaFormulir
+        terbuka={formBuka}
+        judul={sedangUbah === null ? t(labelTambah) : t("md.edit_title")}
+        keterangan={sedangUbah === null ? t("md.add_sub") : t("md.edit_sub")}
+        labelTutup={t("md.cancel")}
+        onTutup={batal}
+        kaki={
+          <>
+            <Button onClick={batal} disabled={sibuk}>
+              {t("md.cancel")}
+            </Button>
+            <Button variant="solid" onClick={simpan} disabled={sibuk}>
+              {sibuk ? t("md.saving") : t("md.save")}
+            </Button>
+          </>
+        }
+      >
+        {pesan && !pesan.ok && (
+          <div className="mb-4">
+            <ErrorBox message={pesan.teks} />
+          </div>
         )}
+        <div className="grid gap-3.5 sm:grid-cols-2">
+          {ruas.map((r) => (
+            <IsianRuas
+              key={r.key}
+              r={r}
+              nilai={isian[r.key] ?? ""}
+              galat={galatRuas[r.key]}
+              ubah={(v) => {
+                setIsian((s) => ({ ...s, [r.key]: v }));
+                // Penolakan hilang begitu kolomnya disentuh: membiarkannya
+                // menempel setelah diperbaiki membuat formulir terlihat
+                // masih salah padahal sudah benar.
+                setGalatRuas((g) => (g[r.key] ? { ...g, [r.key]: "" } : g));
+              }}
+            />
+          ))}
+        </div>
+      </JendelaFormulir>
 
       <DialogKonfirmasi
         terbuka={kandidatHapus !== null}

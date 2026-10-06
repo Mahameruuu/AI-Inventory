@@ -26,6 +26,7 @@ import {
   Minus,
   MoveDownRight,
   MoveUpRight,
+  X,
 } from "lucide-react";
 import { CSSProperties, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -530,6 +531,122 @@ export function DialogKonfirmasi({
       </div>
     </div>,
     document.body,
+  );
+}
+
+/**
+ * Jendela formulir: tambah/ubah data dasar, penerimaan, pengeluaran.
+ *
+ * SATU BENTUK UNTUK SEMUA FORMULIR ISIAN. Halaman menampilkan daftarnya saja;
+ * formulir dibuka dari tombol di atas tabel dan tampil di atas halaman, dengan
+ * kepala (judul), badan yang dapat digulir, dan kaki berisi Batal + Simpan di
+ * tempat yang selalu sama.
+ *
+ * Diportalkan ke <body> dengan alasan yang sama seperti DialogKonfirmasi.
+ * Klik pada latar SENGAJA tidak menutupnya: isian yang sudah diketik tidak
+ * boleh hilang karena salah klik. Tutup lewat Batal, tanda silang, atau Esc.
+ */
+export function JendelaFormulir({
+  terbuka,
+  judul,
+  keterangan,
+  labelTutup,
+  onTutup,
+  kaki,
+  lebar = "sedang",
+  children,
+}: {
+  terbuka: boolean;
+  judul: string;
+  keterangan?: string;
+  /** teks tombol silang untuk pembaca layar, mis. "Batal" */
+  labelTutup: string;
+  onTutup: () => void;
+  /** isi kaki jendela: tombol Batal dan Simpan */
+  kaki: ReactNode;
+  lebar?: "sedang" | "lebar";
+  children: ReactNode;
+}) {
+  useEffect(() => {
+    if (!terbuka) return;
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onTutup();
+    };
+    document.addEventListener("keydown", esc);
+    // Latar tidak boleh ikut menggulir di belakang jendela.
+    const sebelum = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", esc);
+      document.body.style.overflow = sebelum;
+    };
+  }, [terbuka, onTutup]);
+
+  if (!terbuka || typeof document === "undefined") return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6"
+      style={{ background: "color-mix(in srgb, var(--text-primary) 45%, transparent)" }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="jf-judul"
+        className={`flex max-h-full w-full flex-col rounded-[var(--r-lg)] ${
+          lebar === "lebar" ? "max-w-4xl" : "max-w-2xl"
+        }`}
+        style={{
+          background: "var(--surface-1)",
+          boxShadow: "var(--elev-3), inset 0 0 0 1px var(--border)",
+        }}
+      >
+        <div
+          className="flex items-start justify-between gap-3 border-b px-5 py-4"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <div className="min-w-0">
+            <h2 id="jf-judul" className="font-display t-lead font-bold text-ink">
+              {judul}
+            </h2>
+            {keterangan && <p className="mt-0.5 t-small text-muted">{keterangan}</p>}
+          </div>
+          <button
+            type="button"
+            onClick={onTutup}
+            title={labelTutup}
+            aria-label={labelTutup}
+            className="rounded-lg p-1.5 text-muted transition hover:bg-[var(--surface-sunken)]"
+          >
+            <X size={16} />
+          </button>
+        </div>
+        <div className="overflow-y-auto px-5 py-4">{children}</div>
+        <div
+          className="flex flex-wrap items-center justify-end gap-2 border-t px-5 py-3.5"
+          style={{ borderColor: "var(--border)" }}
+        >
+          {kaki}
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/** Spanduk hijau "tersimpan" di atas daftar, setelah jendela formulir tertutup. */
+export function PesanBerhasil({ children }: { children: ReactNode }) {
+  return (
+    <div
+      className="flex items-center gap-2 rounded-xl border px-3.5 py-2.5 t-small"
+      style={{
+        borderColor: "color-mix(in srgb, var(--status-good) 40%, var(--border))",
+        background: "color-mix(in srgb, var(--status-good) 8%, var(--surface-1))",
+      }}
+    >
+      <Check size={14} aria-hidden className="shrink-0" />
+      {children}
+    </div>
   );
 }
 
