@@ -17,11 +17,12 @@
  * pembaca yang tidak membedakannya.
  */
 
-import { ReactNode } from "react";
+import { Fragment, ReactNode } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
   CircleHelp,
+  LineChart,
   Minus,
   TrendingDown,
   TrendingUp,
@@ -273,12 +274,15 @@ export function TabelUmurPakai({
   total,
   terpilih,
   onPilih,
+  rincian = null,
 }: {
   baris: BarisUmurPakai[];
   /** jumlah SELURUH hasil; menentukan boleh-tidaknya diurutkan di layar */
   total: number;
   terpilih: string | null;
   onPilih: (b: BarisUmurPakai) => void;
+  /** grafik + rincian komponen terpilih; terbuka tepat di bawah barisnya */
+  rincian?: ReactNode;
 }) {
   const t = useT();
   const urut = useUrutTabel(baris, total, URUT_UMUR);
@@ -302,14 +306,16 @@ export function TabelUmurPakai({
             {t("lt.col.replacements")}
           </Th>
           <Th>{t("lt.col.status")}</Th>
+          <Th align="right">{t("lt.col.chart")}</Th>
         </tr>
       </thead>
       <tbody>
         {urut.baris.map((b) => {
           const kunci = `${b.item.id}-${b.warehouse.id}`;
+          const buka = terpilih === kunci;
           return (
+            <Fragment key={kunci}>
             <tr
-              key={kunci}
               onClick={() => onPilih(b)}
               className="cursor-pointer"
               style={
@@ -368,7 +374,35 @@ export function TabelUmurPakai({
               <Td>
                 <LencanaStatus status={b.status} label={b.status_label} />
               </Td>
+              <Td align="right">
+                {/* Klik pada baris pun membukanya; tombol ini ada supaya
+                    caranya terlihat, bukan harus ditebak. */}
+                <button
+                  type="button"
+                  aria-expanded={buka}
+                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border px-2.5 py-1 t-caption font-semibold transition hover:bg-[var(--surface-sunken)]"
+                  style={{
+                    borderColor: buka ? "var(--brand)" : "var(--border)",
+                    color: "var(--brand)",
+                  }}
+                >
+                  <LineChart size={13} />
+                  {t(buka ? "lt.chart.close" : "lt.chart.open")}
+                </button>
+              </Td>
             </tr>
+            {buka && rincian && (
+              <tr>
+                <td
+                  colSpan={7}
+                  className="border-b px-4 py-5 sm:px-6"
+                  style={{ borderColor: "var(--border)", background: "var(--surface-sunken)" }}
+                >
+                  {rincian}
+                </td>
+              </tr>
+            )}
+            </Fragment>
           );
         })}
       </tbody>

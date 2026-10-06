@@ -34,13 +34,12 @@
  */
 
 import { useEffect, useState } from "react";
-import { BarChart3, Table2, Timer, TrendingUp, RefreshCw, X } from "lucide-react";
+import { Timer, TrendingUp, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
-import { GrafikRiwayatPenggantian, GrafikUmurPakai } from "@/components/lifetime-charts";
+import { GrafikRiwayatPenggantian } from "@/components/lifetime-charts";
 import {
   FaktorPendukung,
-  PitaUmurPakai,
   RingkasanUmurPakai,
   RiwayatPenggantian,
   Ruas,
@@ -72,9 +71,6 @@ export default function LifetimePage() {
   const [cari, setCari] = useState("");
   const [page, setPage] = useState(1);
   const [terpilih, setTerpilih] = useState<BarisUmurPakai | null>(null);
-  // Grafik adalah tampilan utama; tabelnya tetap ada bagi yang ingin
-  // mengurutkan kolom atau membaca angka per angka.
-  const [tampilan, setTampilan] = useState<"grafik" | "tabel">("grafik");
 
   // Pencarian ditunda sebelum dikirim: tiap ketukan tombol yang langsung
   // menjadi permintaan berarti backend mengelompokkan ulang seluruh riwayat
@@ -136,7 +132,6 @@ export default function LifetimePage() {
   }
 
   const d = data!;
-  const samping = tampilan === "tabel";
   // Menekan baris yang sedang terbuka menutupnya kembali.
   const pilih = (b: BarisUmurPakai) =>
     setTerpilih((kini) =>
@@ -168,110 +163,40 @@ export default function LifetimePage() {
       <RingkasanUmurPakai ringkas={d.summary} />
 
       {/*
-        GRAFIK MEMAKAI SELURUH LEBAR, dan rinciannya terbuka DI BAWAHNYA untuk
-        komponen yang dipilih: dua puluh lima nama komponen pada sumbu datar
-        tidak muat di kolom 3/5. Tampilan tabel tetap memakai panel samping.
+        TABEL DULU, GRAFIK PER BARIS. Tiap komponen punya grafiknya sendiri
+        (standar vs aktual), dibuka dari kolom "Grafik" dan tampil tepat di
+        bawah barisnya bersama rinciannya.
       */}
-      <div className={samping ? "mt-4 grid gap-4 xl:grid-cols-5" : "mt-4"}>
+      <div className="mt-4">
         <Card
-          className={samping ? "xl:col-span-3" : ""}
           icon={<Timer size={15} />}
           title={t("lt.chart.title")}
           subtitle={t("lt.chart.subtitle")}
           meta={`${num(d.total)} ${t("c.rows_label")}`}
-          right={
-            <div
-              role="tablist"
-              className="inline-flex gap-1 rounded-lg p-0.5"
-              style={{ background: "var(--surface-sunken)" }}
-            >
-              {(["grafik", "tabel"] as const).map((v) => {
-                const on = v === tampilan;
-                const Ikon = v === "grafik" ? BarChart3 : Table2;
-                return (
-                  <button
-                    key={v}
-                    role="tab"
-                    aria-selected={on}
-                    onClick={() => setTampilan(v)}
-                    className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 t-caption font-semibold transition"
-                    style={{
-                      background: on ? "var(--surface-1)" : "transparent",
-                      color: on ? "var(--text-primary)" : "var(--text-secondary)",
-                      boxShadow: on ? "var(--elev-1)" : "none",
-                    }}
-                  >
-                    <Ikon size={12} />
-                    {t(v === "grafik" ? "lt.view.chart" : "lt.view.table")}
-                  </button>
-                );
-              })}
-            </div>
-          }
           dim={refreshing}
           delay={80}
         >
           {d.items.length ? (
             <>
-              {tampilan === "grafik" ? (
-                <GrafikUmurPakai
-                  baris={d.items}
-                  terpilih={terpilih ? `${terpilih.item.id}-${terpilih.warehouse.id}` : null}
-                  onPilih={pilih}
-                  rincian={
-                    !terpilih ? null : memuatDetail && !detail ? (
-                      <SkeletonRows rows={4} cols={3} />
-                    ) : detail ? (
-                      <PanelDetail detail={detail} lebar />
-                    ) : null
-                  }
-                />
-              ) : (
-                <TabelUmurPakai
-                  baris={d.items}
-                  total={d.total}
-                  terpilih={terpilih ? `${terpilih.item.id}-${terpilih.warehouse.id}` : null}
-                  onPilih={setTerpilih}
-                />
-              )}
+              <TabelUmurPakai
+                baris={d.items}
+                total={d.total}
+                terpilih={terpilih ? `${terpilih.item.id}-${terpilih.warehouse.id}` : null}
+                onPilih={pilih}
+                rincian={
+                  !terpilih ? null : memuatDetail && !detail ? (
+                    <SkeletonRows rows={4} cols={3} />
+                  ) : detail ? (
+                    <PanelDetail detail={detail} />
+                  ) : null
+                }
+              />
               <Pager page={d.page} pages={d.pages} total={d.total} onPage={setPage} />
             </>
           ) : (
             <Empty message={tanpaReferensi ? t("lt.empty_all") : t("lt.empty")} />
           )}
         </Card>
-
-        {/* ---------- panel detail (tampilan tabel) ---------- */}
-        {samping && (
-        <div className="xl:col-span-2">
-          <Card
-            icon={<RefreshCw size={15} />}
-            title={t("lt.detail.title")}
-            subtitle={terpilih ? `${terpilih.item.sku} · ${terpilih.warehouse.code}` : undefined}
-            right={
-              terpilih ? (
-                <button
-                  onClick={() => setTerpilih(null)}
-                  title={t("lt.detail.close")}
-                  aria-label={t("lt.detail.close")}
-                  className="rounded-lg p-1 text-muted transition hover:bg-surface-2"
-                >
-                  <X size={14} />
-                </button>
-              ) : undefined
-            }
-            delay={140}
-          >
-            {!terpilih ? (
-              <Empty message={t("lt.detail.empty")} />
-            ) : memuatDetail && !detail ? (
-              <SkeletonRows rows={6} cols={3} />
-            ) : detail ? (
-              <PanelDetail detail={detail} />
-            ) : null}
-          </Card>
-        </div>
-        )}
       </div>
     </>
   );
@@ -286,17 +211,18 @@ export default function LifetimePage() {
  * benar; yang menggulir sampai bawah tahu persis apa yang TIDAK diketahui
  * sistem ini.
  */
-function PanelDetail({ detail, lebar = false }: { detail: DetailUmurPakai; lebar?: boolean }) {
+function PanelDetail({ detail }: { detail: DetailUmurPakai }) {
   const t = useT();
   const punyaPita =
     detail.lower_lifetime_days !== null &&
     detail.expected_lifetime_days !== null &&
     detail.upper_lifetime_days !== null;
+  const adaGrafik = punyaPita && detail.events.some((e) => e.lifetime_days !== null);
 
-  // `lebar`: dua kolom -- kesimpulan di kiri, riwayat di kanan. Sempit: satu
-  // kolom dengan urutan yang sama.
+  // Dua kolom di layar lebar -- grafik di kiri, angka di kanan; satu kolom
+  // dengan urutan yang sama di layar sempit.
   return (
-    <div className={lebar ? "grid gap-x-10 gap-y-5 lg:grid-cols-2" : "space-y-5"}>
+    <div className="grid gap-x-10 gap-y-5 lg:grid-cols-2">
       <div className="min-w-0 space-y-5">
       <div>
         <div className="font-display t-lead font-semibold leading-snug text-ink">
@@ -305,10 +231,7 @@ function PanelDetail({ detail, lebar = false }: { detail: DetailUmurPakai; lebar
         <p className="mt-1.5 t-body leading-relaxed text-ink-2">{detail.basis}</p>
       </div>
 
-      {/* Pada tampilan lebar pitanya sudah tergambar pada grafik riwayat di
-          sebelahnya, jadi yang dicetak di sini cukup ketiga batasnya dalam
-          hari. */}
-      {punyaPita && lebar && (
+      {punyaPita && (
         <div className="grid grid-cols-3 gap-4">
           <Ruas label={t("lt.detail.lower")}>
             {num(detail.lower_lifetime_days)} {t("lt.unit.days")}
@@ -319,20 +242,6 @@ function PanelDetail({ detail, lebar = false }: { detail: DetailUmurPakai; lebar
           <Ruas label={t("lt.detail.upper")}>
             {num(detail.upper_lifetime_days)} {t("lt.unit.days")}
           </Ruas>
-        </div>
-      )}
-      {punyaPita && !lebar && (
-        <div>
-          <div className="t-micro font-semibold uppercase tracking-[0.07em] text-muted">
-            {t("lt.detail.band")}
-          </div>
-          <PitaUmurPakai
-            bawah={detail.lower_lifetime_days!}
-            harapan={detail.expected_lifetime_days!}
-            atas={detail.upper_lifetime_days!}
-            aktual={detail.actual_lifetime_days}
-            status={detail.status}
-          />
         </div>
       )}
 
@@ -402,19 +311,21 @@ function PanelDetail({ detail, lebar = false }: { detail: DetailUmurPakai; lebar
       )}
 
       </div>
-      <div className="min-w-0 space-y-5">
+      {/* Grafik lebih dulu: untuk itulah baris ini dibuka. */}
+      <div className="min-w-0 space-y-5 lg:order-first">
+      {!adaGrafik && (
+        <p className="t-small text-muted">{t("lt.chart.no_data")}</p>
+      )}
       {detail.events.length > 0 && (
         <div>
           <div className="mb-2 t-micro font-semibold uppercase tracking-[0.07em] text-muted">
-            {punyaPita ? t("lt.chart.history_title") : t("lt.detail.events")}
+            {adaGrafik ? t("lt.chart.history_title") : t("lt.detail.events")}
           </div>
-          {punyaPita ? (
+          {adaGrafik ? (
             <>
               <GrafikRiwayatPenggantian
                 kejadian={detail.events}
-                bawah={detail.lower_lifetime_days!}
                 harapan={detail.expected_lifetime_days!}
-                atas={detail.upper_lifetime_days!}
               />
               {/* Tabelnya tetap ada, tertutup: nomor dokumen dan tanggal
                   persisnya hanya terbaca di sana. */}

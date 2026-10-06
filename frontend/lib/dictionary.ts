@@ -1666,37 +1666,29 @@ export const DICT: Record<string, Entry> = {
     en: "Pick a component in the chart to see its replacement history.",
   },
 
-  /* --- grafik standar vs aktual --- */
+  /* --- grafik standar vs aktual, per komponen --- */
   "lt.chart.title": { id: "Standar vs Aktual", en: "Standard vs Actual" },
   "lt.chart.subtitle": {
-    id: "Dua garis: umur standar dan umur aktual tiap komponen, dalam hari. Garis aktual di bawah standar berarti diganti lebih cepat.",
-    en: "Two lines: each component's standard and actual lifetime, in days. Actual below standard means replaced sooner.",
+    id: "Umur aktual tiap komponen terhadap standarnya. Tekan Lihat grafik pada satu baris untuk grafik komponen itu.",
+    en: "Each component's actual lifetime against its standard. Press View chart on a row for that component's chart.",
   },
+  "lt.col.chart": { id: "Grafik", en: "Chart" },
+  "lt.chart.open": { id: "Lihat grafik", en: "View chart" },
+  "lt.chart.close": { id: "Tutup grafik", en: "Hide chart" },
   "lt.chart.standard": { id: "Standar", en: "Standard" },
-  "lt.chart.standard_days": { id: "Standar {n} hari", en: "Standard {n} days" },
   "lt.chart.actual": { id: "Aktual", en: "Actual" },
-  "lt.chart.legend_standard": { id: "Standar (umur harapan)", en: "Standard (expected lifetime)" },
-  "lt.chart.legend_actual": { id: "Aktual (median jarak penggantian)", en: "Actual (median replacement interval)" },
-  "lt.chart.axis_note": {
-    id: "Sumbu tegak: umur dalam hari. Komponen diurutkan dari standar terpendek. Klik satu titik untuk rinciannya.",
-    en: "Vertical axis: lifetime in days. Components are ordered by shortest standard first. Click a point for details.",
-  },
-  "lt.chart.log_note": {
-    id: "Skalanya logaritmik supaya komponen berumur pendek dan panjang sama-sama terbaca.",
-    en: "The scale is logarithmic so short- and long-lived components are both readable.",
-  },
-  "lt.chart.omitted": {
-    id: "{n} komponen tanpa standar tidak digambar.",
-    en: "{n} components without a standard are not plotted.",
-  },
-  "lt.chart.history_title": { id: "Umur tiap unit vs standar", en: "Each unit's lifetime vs standard" },
+  "lt.chart.legend_standard": { id: "Standar ({n} hari)", en: "Standard ({n} days)" },
+  "lt.chart.legend_actual": { id: "Aktual (umur tiap unit)", en: "Actual (each unit's lifetime)" },
+  "lt.chart.history_title": { id: "Grafik standar vs aktual", en: "Standard vs actual chart" },
   "lt.chart.history_note": {
-    id: "Satu titik = satu penggantian; tingginya lama unit itu bertahan (hari). Pita hijau adalah rentang wajar.",
-    en: "One dot = one replacement; its height is how long that unit lasted (days). The green band is the normal range.",
+    id: "Satu titik = satu penggantian; tingginya lama unit itu bertahan (hari). Warna titik mengikuti statusnya.",
+    en: "One dot = one replacement; its height is how long that unit lasted (days). Dot colour follows its status.",
+  },
+  "lt.chart.no_data": {
+    id: "Belum ada grafik: perlu standar umur pakai dan sedikitnya dua penggantian.",
+    en: "No chart yet: it needs a standard lifetime and at least two replacements.",
   },
   "lt.chart.events_table": { id: "Lihat sebagai tabel", en: "View as table" },
-  "lt.view.chart": { id: "Grafik", en: "Chart" },
-  "lt.view.table": { id: "Tabel", en: "Table" },
 
   /* faktor pendukung — panel yang ADA justru untuk menyatakan datanya kosong */
   "lt.factors": { id: "Faktor pendukung", en: "Contributing factors" },
