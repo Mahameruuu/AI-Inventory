@@ -17,7 +17,7 @@
  * pembaca yang tidak membedakannya.
  */
 
-import { Fragment, ReactNode } from "react";
+import { Fragment, ReactNode, useEffect, useState } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -28,7 +28,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-import { Field, Select, StatTile, Table, Td, TextInput, Th, useUrutTabel } from "@/components/ui";
+import { Field, Pager, Select, StatTile, Table, Td, TextInput, Th, useUrutTabel } from "@/components/ui";
 import { PillUmur, UMUR } from "@/components/status";
 import { useT } from "@/lib/i18n";
 import { dateLabel, num } from "@/lib/format";
@@ -516,6 +516,9 @@ export function PitaUmurPakai({
 /* Riwayat kejadian                                                    */
 /* ------------------------------------------------------------------ */
 
+/** Baris riwayat penggantian per halaman. */
+const BARIS_RIWAYAT = 20;
+
 export function RiwayatPenggantian({
   kejadian,
   total,
@@ -532,6 +535,12 @@ export function RiwayatPenggantian({
   total: number;
 }) {
   const t = useT();
+  // Riwayat bisa sampai puluhan baris; dibagi per halaman di layar supaya
+  // tidak perlu digulir panjang. Datanya sudah ada seluruhnya di sini.
+  const [hal, setHal] = useState(1);
+  useEffect(() => setHal(1), [kejadian]);
+  const jumlahHal = Math.max(1, Math.ceil(kejadian.length / BARIS_RIWAYAT));
+  const tampil = kejadian.slice((hal - 1) * BARIS_RIWAYAT, hal * BARIS_RIWAYAT);
   return (
     <>
       <Table kartuPonsel>
@@ -545,7 +554,7 @@ export function RiwayatPenggantian({
           </tr>
         </thead>
         <tbody>
-          {kejadian.map((e) => (
+          {tampil.map((e) => (
             <tr key={e.id}>
               <Td>{dateLabel(e.date)}</Td>
               <Td>
@@ -591,6 +600,9 @@ export function RiwayatPenggantian({
           ))}
         </tbody>
       </Table>
+      {jumlahHal > 1 && (
+        <Pager page={hal} pages={jumlahHal} total={kejadian.length} onPage={setHal} />
+      )}
       {total > kejadian.length && (
         <p className="mt-3 text-xs text-muted">
           {t("lt.detail.events_note", { n: num(kejadian.length), total: num(total) })}
