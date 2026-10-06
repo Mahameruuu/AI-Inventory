@@ -1690,10 +1690,6 @@ export const DICT: Record<string, Entry> = {
   },
   "lt.chart.events_table": { id: "Lihat sebagai tabel", en: "View as table" },
 
-  /* faktor pendukung — panel yang ADA justru untuk menyatakan datanya kosong */
-  "lt.factors": { id: "Faktor pendukung", en: "Contributing factors" },
-  "lt.factors_unavailable": { id: "Data belum tersedia", en: "Data unavailable" },
-
   /* tautan ke modul yang memang memakai polanya */
   "lt.link.forecast": { id: "Lihat prakiraan", en: "View forecast" },
   "lt.link.reorder": { id: "Lihat pemesanan ulang", en: "View reorder" },

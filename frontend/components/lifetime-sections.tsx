@@ -8,9 +8,9 @@
  * lebih cepat daripada umur pakai harapannya; ia tidak boleh mengatakan
  * kenapa. Data beban, suhu, pelumasan, dan jadwal pemeliharaan tidak ada di
  * sistem ini, dan menyimpulkan sebab dari satu-satunya angka yang kebetulan
- * tersedia adalah menuduh tanpa bukti. Panel "Faktor pendukung" ada justru
- * untuk mengatakan itu dengan lantang alih-alih membiarkan pembacanya
- * menyimpulkan sendiri.
+ * tersedia adalah menuduh tanpa bukti. (Panel "Faktor pendukung" yang dulu
+ * mencetak hal itu dihapus atas permintaan pengguna pada 6 Oktober 2026;
+ * larangannya tetap berlaku.)
  *
  * WARNA HANYA UNTUK STATUS. Tiga kategori, tiga warna, dan tiap warna selalu
  * didampingi ikon dan label teks -- warna sendirian bukan informasi bagi
@@ -513,50 +513,6 @@ export function PitaUmurPakai({
 }
 
 /* ------------------------------------------------------------------ */
-/* Faktor pendukung                                                    */
-/* ------------------------------------------------------------------ */
-
-/**
- * Panel yang ADA justru untuk menyatakan bahwa datanya kosong.
- *
- * Menyembunyikannya saat kosong akan meninggalkan pembaca dengan satu-satunya
- * angka yang tersisa di layar -- simpangan umur pakai -- dan membiarkannya
- * menyimpulkan sebab sendiri. Panel ini menutup jalan itu dengan menyebutkan
- * apa saja yang SEHARUSNYA diperiksa dan menyatakan bahwa tidak satu pun ada.
- */
-export function FaktorPendukung({
-  faktor,
-  catatan,
-}: {
-  faktor: { key: string; label: string; available: boolean }[];
-  catatan: string;
-}) {
-  const t = useT();
-  return (
-    <div>
-      <div className="flex flex-wrap gap-1.5">
-        {faktor.map((f) => (
-          <span
-            key={f.key}
-            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 t-caption"
-            style={{
-              background: "var(--surface-sunken)",
-              color: "var(--text-muted)",
-            }}
-          >
-            {f.label}
-            <span className="t-micro opacity-70">
-              {f.available ? "" : `· ${t("lt.factors_unavailable")}`}
-            </span>
-          </span>
-        ))}
-      </div>
-      <p className="mt-3 t-small leading-relaxed text-ink-2">{catatan}</p>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
 /* Riwayat kejadian                                                    */
 /* ------------------------------------------------------------------ */
 
@@ -621,8 +577,7 @@ export function RiwayatPenggantian({
                  * Kejadian pertama tidak punya status. Kalimat penjelasnya --
                  * enam puluh karakter -- dulu dicetak DI DALAM sel ini dan
                  * memaksa seluruh kolom melebar demi satu baris yang tidak
-                 * menyatakan apa-apa. Kini ia tinggal di tooltip dan di
-                 * catatan kaki tabel, tempat kalimat memang boleh panjang.
+                 * menyatakan apa-apa. Kini ia tinggal di tooltip saja.
                  */}
                 {e.status && e.status_label ? (
                   <LencanaStatus status={e.status} label={e.status_label} />
@@ -640,9 +595,6 @@ export function RiwayatPenggantian({
         <p className="mt-3 text-xs text-muted">
           {t("lt.detail.events_note", { n: num(kejadian.length), total: num(total) })}
         </p>
-      )}
-      {kejadian.some((e) => e.lifetime_days === null) && (
-        <p className="mt-1.5 text-xs text-muted">{t("lt.detail.first_event")}</p>
       )}
     </>
   );

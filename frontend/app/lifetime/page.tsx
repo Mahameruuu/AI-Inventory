@@ -17,8 +17,7 @@
  *
  *   1. MENYEBUT SEBAB. Boleh: "diganti 30% lebih cepat daripada umur pakai
  *      harapan". Tidak boleh: "karena olinya telat diganti". Data beban, suhu,
- *      pelumasan, dan pemeliharaan tidak ada di sistem ini, dan panel Faktor
- *      Pendukung tercetak justru untuk mengatakan itu.
+ *      pelumasan, dan pemeliharaan tidak ada di sistem ini.
  *
  *   2. MEMPRAKIRAKAN KERUSAKAN. Ini bukan predictive maintenance. Yang diukur
  *      adalah apa yang SUDAH terjadi.
@@ -39,7 +38,6 @@ import Link from "next/link";
 
 import { GrafikRiwayatPenggantian } from "@/components/lifetime-charts";
 import {
-  FaktorPendukung,
   RingkasanUmurPakai,
   RiwayatPenggantian,
   Ruas,
@@ -205,11 +203,7 @@ export default function LifetimePage() {
 /**
  * Isi panel detail satu komponen.
  *
- * Urutannya disengaja: kesimpulan (pita + status) lebih dulu, riwayat yang
- * menopangnya sesudahnya, batas pengetahuan (faktor pendukung) paling akhir.
- * Pembaca yang berhenti di layar pertama tetap membawa pulang kesimpulan yang
- * benar; yang menggulir sampai bawah tahu persis apa yang TIDAK diketahui
- * sistem ini.
+ * Grafik standar vs aktual di kiri, angka dan kalimat dampaknya di kanan.
  */
 function PanelDetail({ detail }: { detail: DetailUmurPakai }) {
   const t = useT();
@@ -344,15 +338,6 @@ function PanelDetail({ detail }: { detail: DetailUmurPakai }) {
         </div>
       )}
 
-      <div>
-        <div className="mb-2 t-micro font-semibold uppercase tracking-[0.07em] text-muted">
-          {t("lt.factors")}
-        </div>
-        <FaktorPendukung
-          faktor={detail.contributing_factors}
-          catatan={detail.contributing_factors_note}
-        />
-      </div>
       </div>
     </div>
   );
