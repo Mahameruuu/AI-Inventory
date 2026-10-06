@@ -383,11 +383,10 @@ export function TabelUmurPakai({
 /**
  * Batas bawah — harapan — batas atas, dengan umur aktual ditandai di atasnya.
  *
- * Satu-satunya grafik pada halaman ini, dan ia ada karena menjawab dalam satu
- * pandangan apa yang butuh tiga angka untuk dikatakan: seberapa jauh umur
- * aktual dari pitanya, dan ke arah mana. Grafik lain -- garis riwayat
- * penggantian, donat komposisi status -- akan cantik tanpa menambah satu pun
- * keputusan yang dapat diambil pembacanya.
+ * Menjawab dalam satu pandangan apa yang butuh tiga angka untuk dikatakan:
+ * seberapa jauh umur aktual dari pitanya, dan ke arah mana -- dalam HARI,
+ * untuk satu komponen. Perbandingan lintas komponen dan riwayat tiap unit
+ * digambar components/lifetime-charts.tsx (sejak 6 Oktober 2026).
  */
 export function PitaUmurPakai({
   bawah,

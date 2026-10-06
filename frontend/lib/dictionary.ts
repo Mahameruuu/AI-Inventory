@@ -1662,9 +1662,32 @@ export const DICT: Record<string, Entry> = {
      "lt.detail.open" -- label TOMBOL yang dipakai sebagai kalimat, sehingga
      panelnya berbunyi "Lihat riwayat" tanpa memberi tahu caranya. */
   "lt.detail.empty": {
-    id: "Pilih satu komponen pada tabel untuk melihat riwayat penggantiannya.",
-    en: "Pick a component in the table to see its replacement history.",
+    id: "Pilih satu komponen pada grafik untuk melihat riwayat penggantiannya.",
+    en: "Pick a component in the chart to see its replacement history.",
   },
+
+  /* --- grafik standar vs aktual --- */
+  "lt.chart.title": { id: "Standar vs Aktual", en: "Standard vs Actual" },
+  "lt.chart.subtitle": {
+    id: "Umur aktual tiap komponen terhadap standarnya sendiri. Garis tengah berarti tepat sesuai standar.",
+    en: "Each component's actual lifetime against its own standard. The centre line means exactly on standard.",
+  },
+  "lt.chart.faster": { id: "lebih cepat diganti", en: "replaced sooner" },
+  "lt.chart.longer": { id: "bertahan lebih lama", en: "lasts longer" },
+  "lt.chart.standard": { id: "Standar", en: "Standard" },
+  "lt.chart.of_standard": { id: "standar {n} hari", en: "standard {n} days" },
+  "lt.chart.no_standard": { id: "standar belum diisi", en: "no standard set" },
+  "lt.chart.standard_days": { id: "Standar {n} hari", en: "Standard {n} days" },
+  "lt.chart.legend_standard": { id: "Standar (umur harapan)", en: "Standard (expected lifetime)" },
+  "lt.chart.legend_band": { id: "Rentang wajar ±{n}%", en: "Normal range ±{n}%" },
+  "lt.chart.history_title": { id: "Umur tiap unit vs standar", en: "Each unit's lifetime vs standard" },
+  "lt.chart.history_note": {
+    id: "Satu titik = satu penggantian; tingginya lama unit itu bertahan (hari). Pita hijau adalah rentang wajar.",
+    en: "One dot = one replacement; its height is how long that unit lasted (days). The green band is the normal range.",
+  },
+  "lt.chart.events_table": { id: "Lihat sebagai tabel", en: "View as table" },
+  "lt.view.chart": { id: "Grafik", en: "Chart" },
+  "lt.view.table": { id: "Tabel", en: "Table" },
 
   /* faktor pendukung — panel yang ADA justru untuk menyatakan datanya kosong */
   "lt.factors": { id: "Faktor pendukung", en: "Contributing factors" },
