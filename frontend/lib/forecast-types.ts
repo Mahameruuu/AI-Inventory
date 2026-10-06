@@ -75,9 +75,13 @@ export interface BarisReorder {
   lead_time_days_int: number | null;
   lead_time_demand_int: number | null;
 
-  /** Kebutuhan pada horizon KEPUTUSAN yang dipatok, bukan pada periode layar. */
+  /** Periode yang dipilih di layar; kebutuhannya sama dengan halaman Prakiraan. */
   decision_horizon_days: number;
   forecast_usage_int: number | null;
+  /** Kebutuhan periode − stok tersedia; null bila prakiraan belum tersedia. */
+  period_shortage_int: number | null;
+  /** Stok tersedia − kebutuhan periode; null bila prakiraan belum tersedia. */
+  period_surplus_int: number | null;
   usage_frequency_label: string;
   usage_frequency_detail: string;
 
@@ -105,6 +109,8 @@ export interface RingkasReorder {
   total_qty: number;
   qty_belum_terhitung: number;
   total_baris: number;
+  /** Periode yang dipakai menghitung seluruh daftar. */
+  horizon_hari: number;
 }
 
 export interface DaftarReorder {

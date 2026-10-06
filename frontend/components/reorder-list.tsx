@@ -15,6 +15,13 @@
  * satu barang mustahil menyebut angka berbeda di daftar ini dan di halaman
  * Prakiraan.
  *
+ * KOLOMNYA ADALAH TIGA KARTU PRAKIRAAN, DIJAJARKAN: stok tersedia, kebutuhan
+ * periode, lalu kurang atau sisa -- disusul status dan jumlah pesanan. Titik
+ * pesan dan lama stok bertahan tidak hilang; keduanya turun ke rantai
+ * perhitungan yang terbuka saat barisnya ditekan, karena di kepala tabel
+ * keduanya memaksa pembaca menghitung sendiri apa yang sudah dijawab kolom
+ * Kurang / sisa.
+ *
  * URUTAN BARISNYA DITENTUKAN BACKEND: paling mendesak lebih dulu, lalu
  * prioritas, lalu jumlah terbesar. Daftar yang benar isinya tetapi acak
  * urutannya menuntut pembacanya memindai seluruh halaman untuk menemukan yang
@@ -33,7 +40,12 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-import { angka, useLabelAksi } from "@/components/forecast-ui";
+import {
+  PemilihModel,
+  PemilihPeriode,
+  angka,
+  useLabelAksi,
+} from "@/components/forecast-ui";
 import { PillAksi, PRIORITAS, WARNA } from "@/components/status";
 import {
   Button,
@@ -299,6 +311,15 @@ function DetailBaris({
                 }
               />
               <BarisHitung
+                label={t("rl.detail.cover")}
+                dasar={t("rl.detail.cover_basis")}
+                nilai={
+                  baris.days_of_cover_int === null
+                    ? t("rl.no_cover")
+                    : t("c.days", { n: num(baris.days_of_cover_int) })
+                }
+              />
+              <BarisHitung
                 label={t("rl.detail.ltd")}
                 nilai={angka(baris.lead_time_demand_int, u)}
               />
@@ -409,6 +430,32 @@ function Sel({
 }
 
 /**
+ * Kurang atau sisa, untuk periode yang dipilih.
+ *
+ * SATU KOLOM, DUA BUNYI -- sama seperti kartu ketiga halaman Prakiraan, yang
+ * berganti antara "perlu ditambah" dan "sisa stok". Hanya yang kurang yang
+ * berwarna: sisa adalah keadaan biasa dan tidak menuntut perhatian siapa pun.
+ * Keduanya null berarti prakiraannya belum tersedia, bukan nol.
+ */
+function Selisih({ baris }: { baris: BarisReorder }) {
+  const t = useT();
+  const u = baris.unit_code ?? "";
+  const kurang = baris.period_shortage_int;
+  const sisa = baris.period_surplus_int;
+  if (kurang === null || sisa === null) {
+    return <span className="t-small text-muted">{t("rl.qty_none")}</span>;
+  }
+  if (kurang > 0) {
+    return (
+      <span className="font-semibold" style={{ color: "var(--status-critical)" }}>
+        {t("rl.gap.short", { q: angka(kurang, u) })}
+      </span>
+    );
+  }
+  return <span>{t("rl.gap.left", { q: angka(sisa, u) })}</span>;
+}
+
+/**
  * Satu baris, dan detailnya yang tersembunyi.
  *
  * Barisnya dapat DIBUKA, bukan ditautkan ke halaman lain: yang dicari pembaca
@@ -477,17 +524,10 @@ function BarisTabel({ baris }: { baris: BarisReorder }) {
           {angka(baris.available_stock_int, u)}
         </Sel>
         <Sel align="right" className="tnum">
-          {angka(baris.effective_reorder_point_int, u)}
-        </Sel>
-        <Sel align="right" className="tnum">
           {angka(baris.forecast_usage_int, u)}
         </Sel>
-        <Sel align="right" className="tnum">
-          {/* null berarti stok TIDAK BERGERAK, bukan "belum dihitung" -- dua
-              hal yang berbeda dan "—" akan menyamakan keduanya. */}
-          {baris.days_of_cover_int === null
-            ? t("rl.no_cover")
-            : t("c.days", { n: num(baris.days_of_cover_int) })}
+        <Sel align="right" className="tnum whitespace-nowrap">
+          <Selisih baris={baris} />
         </Sel>
         <Sel>
           <span className="flex flex-col items-start gap-1">
@@ -509,7 +549,7 @@ function BarisTabel({ baris }: { baris: BarisReorder }) {
       </tr>
       {buka && (
         <tr>
-          <td colSpan={8} className="p-0">
+          <td colSpan={7} className="p-0">
             <DetailBaris
               baris={baris}
               onPo={buatPo}
@@ -525,15 +565,18 @@ function BarisTabel({ baris }: { baris: BarisReorder }) {
 }
 
 /*
- * Kunci pengurutan. Kolom yang TIDAK dapat diurutkan sengaja tidak punya
- * entri di sini: titik pesan dan prakiraan hanya berarti dibandingkan dengan
- * stok pada barisnya sendiri, dan mengurutkan katalog menurut angka yang
- * satuannya berbeda tiap baris tidak menjawab pertanyaan siapa pun.
+ * Kunci pengurutan. Kebutuhan sengaja tidak punya entri di sini: ia hanya
+ * berarti dibandingkan dengan stok pada barisnya sendiri, dan perbandingan
+ * itu sudah menjadi kolom Kurang / sisa -- yang kurang bernilai negatif,
+ * sehingga urutan menaik menaruh kekurangan terbesar paling atas.
  */
 const URUT_REORDER: Record<string, (b: BarisReorder) => number | string | null> = {
   item: (b) => b.item_name,
   stok: (b) => b.current_stock_int,
-  cover: (b) => b.days_of_cover_int,
+  selisih: (b) =>
+    b.period_shortage_int === null || b.period_surplus_int === null
+      ? null
+      : b.period_surplus_int - b.period_shortage_int,
   qty: (b) => b.recommended_order_qty,
 };
 
@@ -571,7 +614,7 @@ export function TabelReorder({
    */
   return (
     <div className="surface-card px-1">
-      <Table lekat minLebar="62rem" label={t("ro.title")} kartuPonsel>
+      <Table lekat minLebar="56rem" label={t("ro.title")} kartuPonsel>
         <thead>
           <tr>
             <Th urut={urut.arah("item")} onUrut={urut.handler("item")}>
@@ -581,10 +624,9 @@ export function TabelReorder({
             <Th align="right" urut={urut.arah("stok")} onUrut={urut.handler("stok")}>
               {t("rl.col.stock")}
             </Th>
-            <Th align="right">{t("rl.col.rop")}</Th>
             <Th align="right">{t("rl.col.forecast", { n: horizon })}</Th>
-            <Th align="right" urut={urut.arah("cover")} onUrut={urut.handler("cover")}>
-              {t("rl.col.cover")}
+            <Th align="right" urut={urut.arah("selisih")} onUrut={urut.handler("selisih")}>
+              {t("rl.col.gap")}
             </Th>
             <Th>{t("rl.col.status")}</Th>
             <Th align="right" urut={urut.arah("qty")} onUrut={urut.handler("qty")}>
@@ -614,7 +656,15 @@ export function SaringanReorder({
   setPrioritas,
   cari,
   setCari,
+  periode,
+  setPeriode,
+  model,
+  setModel,
 }: {
+  periode: string;
+  setPeriode: (v: string) => void;
+  model: string;
+  setModel: (v: string) => void;
   gudang: { id: number; code: string; name: string }[];
   warehouseId: string;
   setWarehouseId: (v: string) => void;
@@ -637,6 +687,11 @@ export function SaringanReorder({
           className="min-w-[190px]"
         />
       </Field>
+      {/* Periode dan Model: kendali yang sama, dengan pilihan yang sama,
+          seperti di halaman Prakiraan. Keduanya menentukan angka Kebutuhan,
+          jadi keduanya harus terlihat di layar yang mencetaknya. */}
+      <PemilihPeriode periode={periode} setPeriode={setPeriode} />
+      <PemilihModel model={model} setModel={setModel} />
       <Field label={t("rl.filter.priority")}>
         <Select
           value={prioritas}

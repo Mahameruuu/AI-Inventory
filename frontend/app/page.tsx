@@ -78,6 +78,8 @@ interface Dashboard {
       unit_code: string | null;
       current_stock: number;
       reorder_point: number;
+      forecast_usage: number | null;
+      horizon_days: number;
       days_of_cover: number | null;
       recommended_order_qty: number | null;
       status: string;
@@ -285,10 +287,12 @@ export default function DashboardPage() {
                   <Th>{t("c.warehouse")}</Th>
                   {/* Judul kolom yang SAMA PERSIS dengan halaman Pemesanan
                       Ulang, karena isinya memang angka yang sama: stok
-                      tersedia, yaitu yang dibandingkan mesin terhadap titik
-                      pesan efektif di kolom sebelahnya. */}
+                      tersedia, dan kebutuhan periode yang dibandingkan mesin
+                      terhadapnya di kolom sebelahnya. */}
                   <Th align="right">{t("rl.col.stock")}</Th>
-                  <Th align="right">{t("rl.col.rop")}</Th>
+                  <Th align="right">
+                    {t("rl.col.forecast", { n: a.rows[0].horizon_days })}
+                  </Th>
                   <Th align="right">{t("rl.col.qty")}</Th>
                   <Th>{t("c.status")}</Th>
                 </tr>
@@ -310,7 +314,11 @@ export default function DashboardPage() {
                       </span>
                     </Td>
                     <Td align="right" numeric>
-                      {num(r.reorder_point)}
+                      {r.forecast_usage === null ? (
+                        <span className="text-muted">—</span>
+                      ) : (
+                        num(r.forecast_usage)
+                      )}
                     </Td>
                     <Td align="right" numeric>
                       {/* null berarti belum dapat dihitung, bukan nol -- nol

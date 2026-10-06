@@ -615,3 +615,89 @@ class TestMasaTunggu:
         """
         assert "lead_time_days" in tools.BIDANG_FORECAST
         assert tools._SUMBER_TAMPILAN["lead_time_days"] == "lead_time_days_int"
+
+
+# ==========================================================================
+# Mode periode: status dan jumlah mengikuti periode yang dipilih di layar
+# ==========================================================================
+
+def periode(hari=30, butuh=120.0, stok=40, **ubah):
+    """Barang pada mode periode; kurang dan sisa diturunkan dari butuh & stok."""
+    arg = dict(
+        current_stock=stok, available_stock=stok, reorder_point=0,
+        safety_stock=15, avg_daily_usage=butuh / hari, lead_time_days=5,
+        forecast_days=hari, periode_keputusan=hari, kebutuhan_periode=butuh,
+        kekurangan_periode=max(0, round(butuh) - stok),
+        sisa_periode=max(0, stok - round(butuh)),
+    )
+    arg.update(ubah)
+    return lapisan(**arg)
+
+
+class TestModePeriode:
+
+    def test_kurang_dalam_periode_berarti_perlu_pesan(self):
+        """
+        Stok 40 masih DI ATAS titik pesan efektif (4 x 5 + 15 = 35), jadi
+        aturan lama menjawab aman. Kebutuhan 30 harinya 120: kurang 80, dan
+        itulah yang kini menentukan.
+        """
+        r = periode()
+        assert r["effective_reorder_point"] == 35.0
+        assert r["action_status"] == d.STATUS_PERLU_REORDER
+        assert r["period_shortage_int"] == 80
+        assert r["decision_basis"] == "period"
+
+    def test_jumlah_adalah_kekurangan_ditambah_stok_pengaman(self):
+        r = periode()
+        assert r["order_up_to_level"] == 135.0          # 120 + 15
+        assert r["recommended_order_qty"] == 80 + 15
+
+    def test_cukup_dan_di_atas_titik_pesan_berarti_aman(self):
+        r = periode(butuh=30.0, stok=65)
+        assert r["action_status"] == d.STATUS_AMAN
+        assert r["recommended_order_qty"] == 0
+        assert r["period_shortage_int"] == 0
+        assert r["period_surplus_int"] == 35
+
+    def test_titik_pesan_tetap_menjaring_periode_pendek(self):
+        """
+        Periode 7 hari pada barang bermasa tunggu 30 hari: cukup untuk
+        periodenya, tetapi harus dipesan hari ini supaya tidak kosong bulan
+        depan. Alasannya menyebut titik pesan, bukan kekurangan.
+        """
+        r = periode(hari=7, butuh=7.0, stok=35, lead_time_days=30,
+                    safety_stock=10)
+        assert r["period_shortage_int"] == 0
+        assert r["action_status"] == d.STATUS_PERLU_REORDER
+        assert r["recommended_order_qty"] > 0
+        assert "titik pesan" in r["reorder_status_reason"]
+
+    def test_habis_sebelum_kiriman_tetap_risiko_stockout(self):
+        r = periode(stok=10)                 # 10 / 4 per hari = 2,5 hari < 5
+        assert r["action_status"] == d.STATUS_RISIKO_STOCKOUT
+
+    def test_periode_lebih_panjang_memesan_lebih_banyak(self):
+        pendek = periode(hari=30, butuh=120.0)
+        panjang = periode(hari=90, butuh=360.0)
+        assert panjang["recommended_order_qty"] > pendek["recommended_order_qty"]
+        assert panjang["decision_horizon_days"] == 90
+        assert panjang["decision_horizon_usage_int"] == 360
+
+    def test_alasan_menyebut_angka_kolomnya(self):
+        teks = periode()["reorder_status_reason"]
+        for angka in ("30", "120", "40", "80"):
+            assert angka in teks, teks
+
+    def test_tanpa_prakiraan_jumlahnya_belum_dapat_dihitung(self):
+        r = periode(kebutuhan_periode=None, kekurangan_periode=None,
+                    sisa_periode=None, avg_daily_usage=None,
+                    has_forecast=False)
+        assert r["recommended_order_qty"] is None
+        assert r["period_shortage_int"] is None
+
+    def test_tanpa_mode_periode_perilaku_lama_tidak_bergeser(self):
+        r = lapisan()
+        assert r["decision_basis"] == "lead_time"
+        assert r["decision_horizon_days"] == d.HORIZON_KEPUTUSAN
+        assert r["period_shortage_int"] is None

@@ -860,8 +860,8 @@ export const DICT: Record<string, Entry> = {
   /* 3. Apa yang diprakirakan terjadi */
   "dash.forecast": { id: "Kebutuhan {n} Hari ke Depan", en: "Demand Over the Next {n} Days" },
   "dash.forecast_sub": {
-    id: "Horizon keputusan pemesanan ulang, bukan periode yang dipilih di halaman Prakiraan",
-    en: "The reorder decision horizon, not the period chosen on the Forecasting page",
+    id: "Periode bawaan pemesanan ulang; di halaman Pemesanan Ulang periodenya dapat diganti",
+    en: "The default reorder period; it can be changed on the Reorder page",
   },
   "dash.forecast.usage": { id: "Prakiraan pemakaian", en: "Forecast usage" },
   "dash.forecast.qty": { id: "Disarankan dipesan", en: "Recommended to order" },
@@ -1170,8 +1170,8 @@ export const DICT: Record<string, Entry> = {
     en: "Stock is projected to run out on {d} (day {h}).",
   },
   "fc.banner.order_note": {
-    id: "Angka ini selisih kebutuhan dan stok saja. Jumlah pesanan di halaman Pemesanan Ulang bisa lebih besar karena ikut menghitung masa tunggu dan stok pengaman.",
-    en: "This is only demand minus stock. The order quantity on the Reorder page can be larger because it also accounts for lead time and safety stock.",
+    id: "Angka ini selisih kebutuhan dan stok saja. Jumlah pesanan di halaman Pemesanan Ulang adalah kekurangan ini ditambah stok pengaman.",
+    en: "This is only demand minus stock. The order quantity on the Reorder page is this shortfall plus safety stock.",
   },
   "fc.need.stock_detail": { id: "Yang tersedia di gudang hari ini", en: "Available in the warehouse today" },
   "fc.need.stock_reserved": {
@@ -1483,11 +1483,11 @@ export const DICT: Record<string, Entry> = {
 
   /* ---------------- daftar pemesanan ulang ---------------- */
   "rl.desc": {
-    id: "Barang yang perlu dipesan, diurutkan dari yang paling mendesak.",
-    en: "Items that need ordering, most urgent first.",
+    id: "Cukup tidaknya stok untuk periode yang dipilih, dan berapa yang perlu dipesan. Paling mendesak lebih dulu.",
+    en: "Whether stock covers the chosen period, and how much to order. Most urgent first.",
   },
   "rl.kpi.need": { id: "Perlu reorder", en: "Needs reorder" },
-  "rl.kpi.need_hint": { id: "Stok pada atau di bawah titik pesan", en: "Stock at or below the reorder point" },
+  "rl.kpi.need_hint": { id: "Stok kurang untuk periode ini", en: "Stock falls short for this period" },
   "rl.kpi.high": { id: "Prioritas tinggi", en: "High priority" },
   "rl.kpi.high_hint": { id: "Dikerjakan lebih dulu", en: "Handle these first" },
   "rl.kpi.stockout": { id: "Risiko stockout", en: "Stockout risk" },
@@ -1510,16 +1510,17 @@ export const DICT: Record<string, Entry> = {
   "rl.col.item": { id: "Barang", en: "Item" },
   "rl.col.warehouse": { id: "Gudang", en: "Warehouse" },
   "rl.col.stock": { id: "Stok tersedia", en: "Available stock" },
-  "rl.col.rop": { id: "Titik pesan", en: "Reorder point" },
-  "rl.col.forecast": { id: "Forecast {n} hari", en: "{n}-day forecast" },
-  "rl.col.cover": { id: "Hari menuju habis", en: "Days to empty" },
+  "rl.col.forecast": { id: "Kebutuhan {n} hari", en: "{n}-day demand" },
+  "rl.col.gap": { id: "Kurang / sisa", en: "Short / left" },
   "rl.col.status": { id: "Status", en: "Status" },
-  "rl.col.qty": { id: "Rekomendasi", en: "Recommendation" },
+  "rl.col.qty": { id: "Pesan", en: "Order" },
+  "rl.gap.short": { id: "Kurang {q}", en: "Short {q}" },
+  "rl.gap.left": { id: "Sisa {q}", en: "{q} left" },
 
   "rl.empty": { id: "Tidak ada barang yang cocok dengan saringan ini.", en: "No items match these filters." },
   "rl.empty_safe": {
-    id: "Tidak ada barang yang perlu dipesan di gudang ini. Semuanya masih di atas titik pesan.",
-    en: "Nothing needs ordering in this warehouse. Everything is still above its reorder point.",
+    id: "Tidak ada barang yang perlu dipesan. Stok semuanya cukup untuk periode ini.",
+    en: "Nothing needs ordering. Stock covers this period for every item.",
   },
   "rl.qty_none": { id: "Belum dapat dihitung", en: "Not yet computable" },
   "rl.qty_zero": { id: "Tidak perlu", en: "Not needed" },
@@ -1543,13 +1544,15 @@ export const DICT: Record<string, Entry> = {
   },
   "rl.detail.horizon": { id: "Kebutuhan {n} hari ke depan", en: "Demand over the next {n} days" },
   "rl.detail.horizon_basis": {
-    id: "Horizon tetap, tidak mengikuti periode di halaman Prakiraan",
-    en: "A fixed horizon; it does not follow the period on the Forecasting page",
+    id: "Angka yang sama dengan halaman Prakiraan untuk periode ini",
+    en: "The same figure as the Forecasting page for this period",
   },
+  "rl.detail.cover": { id: "Stok bertahan", en: "Stock lasts" },
+  "rl.detail.cover_basis": { id: "pada rata-rata pemakaian di atas", en: "at the average consumption above" },
   "rl.detail.target": { id: "Sasaran pengisian", en: "Order-up-to level" },
   "rl.detail.target_basis": {
-    id: "yang tertinggi antara titik pesan efektif dan kebutuhan ke depan + stok pengaman",
-    en: "the higher of the effective reorder point and upcoming demand + safety stock",
+    id: "kebutuhan periode + stok pengaman, tidak pernah di bawah titik pesan efektif",
+    en: "period demand + safety stock, never below the effective reorder point",
   },
   "rl.detail.qty": { id: "Jumlah yang direkomendasikan", en: "Recommended quantity" },
   "rl.detail.qty_basis": { id: "sasaran pengisian − stok tersedia, dibulatkan ke atas, tidak pernah negatif", en: "order-up-to level − available stock, rounded up, never negative" },

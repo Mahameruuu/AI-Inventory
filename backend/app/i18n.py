@@ -287,6 +287,32 @@ TEKS: dict[str, dict[str, str]] = {
         "id": "Stok tersedia {s}{u} sudah berada pada atau di bawah titik pesan efektif.",
         "en": "Available stock {s}{u} is at or below the effective reorder point.",
     },
+    # Mode periode (halaman Pemesanan Ulang): alasannya menyebut periode yang
+    # dipilih dan angka yang sama dengan kolom Kebutuhan dan Kurang/Sisa.
+    "reorder.reason.periode.kurang": {
+        "id": "Kebutuhan {n} hari {b}{u}, stok tersedia {s}{u} — kurang {k}{u}.",
+        "en": "{n}-day need is {b}{u}, available stock {s}{u} — short by {k}{u}.",
+    },
+    "reorder.reason.periode.titik_pesan": {
+        "id": "Stok cukup untuk {n} hari, tetapi sudah menyentuh titik pesan {e}{u} — kiriman butuh {l} hari, jadi pesan sekarang.",
+        "en": "Stock covers {n} days but has reached the reorder point {e}{u} — delivery takes {l} days, so order now.",
+    },
+    "reorder.reason.periode.titik_pesan_tanpa_lead": {
+        "id": "Stok cukup untuk {n} hari, tetapi sudah menyentuh titik pesan {e}{u}.",
+        "en": "Stock covers {n} days but has reached the reorder point {e}{u}.",
+    },
+    "reorder.reason.periode.cukup": {
+        "id": "Kebutuhan {n} hari {b}{u}, stok tersedia {s}{u} — cukup.",
+        "en": "{n}-day need is {b}{u}, available stock {s}{u} — enough.",
+    },
+    "reorder.reason.periode.diam": {
+        "id": "Tidak ada pemakaian yang diprakirakan dalam {n} hari.",
+        "en": "No usage is forecast over the next {n} days.",
+    },
+    "reorder.reason.periode.belum": {
+        "id": "Prakiraan belum tersedia; status dinilai dari titik pesan saja.",
+        "en": "No forecast yet; status is judged from the reorder point alone.",
+    },
     "reorder.reason.aman": {
         "id": "Stok tersedia {s}{u} masih di atas titik pesan efektif.",
         "en": "Available stock {s}{u} is still above the effective reorder point.",

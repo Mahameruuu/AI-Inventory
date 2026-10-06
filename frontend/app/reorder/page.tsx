@@ -17,21 +17,20 @@
  * sama persis dengan /api/forecast, jadi satu barang menyebut status, titik
  * pesan, dan jumlah yang sama di daftar ini maupun di halaman Prakiraan.
  *
- * TIDAK ADA PEMILIH PERIODE DAN TIDAK ADA PEMILIH MODEL, dan keduanya
- * disengaja:
+ * PERIODE DAN MODEL DIBAGI DENGAN HALAMAN PRAKIRAAN (sejak 6 Oktober 2026).
+ * Dulu keduanya sengaja tidak ada: jumlah pesanan berpatokan horizon tetap 14
+ * hari supaya setelan di layar sebelah tidak menggesernya diam-diam. Harganya
+ * dua halaman yang menyebut dua kebutuhan untuk barang yang sama. Kini
+ * kendalinya ada DI SINI JUGA, sehingga pergeserannya disengaja dan terlihat:
  *
- *   periode  Jumlah pesanan berpatokan HORIZON KEPUTUSAN yang dipatok backend
- *            (decision.HORIZON_KEPUTUSAN), bukan periode tampilan. Menyediakan
- *            dropdown periode di sini akan menyiratkan bahwa menggesernya
- *            mengubah jumlah pesanan -- padahal tidak, dan tidak boleh.
- *   model    Titik pesan tidak menuntut model prakiraan untuk berarti; ia
- *            menuntut laju pemakaian dan ketidakpastiannya. Dropdown model di
- *            sini hanya menawarkan pilihan yang tidak menjawab pertanyaan layar
- *            ini, lalu membuat pembacanya mengira urutan pekerjaannya
- *            bergantung padanya.
+ *   periode  Menentukan kolom Kebutuhan, Kurang / sisa, status, dan jumlah
+ *            pesanan. Barang yang kurang untuk periode itu perlu dipesan, dan
+ *            jumlahnya kekurangan + stok pengaman.
+ *   model    Menentukan siapa yang meramal kebutuhannya; pilihan yang sama
+ *            dengan Prakiraan supaya angkanya identik di kedua halaman.
  *
- * TIDAK ADA SATU PUN RUMUS DI BERKAS INI, dan tidak ada nama model, galat
- * terskala, atau papan skor. Layar ini berorientasi TINDAKAN.
+ * TIDAK ADA SATU PUN RUMUS DI BERKAS INI, dan tidak ada galat terskala atau
+ * papan skor. Layar ini berorientasi TINDAKAN.
  */
 
 import { useEffect, useState } from "react";
@@ -45,6 +44,7 @@ import {
   TabelReorder,
   TabStatus,
 } from "@/components/reorder-list";
+import { usePilihanModel, usePilihanPeriode } from "@/components/forecast-ui";
 import { ErrorBox, PageHeader, PageSkeleton, Pager } from "@/components/ui";
 import { useApi } from "@/lib/api";
 import { DaftarReorder } from "@/lib/forecast-types";
@@ -60,6 +60,9 @@ export default function ReorderPage() {
   const [tab, setTab] = useState<TabStatus>("");
   const [cari, setCari] = useState("");
   const [page, setPage] = useState(1);
+  // Keduanya dibagi dengan halaman Prakiraan; lihat usePilihanPeriode.
+  const [days, setDays] = usePilihanPeriode();
+  const [model, setModel] = usePilihanModel();
 
   /*
    * Pencarian DITUNDA sebelum dikirim. Tiap permintaan menjalankan rantai
@@ -98,7 +101,7 @@ export default function ReorderPage() {
   // layar kosong yang terbaca seolah tidak ada hasilnya.
   useEffect(() => {
     setPage(1);
-  }, [warehouseId, prioritas, tab, cariKirim]);
+  }, [warehouseId, prioritas, tab, cariKirim, days, model]);
 
   const { data: gudang } = useApi<any>("/api/warehouses", { page_size: 200 });
 
@@ -107,6 +110,8 @@ export default function ReorderPage() {
     status: tab || undefined,
     priority: prioritas || undefined,
     q: cariKirim || undefined,
+    days,
+    model,
     page,
     page_size: PER_HALAMAN,
   });
@@ -129,11 +134,15 @@ export default function ReorderPage() {
           setPrioritas={setPrioritas}
           cari={cari}
           setCari={setCari}
+          periode={days}
+          setPeriode={setDays}
+          model={model}
+          setModel={setModel}
         />
       </PageHeader>
 
       {loading && !data ? (
-        <PageSkeleton tiles={4} rows={8} cols={8} />
+        <PageSkeleton tiles={4} rows={8} cols={7} />
       ) : !data ? null : (
         <div>
           <RingkasanReorder ringkas={data.summary} />
@@ -148,7 +157,7 @@ export default function ReorderPage() {
             <TabelReorder
               items={data.items}
               total={data.total}
-              horizon={data.items[0]?.decision_horizon_days ?? 14}
+              horizon={data.summary.horizon_hari}
               tab={tab}
             />
           </div>

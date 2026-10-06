@@ -149,6 +149,12 @@ def dashboard(
             # sendiri ("stok 10, titik pesan 8, perlu reorder").
             "current_stock": b["available_stock_int"],
             "reorder_point": b["effective_reorder_point_int"],
+            # Kebutuhan pada periode bawaan mesin itu. Sejak status mengikuti
+            # periode, INILAH angka yang menjelaskan barisnya: barang dapat
+            # perlu dipesan dengan stok masih di atas titik pesan, karena
+            # stoknya kurang untuk kebutuhan ini.
+            "forecast_usage": b["forecast_usage_int"],
+            "horizon_days": b["decision_horizon_days"],
             "days_of_cover": b["days_of_cover_int"],
             "recommended_order_qty": b["recommended_order_qty"],
             "status": b["action_status"],

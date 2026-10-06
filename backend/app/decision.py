@@ -584,6 +584,102 @@ def status_keputusan(
     return STATUS_AMAN
 
 
+def status_keputusan_periode(
+    available_stock,
+    effective_reorder_point,
+    avg_daily_usage,
+    lead_time_days,
+    kekurangan_periode,
+) -> str:
+    """
+    Status pada MODE PERIODE: halaman Pemesanan Ulang, sejak 6 Oktober 2026.
+
+        stok habis sebelum kiriman tiba        -> RISIKO_STOCKOUT
+        stok kurang untuk periode yang dipilih -> PERLU_REORDER
+        stok <= titik pesan efektif            -> PERLU_REORDER
+        selain itu                             -> AMAN
+
+    Aturan kedua adalah yang baru, dan ia sengaja memakai angka yang SAMA
+    dengan kartu "perlu ditambah" di halaman Prakiraan: barang yang di sana
+    terbaca kurang, di sini terbaca perlu dipesan. Dua halaman yang membaca
+    periode yang sama tidak boleh menjawab berbeda untuk barang yang sama.
+
+    ATURAN KETIGA TETAP ADA, sebagai jaring pengaman. Periode yang lebih
+    pendek daripada masa tunggu -- 7 hari pada barang yang kirimannya 30 hari
+    -- akan menyatakan "cukup" untuk barang yang harus dipesan hari ini juga
+    supaya tidak kosong bulan depan. Titik pesan menangkap barang itu, dan
+    kalimat alasannya menyebut terang-terangan bahwa pemicunya titik pesan.
+
+    status_keputusan() TIDAK DIUBAH dan tetap dipakai pemanggil yang tidak
+    meminta mode ini (asisten, transfer antar gudang).
+    """
+    if stok_habis_sebelum_kiriman(available_stock, avg_daily_usage,
+                                  lead_time_days):
+        return STATUS_RISIKO_STOCKOUT
+
+    if (_angka(kekurangan_periode) or 0.0) > 0:
+        return STATUS_PERLU_REORDER
+
+    tersedia = _angka(available_stock) or 0.0
+    if tersedia <= (_angka(effective_reorder_point) or 0.0):
+        return STATUS_PERLU_REORDER
+
+    return STATUS_AMAN
+
+
+def target_pengadaan_periode(effective_reorder_point, kebutuhan_periode,
+                             safety_stock) -> float | None:
+    """
+    Sasaran pengisian pada mode periode.
+
+        target = max(titik pesan efektif, kebutuhan periode + stok pengaman)
+
+    Bentuknya sama dengan target_pengadaan(); yang berganti hanya suku
+    kebutuhannya -- jumlah prakiraan sepanjang periode yang dipilih, bukan
+    laju x HORIZON_KEPUTUSAN. Suku pertamanya menjaga invarian yang sama:
+    sasaran tidak pernah berada di bawah ambang pemicunya sendiri.
+    """
+    kebutuhan = _angka(kebutuhan_periode)
+    if kebutuhan is None:
+        return None
+    return max(_angka(effective_reorder_point) or 0.0,
+               max(0.0, kebutuhan) + (_angka(safety_stock) or 0.0))
+
+
+def saran_qty_periode(status: str, effective_reorder_point, kebutuhan_periode,
+                      safety_stock, available_stock,
+                      punya_forecast: bool = True) -> int | None:
+    """
+    Berapa yang dipesan pada mode periode: sasaran dikurangi stok tersedia.
+
+    Untuk barang yang kurang, itu sama dengan KEKURANGAN + STOK PENGAMAN --
+    kalimat yang dapat diucapkan di depan tabelnya. Lebih besar hanya bila
+    titik pesan efektif yang menang sebagai sasaran.
+
+    NOL BILA AMAN, None bila belum dapat dihitung; keduanya berarti sama
+    seperti pada saran_qty_reorder(). Statusnya menjadi masukan di sini karena
+    pada mode ini pemicunya dua (kekurangan periode ATAU titik pesan), dan
+    memeriksa ulang keduanya di dua tempat adalah undangan untuk berselisih.
+    """
+    if not punya_forecast:
+        return None
+    sasaran = target_pengadaan_periode(effective_reorder_point,
+                                       kebutuhan_periode, safety_stock)
+    if sasaran is None:
+        return None
+    if status == STATUS_AMAN:
+        return 0
+
+    tersedia = _angka(available_stock) or 0.0
+    kebutuhan = max(0.0, sasaran - tersedia)
+    # Sama seperti saran_qty_reorder(): stok yang duduk tepat di ambang, dengan
+    # sasaran yang juga tepat di situ, memesan kebutuhan satu periode supaya
+    # ambangnya terlepas.
+    if kebutuhan <= 0:
+        kebutuhan = max(0.0, _angka(kebutuhan_periode) or 0.0)
+    return max(0, math.ceil(kebutuhan))
+
+
 def prioritas_reorder(status: str, available_stock, safety_stock) -> str:
     """
     Mana yang dikerjakan lebih dulu di antara barang yang sama-sama perlu
@@ -794,6 +890,42 @@ def kalimat_status_reorder(*, action_status: str, tersedia, titik_efektif,
     if action_status == STATUS_PERLU_REORDER:
         return i18n.t("reorder.reason.perlu", lang, s=s, e=e, u=u)
     return i18n.t("reorder.reason.aman", lang, s=s, e=e, u=u)
+
+
+def kalimat_status_periode(*, action_status: str, tersedia, titik_efektif,
+                           kebutuhan, kekurangan, hari: int, masa_tunggu_hari,
+                           unit: str, lang: str = i18n.BAHASA_BAWAAN) -> str:
+    """
+    Kalimat alasan pada mode periode. Menyebut periodenya dan angka yang sama
+    dengan kolom Kebutuhan dan Kurang/Sisa di sebelahnya.
+
+    Barang yang CUKUP untuk periodenya tetapi sudah menyentuh titik pesan
+    mendapat kalimatnya sendiri: tanpa itu barisnya terbaca "sisa 7, perlu
+    pesan" dan tidak ada yang menjelaskan sebabnya.
+    """
+    u = f" {unit}".rstrip()
+    s, e = bulat(tersedia), bulat(titik_efektif)
+    k, b = bulat(kekurangan) or 0, bulat(kebutuhan)
+
+    if action_status == STATUS_RISIKO_STOCKOUT:
+        if (_angka(tersedia) or 0.0) <= 0:
+            return i18n.t("reorder.reason.stockout.empty", lang)
+        return i18n.t("reorder.reason.stockout.before_lead", lang, s=s, u=u)
+    if action_status == STATUS_PERLU_REORDER:
+        if k > 0:
+            return i18n.t("reorder.reason.periode.kurang", lang,
+                          n=hari, b=b, s=s, k=k, u=u)
+        lead = bulat(masa_tunggu(masa_tunggu_hari))
+        if lead:
+            return i18n.t("reorder.reason.periode.titik_pesan", lang,
+                          n=hari, e=e, l=lead, u=u)
+        return i18n.t("reorder.reason.periode.titik_pesan_tanpa_lead", lang,
+                      n=hari, e=e, u=u)
+    if b is None:
+        return i18n.t("reorder.reason.periode.belum", lang)
+    if b <= 0:
+        return i18n.t("reorder.reason.periode.diam", lang, n=hari)
+    return i18n.t("reorder.reason.periode.cukup", lang, n=hari, b=b, s=s, u=u)
 
 
 def kalimat_pengadaan(*, qty: int | None, titik_efektif, sasaran,
@@ -1046,10 +1178,21 @@ def lapisan_keputusan(
     history_start=None,
     history_end=None,
     as_of: str = "",
+    periode_keputusan: int | None = None,
+    kebutuhan_periode=None,
+    kekurangan_periode=None,
+    sisa_periode=None,
     lang: str = i18n.BAHASA_BAWAAN,
 ) -> dict:
     """
     Menyusun seluruh field turunan yang dipakai kartu keputusan.
+
+    MODE PERIODE (opt-in lewat `periode_keputusan`). Bila diisi, status dan
+    jumlah pesanan mengikuti periode itu: `kebutuhan_periode` adalah jumlah
+    prakiraan sepanjang periode, `kekurangan_periode` dan `sisa_periode`
+    selisihnya terhadap stok tersedia -- ketiganya angka yang sama dengan tiga
+    kartu halaman Prakiraan. Tanpa itu seluruh perilaku lama berlaku apa
+    adanya, dan itulah yang tetap dikunci tes kasus tepi.
 
     Dipanggil untuk SETIAP hasil prakiraan, termasuk yang datanya belum cukup:
     pada kasus itu laju pemakaiannya None, dan bucket-nya jujur berbunyi "—"
@@ -1070,8 +1213,17 @@ def lapisan_keputusan(
     permintaan_lead = permintaan_selama_lead(avg_daily_usage, lead_time_days)
     titik_efektif = titik_pesan_efektif(titik, permintaan_lead, safety_stock)
     memadai = titik_pesan_memadai(titik, permintaan_lead, safety_stock)
-    sasaran_isi = target_pengadaan(titik_efektif, avg_daily_usage, safety_stock)
-    kebutuhan_horizon = kebutuhan_horizon_keputusan(avg_daily_usage)
+    mode_periode = bool(periode_keputusan)
+    if mode_periode:
+        hari_keputusan = int(periode_keputusan)
+        kebutuhan_horizon = _angka(kebutuhan_periode)
+        sasaran_isi = target_pengadaan_periode(titik_efektif, kebutuhan_horizon,
+                                               safety_stock)
+    else:
+        hari_keputusan = HORIZON_KEPUTUSAN
+        sasaran_isi = target_pengadaan(titik_efektif, avg_daily_usage,
+                                       safety_stock)
+        kebutuhan_horizon = kebutuhan_horizon_keputusan(avg_daily_usage)
     hari_efektif = hari_menuju_titik_pesan_efektif(
         tersedia, titik_efektif, avg_daily_usage
     )
@@ -1083,17 +1235,31 @@ def lapisan_keputusan(
     # sebelumnya: invarian "status mendesak berarti ada yang dipesan" kini
     # dijaga oleh target_pengadaan(), bukan dengan menyuapkan jumlah ke dalam
     # status -- lihat catatan pada status_keputusan.
-    status = status_keputusan(
-        available_stock=tersedia,
-        effective_reorder_point=titik_efektif,
-        avg_daily_usage=avg_daily_usage,
-        lead_time_days=lead_time_days,
-    )
+    punya_laju = has_forecast and _angka(avg_daily_usage) is not None
+    if mode_periode:
+        status = status_keputusan_periode(
+            available_stock=tersedia,
+            effective_reorder_point=titik_efektif,
+            avg_daily_usage=avg_daily_usage,
+            lead_time_days=lead_time_days,
+            kekurangan_periode=kekurangan_periode,
+        )
+        qty_reorder = saran_qty_periode(
+            status, titik_efektif, kebutuhan_horizon, safety_stock, tersedia,
+            punya_forecast=punya_laju,
+        )
+    else:
+        status = status_keputusan(
+            available_stock=tersedia,
+            effective_reorder_point=titik_efektif,
+            avg_daily_usage=avg_daily_usage,
+            lead_time_days=lead_time_days,
+        )
+        qty_reorder = saran_qty_reorder(
+            titik_efektif, avg_daily_usage, safety_stock, tersedia,
+            punya_forecast=punya_laju,
+        )
     prioritas = prioritas_reorder(status, tersedia, safety_stock)
-    qty_reorder = saran_qty_reorder(
-        titik_efektif, avg_daily_usage, safety_stock, tersedia,
-        punya_forecast=has_forecast and _angka(avg_daily_usage) is not None,
-    )
     # AMAN berarti nol, tanpa kecuali. saran_qty_reorder() sudah menjawab nol
     # untuk stok di atas ambang; penjepitan ini menutup satu-satunya celah yang
     # tersisa -- RISIKO_STOCKOUT karena stok nol pada barang yang tidak punya
@@ -1222,10 +1388,18 @@ def lapisan_keputusan(
         "days_to_effective_rop_label": label_hari_menuju(
             hari_efektif, tersentuh_efektif, laju_ada, lang=lang
         ),
-        "reorder_status_reason": kalimat_status_reorder(
-            action_status=status, tersedia=tersedia,
-            titik_efektif=titik_efektif, titik_master=titik, unit=unit_code,
-            lang=lang,
+        "reorder_status_reason": (
+            kalimat_status_periode(
+                action_status=status, tersedia=tersedia,
+                titik_efektif=titik_efektif, kebutuhan=kebutuhan_horizon,
+                kekurangan=kekurangan_periode, hari=hari_keputusan,
+                masa_tunggu_hari=lead_time_days, unit=unit_code, lang=lang,
+            ) if mode_periode else
+            kalimat_status_reorder(
+                action_status=status, tersedia=tersedia,
+                titik_efektif=titik_efektif, titik_master=titik,
+                unit=unit_code, lang=lang,
+            )
         ),
         "effective_reorder_point_basis": kalimat_titik_pesan_efektif(
             lead_time_demand=permintaan_lead, safety_stock=safety_stock,
@@ -1254,7 +1428,16 @@ def lapisan_keputusan(
         # yang dipilih di layar. Dasar sasaran pengisian; diterbitkan supaya
         # panel detail dapat menunjukkan asal jumlah pesanan tanpa menghitung
         # ulang di frontend.
-        "decision_horizon_days": HORIZON_KEPUTUSAN,
+        "decision_horizon_days": hari_keputusan,
+        # "period" bila status dan jumlah mengikuti periode yang dipilih;
+        # "lead_time" pada perilaku lama. Layar tidak menebaknya sendiri.
+        "decision_basis": "period" if mode_periode else "lead_time",
+        # Selisih kebutuhan periode terhadap stok tersedia, bilangan bulat yang
+        # sama dengan kartu Prakiraan. None di luar mode periode dan pada
+        # barang yang prakiraannya belum tersedia.
+        "period_shortage_int": (bulat(kekurangan_periode)
+                                if mode_periode else None),
+        "period_surplus_int": (bulat(sisa_periode) if mode_periode else None),
         "decision_horizon_usage": (round(kebutuhan_horizon, 3)
                                    if kebutuhan_horizon is not None else None),
         "decision_horizon_usage_int": bulat(kebutuhan_horizon),

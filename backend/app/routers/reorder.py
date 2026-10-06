@@ -15,11 +15,15 @@ persis dengan /api/forecast -- `forecasting._susun()` lalu
 atau jumlah yang berbeda di daftar ini dan di layar detailnya. Yang dikerjakan
 di sini hanya perulangan, penyaringan, pengurutan, dan peringkasan.
 
-MODEL PRAKIRAANNYA DIPATOK ke rumus statistik sederhana, dan itu disengaja.
-Titik pesan tidak menuntut model prakiraan untuk berarti; ia menuntut laju
-pemakaian dan ketidakpastiannya. Membiarkan daftar ini mengikuti pilihan model
-di halaman Prakiraan berarti urutan pekerjaan pengadaan berubah karena setelan
-tampilan di layar sebelah -- lihat catatan yang sama pada app/reorder/page.tsx.
+PERIODE DAN MODELNYA MENGIKUTI HALAMAN PRAKIRAAN (sejak 6 Oktober 2026).
+Dulu keduanya dipatok -- 14 hari, rumus statistik -- supaya setelan tampilan
+di layar sebelah tidak menggeser jumlah pesanan diam-diam. Akibatnya dua
+halaman menyebut dua kebutuhan untuk barang yang sama, dan tidak ada yang
+dapat menjelaskan selisihnya di depan tabel. Kini keduanya parameter yang
+terlihat di layar ini juga: `days` dan `model`, dengan bawaan yang sama
+seperti sebelumnya bagi pemanggil yang tidak mengirim apa-apa (dasbor).
+Status dan jumlahnya dihitung pada mode periode lapisan keputusan; lihat
+decision.status_keputusan_periode.
 
 BIAYANYA DIBATASI. Tiap baris menjalankan rantai prakiraan penuh, jadi jumlah
 pasangan barang/gudang yang diproses dijepit pada BATAS_BARIS. Lebih baik
@@ -33,6 +37,7 @@ from fastapi import APIRouter, Query
 from .. import decision, forecasting, i18n
 from ..common import clamp_page, PAGE_SIZE_DEFAULT
 from ..db import readonly
+from ..ml import klasik
 from . import forecasting as fr
 
 router = APIRouter(tags=["reorder"])
@@ -94,7 +99,22 @@ def _pasangan(q: str | None, warehouse_id: int | None) -> list[dict]:
         return [dict(r) for r in cur.fetchall()]
 
 
-def _baris(item_id: int, warehouse_id: int, lang: str) -> dict | None:
+def _hari(days) -> int:
+    """
+    Periode yang sah, atau bawaannya.
+
+    Fungsi router di aplikasi ini kerap dipanggil langsung sebagai fungsi
+    Python (dasbor melakukannya), dan pada pemanggilan seperti itu nilai bawaan
+    Query milik FastAPI masuk apa adanya -- sebuah objek, bukan bilangan.
+    """
+    if isinstance(days, bool) or not isinstance(days, int):
+        return decision.HORIZON_KEPUTUSAN
+    return max(1, min(days, fr.FORECAST_DAYS_MAX))
+
+
+def _baris(item_id: int, warehouse_id: int, lang: str,
+           days: int = decision.HORIZON_KEPUTUSAN,
+           model: str = klasik.KUNCI_STATISTIK) -> dict | None:
     """
     Satu baris daftar, dari jalur perhitungan yang sama dengan layar detail.
 
@@ -103,8 +123,9 @@ def _baris(item_id: int, warehouse_id: int, lang: str) -> dict | None:
     tidak boleh menjatuhkan seluruh halaman: yang lain tetap dapat ditindak.
     """
     try:
-        h = fr._susun(item_id, warehouse_id, fr.HORIZON_KEPUTUSAN,
-                      fr.HISTORICAL_DAYS_DEFAULT, lang)
+        h = fr._susun(item_id, warehouse_id, days,
+                      fr.HISTORICAL_DAYS_DEFAULT, lang, model=model,
+                      keputusan_periode=True)
     except Exception:
         return None
 
@@ -126,9 +147,14 @@ def _baris(item_id: int, warehouse_id: int, lang: str) -> dict | None:
         "lead_time_days_int": h["lead_time_days_int"],
         "lead_time_demand_int": h["lead_time_demand_int"],
 
-        # --- kebutuhan ke depan, pada horizon KEPUTUSAN yang dipatok ---
+        # --- kebutuhan ke depan, pada PERIODE yang dipilih di layar ---
+        # Sama persis dengan tiga kartu halaman Prakiraan untuk periode dan
+        # model yang sama: kebutuhan, lalu kurang ATAU sisa terhadap stok
+        # tersedia. Kedua selisih itu None bila prakiraannya belum tersedia.
         "decision_horizon_days": h["decision_horizon_days"],
         "forecast_usage_int": h["decision_horizon_usage_int"],
+        "period_shortage_int": h["period_shortage_int"],
+        "period_surplus_int": h["period_surplus_int"],
         # Versi PENUH dari angka di atas, dan ia ada di sini untuk satu
         # keperluan saja: dijumlahkan. Kolom tabel merender yang `_int`;
         # ringkasan katalog menjumlahkan yang ini lalu membulatkan SEKALI di
@@ -170,6 +196,10 @@ def daftar_reorder(
     status: str | None = Query(None, description="AMAN, PERLU_REORDER, RISIKO_STOCKOUT"),
     priority: str | None = Query(None, description="TINGGI, SEDANG, RENDAH"),
     q: str | None = Query(None, description="Cari SKU atau nama barang"),
+    days: int = Query(decision.HORIZON_KEPUTUSAN, ge=1, le=fr.FORECAST_DAYS_MAX,
+                      description="Periode kebutuhan, sama dengan /api/forecast"),
+    model: str = Query(klasik.KUNCI_STATISTIK,
+                       description="Model prakiraan, sama dengan /api/forecast"),
     page: int = 1,
     page_size: int = PAGE_SIZE_DEFAULT,
     lang: str = Query(i18n.BAHASA_BAWAAN),
@@ -189,12 +219,15 @@ def daftar_reorder(
     """
     page, page_size, offset = clamp_page(page, page_size)
     lang = i18n.normalisasi(lang)
+    days = _hari(days)
+    model = fr._model_sah(model if isinstance(model, str) else "")
 
     pasangan = _pasangan(q, warehouse_id)
     terpotong = len(pasangan) > BATAS_BARIS
     pasangan = pasangan[:BATAS_BARIS]
 
-    semua = [b for b in (_baris(p["item_id"], p["warehouse_id"], lang)
+    semua = [b for b in (_baris(p["item_id"], p["warehouse_id"], lang,
+                                days, model)
                          for p in pasangan) if b is not None]
 
     # Ringkasan atas SELURUH baris, sebelum saringan status/prioritas.
@@ -226,7 +259,7 @@ def daftar_reorder(
         # ratus baris teratas, sementara kartu "perlu reorder" di sebelahnya
         # tetap mencakup seluruhnya. Tidak ada satu pun galat yang terbit dari
         # perselisihan seperti itu.
-        "horizon_hari": decision.HORIZON_KEPUTUSAN,
+        "horizon_hari": days,
         # Dijumlahkan sebagai pecahan lalu dibulatkan SEKALI. Lihat catatan
         # pada "forecast_usage" di _baris().
         "total_kebutuhan_horizon": decision.bulat(
@@ -239,7 +272,7 @@ def daftar_reorder(
         "habis_dalam_horizon": sum(
             1 for b in semua
             if b["days_of_cover_int"] is not None
-            and b["days_of_cover_int"] <= decision.HORIZON_KEPUTUSAN),
+            and b["days_of_cover_int"] <= days),
         "tanpa_prakiraan": sum(1 for b in semua if not b["has_forecast"]),
     }
 

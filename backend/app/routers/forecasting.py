@@ -187,10 +187,33 @@ def _model_sah(model: str) -> str:
     return model if model in klasik.semua_kunci() else klasik.KUNCI_STATISTIK
 
 
+def _masukan_periode(hasil: dict, forecast_days: int, aktif: bool) -> dict:
+    """
+    Masukan mode periode untuk lapisan keputusan, dari hasil prakiraan.
+
+    Kekurangan dan sisanya dibaca dari BARIS TERAKHIR `daily_plan` -- sumber
+    yang sama persis dengan kartu "perlu ditambah" / "sisa stok" di halaman
+    Prakiraan. Mengurangkan ulang kebutuhan dari stok di sini akan cocok
+    hampir selalu, lalu meleset satu unit pada pembulatan tertentu, dan satu
+    unit itulah yang akan ditanyakan orang.
+    """
+    if not aktif:
+        return {}
+    rencana = hasil.get("daily_plan") or []
+    akhir = rencana[-1] if rencana else None
+    return {
+        "periode_keputusan": forecast_days,
+        "kebutuhan_periode": hasil.get("predicted_usage"),
+        "kekurangan_periode": akhir["shortage_int"] if akhir else None,
+        "sisa_periode": akhir["stock_int"] if akhir else None,
+    }
+
+
 def _susun(item_id: int, warehouse_id: int, forecast_days: int,
            historical_days: int, lang: str = i18n.BAHASA_BAWAAN,
            model: str = klasik.KUNCI_STATISTIK,
-           strategi: str | None = None) -> dict:
+           strategi: str | None = None,
+           keputusan_periode: bool = False) -> dict:
     """
     Mengambil data mentah lalu menyerahkannya ke mesin prakiraan.
 
@@ -210,6 +233,12 @@ def _susun(item_id: int, warehouse_id: int, forecast_days: int,
     dan panel keputusan harus menyebut angka yang sama untuk barang yang sama.
     Bila salah satunya diam-diam memakai model lain, satu layar akan memuat dua
     jawaban untuk pertanyaan yang sama.
+
+    `keputusan_periode` menyalakan MODE PERIODE lapisan keputusan: status dan
+    jumlah pesanan mengikuti `forecast_days`, memakai kebutuhan dan kekurangan
+    yang sama dengan yang dicetak halaman Prakiraan. Hanya daftar Pemesanan
+    Ulang (dan dasbor, yang meringkasnya) yang memintanya; lihat
+    decision.status_keputusan_periode.
     """
     with readonly() as cur:
         cur.execute(
@@ -545,6 +574,7 @@ def _susun(item_id: int, warehouse_id: int, forecast_days: int,
         history_start=hasil["historical_period"]["start"],
         history_end=hasil["historical_period"]["end"],
         as_of=as_of.isoformat(),
+        **_masukan_periode(hasil, forecast_days, keputusan_periode),
         lang=lang,
     ))
 

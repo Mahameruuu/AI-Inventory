@@ -607,3 +607,49 @@ class TestAlasanRekomendasi:
             assert judul == "Belum perlu pengadaan", nama
         else:
             assert judul == f"Pesan {qty} PCS", nama
+
+
+# ==========================================================================
+# 8. Periode: daftar Pemesanan Ulang berbicara angka yang sama dengan Prakiraan
+# ==========================================================================
+
+class TestPeriodeSamaDenganPrakiraan:
+
+    # /api/forecast dibatasi 30 permintaan per menit dan modul ini sudah
+    # memakainya di atas, jadi yang dibandingkan satu periode dan empat barang.
+    @pytest.mark.parametrize("hari", [30])
+    def test_kebutuhan_dan_selisih_identik(self, klien, dunia, hari):
+        """
+        Untuk periode yang sama, kolom Kebutuhan dan Kurang/Sisa pada daftar
+        harus persis angka tiga kartu halaman Prakiraan -- itulah seluruh
+        alasan periodenya dibuka di sini.
+        """
+        r = klien.get(f"/api/reorder?page_size=200&days={hari}", headers=dunia["h"])
+        assert r.status_code == 200, r.text
+        d = r.json()
+        assert d["summary"]["horizon_hari"] == hari
+        diperiksa = 0
+        for b in d["items"]:
+            if b["warehouse_code"] != "WH-01" or not b["has_forecast"]:
+                continue
+            if diperiksa == 4:
+                break
+            f = prakiraan(klien, dunia, b["sku"], days=hari)
+            akhir = f["daily_plan"][-1]
+            assert b["decision_horizon_days"] == hari
+            assert b["forecast_usage_int"] == f["forecast_usage_int"], b["sku"]
+            assert b["period_shortage_int"] == akhir["shortage_int"], b["sku"]
+            assert b["period_surplus_int"] == akhir["stock_int"], b["sku"]
+            diperiksa += 1
+        assert diperiksa > 0
+
+    def test_yang_kurang_selalu_disuruh_pesan(self, klien, dunia):
+        d = klien.get("/api/reorder?page_size=200&days=90", headers=dunia["h"]).json()
+        kurang = [b for b in d["items"] if (b["period_shortage_int"] or 0) > 0]
+        assert kurang, "data uji tidak memuat barang yang kurang pada 90 hari"
+        for b in kurang:
+            assert b["action_status"] != "AMAN", b["sku"]
+            assert b["recommended_order_qty"] >= b["period_shortage_int"], b["sku"]
+
+    def test_bawaan_tetap_empat_belas_hari(self, reorder):
+        assert reorder["summary"]["horizon_hari"] == 14
