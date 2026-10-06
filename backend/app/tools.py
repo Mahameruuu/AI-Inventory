@@ -115,8 +115,11 @@ def get_low_stock(warehouse_id: int | None = None) -> Any:
 # CRITICAL pada 30 hari tanpa ada yang berubah pada stoknya. Itu mengukur
 # panjang horizon, bukan kegawatan. Field-nya tetap terbit di API untuk
 # antarmuka lama, tetapi model tidak boleh menjadikannya tingkat risiko.
-# Urgensi diambil dari action_status, yang bersandar pada lead time dan tidak
-# bergerak saat horizon berubah.
+# Urgensi diambil dari action_status. Sejak 6 Oktober 2026 ia dihitung pada
+# MODE PERIODE -- sama dengan daftar Pemesanan Ulang -- jadi ia MEMANG bergerak
+# bersama periode, dan itu disengaja: kurang untuk periode yang diminta berarti
+# perlu dipesan. Yang membedakannya dari `status` adalah ia selalu datang
+# bersama jumlah pesanan dan kalimat alasan yang menyebut periodenya.
 #
 # SELURUH ANGKANYA VERSI TAMPILAN, yaitu bilangan bulat yang sama persis
 # dengan yang tercetak di kartu -- lihat _SUMBER_TAMPILAN dan _DIBULATKAN di
@@ -201,7 +204,8 @@ def get_forecast(item_id: int, warehouse_id: int, days: int = 30) -> Any:
     """
     days = max(1, min(int(days), forecasting_router.FORECAST_DAYS_MAX))
     h = forecasting_router._susun(
-        item_id, warehouse_id, days, forecasting_router.HISTORICAL_DAYS_DEFAULT
+        item_id, warehouse_id, days, forecasting_router.HISTORICAL_DAYS_DEFAULT,
+        keputusan_periode=True,
     )
     # Nama internal mesin dipetakan ke nama yang dipakai antarmuka, supaya
     # jawaban chatbot dan halaman Forecasting menyebut angka yang sama dengan
@@ -238,15 +242,17 @@ def get_forecast(item_id: int, warehouse_id: int, days: int = 30) -> Any:
 # hanya mengundang model menyimpulkan urgensi dari angka horizon -- persis
 # kekeliruan yang seluruh berkas ini berusaha cegah.
 #
-# TIDAK SATU PUN field di sini bergerak saat panjang periode prakiraan diubah.
-# forecast_usage, projected_shortage, dan days_until_stockout sengaja TIDAK
-# ikut; keduanya tersedia lewat get_forecast bila memang ditanyakan.
+# SEJAK 6 OKTOBER 2026 KEPUTUSANNYA MENGIKUTI PERIODE, sama dengan daftar
+# Pemesanan Ulang: period_days, period_demand, period_shortage, dan
+# period_surplus adalah kolom Kebutuhan dan Kurang / sisa pada layar itu.
 BIDANG_REORDER = (
     "item", "warehouse",
     # Tiga basis stok, berdampingan supaya model tidak menebak yang mana.
     "current_stock", "reserved_stock", "available_stock",
     # Ambang pada master barang, untuk dibandingkan dengan yang efektif.
     "reorder_point", "minimum_stock", "safety_stock", "lead_time_days",
+    # --- periode keputusan: angka yang sama dengan daftar Pemesanan Ulang ---
+    "period_days", "period_demand", "period_shortage", "period_surplus",
     # --- inti keputusan ---
     "lead_time_demand", "effective_reorder_point",
     "effective_reorder_point_reached", "days_to_effective_rop",
@@ -266,22 +272,22 @@ BIDANG_REORDER = (
 
 _SUMBER_TAMPILAN_REORDER = {
     **_SUMBER_TAMPILAN,
+    "period_days": "decision_horizon_days",
+    "period_demand": "decision_horizon_usage_int",
+    "period_shortage": "period_shortage_int",
+    "period_surplus": "period_surplus_int",
     "days_of_cover": "days_of_cover_int",
 }
 
 _DIBULATKAN_REORDER = ("reserved_stock",)
 
-# Horizon yang dipakai tool reorder. BUKAN pilihan model, dan bukan parameter
-# tool: lapisan reorder tidak memakai forecast_days sama sekali -- titik pesan
-# efektif, hari menuju titik pesan, dan jumlah pengadaan seluruhnya berpatokan
-# lead time atas stok tersedia. Satu-satunya jalur halusnya adalah rata-rata
-# pemakaian harian, yang dirata-ratakan dari deret prakiraan sepanjang horizon,
-# jadi nilainya dipatok sama dengan halaman Reorder (HARI_ACUAN) supaya chatbot
-# dan layar mustahil menyebut angka yang berbeda untuk barang yang sama.
-HARI_ACUAN_REORDER = 7
+# Periode bawaan tool reorder: sama dengan bawaan /api/reorder dan dasbor,
+# diambil dari satu konstanta supaya ketiganya mustahil berbeda.
+HARI_ACUAN_REORDER = decision.HORIZON_KEPUTUSAN
 
 
-def get_reorder_decision(item_id: int, warehouse_id: int) -> Any:
+def get_reorder_decision(item_id: int, warehouse_id: int,
+                         days: int = HARI_ACUAN_REORDER) -> Any:
     """
     Keputusan pemesanan ulang satu barang pada satu gudang.
 
@@ -292,8 +298,13 @@ def get_reorder_decision(item_id: int, warehouse_id: int) -> Any:
     yang bisa jauh lebih tinggi daripada yang tercatat di master barang.
 
     Sumbernya mesin yang sama persis dengan halaman Reorder, dipanggil di dalam
-    proses, dengan horizon yang dipatok sama. Tidak ada angka yang dihitung
-    ulang di sini dan tidak ada yang boleh dihitung model.
+    proses, pada mode periode yang sama. Tidak ada angka yang dihitung ulang di
+    sini dan tidak ada yang boleh dihitung model.
+
+    `days` adalah periode kebutuhannya; bawaannya sama dengan bawaan
+    /api/reorder dan dasbor. Asisten tidak dapat melihat periode yang sedang
+    dipilih pengguna di layar, jadi jawabannya WAJIB menyebut periodenya --
+    itulah yang membuat selisih dengan layar dapat dijelaskan, bukan misterius.
 
     CATATAN KEANDALAN IKUT SERTA, BUKAN OPSIONAL. Seluruh angka di atas lahir
     dari laju pemakaian, dan laju pemakaian lahir dari histori yang panjangnya
@@ -301,9 +312,15 @@ def get_reorder_decision(item_id: int, warehouse_id: int) -> Any:
     UNIT" tanpa menyebut bahwa angka itu berdiri di atas histori tujuh hari
     menyampaikan kepastian yang tidak pernah dimiliki perhitungannya.
     """
+    try:
+        days = int(days)
+    except (TypeError, ValueError):
+        days = HARI_ACUAN_REORDER
+    days = max(1, min(days, forecasting_router.FORECAST_DAYS_MAX))
     h = forecasting_router._susun(
-        item_id, warehouse_id, HARI_ACUAN_REORDER,
+        item_id, warehouse_id, days,
         forecasting_router.HISTORICAL_DAYS_DEFAULT,
+        keputusan_periode=True,
     )
     rata = {**h, "safety_stock": h["safety_stock_value"]}
     hasil = {}
@@ -634,15 +651,16 @@ SPESIFIKASI: list[dict] = [
        "pertanyaan kapan harus memesan; reorder_point_within_horizon = apakah titik pesan "
        "tersentuh di dalam periode ini; days_until_stockout = hari ke berapa stok habis; "
        "has_forecast = false berarti histori belum cukup dan seluruh angka kosong. "
-       "Lapisan reorder, patokannya waktu tunggu pengiriman dan BUKAN periode prakiraan: "
+       "Lapisan reorder; statusnya mengikuti periode ini (perlu reorder bila "
+       "projected_shortage lebih dari 0 atau stok sudah menyentuh titik pesan efektif): "
        "lead_time_days = perkiraan berapa hari sejak pesanan dibuat sampai barang tiba, "
        "null berarti belum diisi pada master barang; "
        "lead_time_demand = perkiraan pemakaian selama menunggu kiriman, yaitu laju "
        "pemakaian harian dikali lead_time_days; "
        "effective_reorder_point = titik pesan hasil perhitungan, yaitu "
-       "lead_time_demand ditambah safety_stock; INILAH ambang yang menentukan "
-       "urgensi, sedangkan reorder_point adalah ambang yang ditetapkan pada master "
-       "barang dan keduanya boleh berbeda; "
+       "lead_time_demand ditambah safety_stock; ia tetap memicu pemesanan walau stok "
+       "cukup untuk periodenya, sedangkan reorder_point adalah ambang yang ditetapkan "
+       "pada master barang dan keduanya boleh berbeda; "
        "days_to_effective_rop = berapa hari lagi menyentuh titik pesan itu; "
        "order_up_to_level = sampai berapa stok diisi saat pengadaan dilakukan; "
        "reorder_point_adequate = false berarti titik pesan pada master barang terlalu "
@@ -650,8 +668,8 @@ SPESIFIKASI: list[dict] = [
        "dikalibrasi, bukan tingkat kegawatan; "
        "recommended_order_qty = jumlah yang disarankan dipesan, 0 berarti tidak perlu "
        "membeli sedangkan null berarti belum dapat dihitung. "
-       "recommended_order_qty dan projected_shortage MENJAWAB PERTANYAAN BERBEDA dan "
-       "biasanya berbeda nilainya; jangan pernah menyamakan atau menukar keduanya.",
+       "recommended_order_qty adalah projected_shortage DITAMBAH stok pengaman, jadi "
+       "biasanya lebih besar; jangan pernah menyamakan atau menukar keduanya.",
        {"item_id": {"type": "integer", "description": "Wajib. Dari hasil get_inventory."},
         "warehouse_id": {"type": "integer", "description": "Wajib. Dari hasil get_inventory."},
         "days": {"type": "integer",
@@ -666,15 +684,22 @@ SPESIFIKASI: list[dict] = [
        "menentukan adalah titik pesan EFEKTIF yang dihitung dari waktu tunggu pengiriman "
        "dan cadangan penyangga, dan kedua angka itu kerap jauh berbeda. Wajib memakai "
        "item_id dan warehouse_id; keduanya diperoleh lebih dulu dari get_inventory dengan "
-       "parameter q berisi SKU atau nama barang. Tidak ada parameter periode, dan itu "
-       "disengaja: tidak satu pun angka pada hasil ini bergerak karena panjang periode "
-       "prakiraan. JANGAN menghitung, mengurangkan, atau membulatkan angka apa pun dari "
-       "hasil ini. Arti tiap field: "
-       "action_status_label = tingkat urgensi (Stok aman, Perlu dipantau, Segera pesan), "
-       "SATU-SATUNYA indikator keputusan; "
+       "parameter q berisi SKU atau nama barang. Parameter days adalah PERIODE kebutuhan: "
+       "isi dengan periode yang disebut pengguna, dan biarkan kosong bila ia tidak "
+       "menyebutnya. Keputusannya mengikuti periode itu, jadi jawaban WAJIB menyebut "
+       "periodenya dari period_days. JANGAN menghitung, mengurangkan, atau membulatkan "
+       "angka apa pun dari hasil ini. Arti tiap field: "
+       "period_days = periode yang dipakai; period_demand = perkiraan kebutuhan selama "
+       "periode itu; period_shortage = kekurangan stok tersedia terhadap kebutuhan itu, "
+       "0 berarti cukup; period_surplus = sisa stok setelah kebutuhan itu; keempatnya "
+       "angka yang sama dengan halaman Pemesanan Ulang; "
+       "action_status_label = tingkat urgensi (Stok aman, Perlu reorder, Risiko "
+       "stockout), SATU-SATUNYA indikator keputusan: perlu reorder bila stok kurang "
+       "untuk periode itu ATAU sudah menyentuh titik pesan efektif; "
        "reorder_status_reason = kalimat alasan status itu, sudah menyebut angkanya; "
-       "effective_reorder_point = ambang yang menentukan urgensi, yaitu lead_time_demand "
-       "ditambah safety_stock, sedangkan reorder_point adalah ambang yang ditetapkan pada "
+       "effective_reorder_point = titik pesan hasil perhitungan, yaitu lead_time_demand "
+       "ditambah safety_stock; ia tetap memicu pemesanan walau stok cukup untuk "
+       "periodenya, sedangkan reorder_point adalah ambang yang ditetapkan pada "
        "master barang; keduanya boleh berbeda dan bila menyebut keduanya jelaskan bedanya; "
        "effective_reorder_point_basis = kalimat asal-usul ambang itu; "
        "effective_reorder_point_reached = apakah stok tersedia sudah menyentuhnya; "
@@ -682,7 +707,8 @@ SPESIFIKASI: list[dict] = [
        "days_to_effective_rop_label kalimat siap sebutnya; "
        "days_of_cover = berapa hari lagi stok habis sama sekali, TIDAK dibatasi periode "
        "prakiraan; "
-       "recommended_order_qty = jumlah yang disarankan dipesan, 0 berarti belum perlu "
+       "recommended_order_qty = jumlah yang disarankan dipesan, yaitu kekurangan periode "
+       "ditambah stok pengaman; 0 berarti belum perlu "
        "memesan sedangkan null berarti belum dapat dihitung dan itu BUKAN nol; "
        "order_qty_title dan order_qty_reason = judul dan alasan jumlah itu, siap dikutip; "
        "order_up_to_level = sampai berapa stok diisi saat pengadaan dilakukan; "
@@ -695,7 +721,10 @@ SPESIFIKASI: list[dict] = [
        "di atas, WAJIB ikut disampaikan pada jawaban; "
        "has_forecast = false berarti histori belum cukup sehingga angka turunannya kosong.",
        {"item_id": {"type": "integer", "description": "Wajib. Dari hasil get_inventory."},
-        "warehouse_id": {"type": "integer", "description": "Wajib. Dari hasil get_inventory."}},
+        "warehouse_id": {"type": "integer", "description": "Wajib. Dari hasil get_inventory."},
+        "days": {"type": "integer",
+                 "description": "Periode kebutuhan dalam hari. Bawaannya 14, sama "
+                                "dengan bawaan halaman Pemesanan Ulang."}},
        ["item_id", "warehouse_id"]),
     _t("get_forecast_summary",
        "RINGKASAN PRAKIRAAN satu barang untuk periode tertentu: perkiraan kebutuhan, "

@@ -118,6 +118,9 @@ export interface BarisTransfer {
   /** batas tiba: lead time pembelian atau sisa hari stok, mana yang lebih dekat */
   route_deadline_days?: number | null;
   days_of_cover_int: number | null;
+  /** Periode yang dipilih dan kebutuhannya; sama dengan daftar Pemesanan Ulang. */
+  decision_horizon_days: number;
+  forecast_usage_int: number | null;
   action_status: string;
   action_status_label: string;
   priority: string;
@@ -152,6 +155,7 @@ export interface RingkasTransfer {
 export interface DaftarTransfer {
   items: BarisTransfer[];
   summary: RingkasTransfer;
+  horizon_days: number;
   total: number;
   page: number;
   page_size: number;

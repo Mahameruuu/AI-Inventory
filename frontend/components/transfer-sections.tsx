@@ -56,7 +56,7 @@ import {
   Warehouse,
 } from "lucide-react";
 
-import { angka } from "@/components/forecast-ui";
+import { PemilihModel, PemilihPeriode, angka } from "@/components/forecast-ui";
 import { PanelRuteML, PilihanRute } from "@/components/rute-ml";
 import { AKSI, PillAksi, PillKeputusan, PillTahap, TAHAP, WARNA } from "@/components/status";
 import { Button, Empty, Field, Select, StatTile, TextInput } from "@/components/ui";
@@ -591,9 +591,11 @@ function PanelKandidat({ baris }: { baris: BarisTransfer }) {
           </span>
         </span>
         <span>
-          <span className="text-muted">{t("tf.detail.erop")}: </span>
+          <span className="text-muted">
+            {t("tf.detail.demand", { n: baris.decision_horizon_days })}:{" "}
+          </span>
           <span className="tnum font-semibold text-ink">
-            {angka(baris.effective_reorder_point_int, satuan)}
+            {angka(baris.forecast_usage_int, satuan)}
           </span>
         </span>
         <span>
@@ -1862,7 +1864,15 @@ export function SaringanTransfer({
   setCari,
   fuzzy,
   setFuzzy,
+  periode,
+  setPeriode,
+  model,
+  setModel,
 }: {
+  periode: string;
+  setPeriode: (v: string) => void;
+  model: string;
+  setModel: (v: string) => void;
   gudang: { id: number; code: string; name: string }[];
   warehouseId: string;
   setWarehouseId: (v: string) => void;
@@ -1885,6 +1895,10 @@ export function SaringanTransfer({
           className="min-w-[220px]"
         />
       </Field>
+      {/* Periode dan Model yang sama dengan Prakiraan dan Pemesanan Ulang:
+          kekurangan yang ditutup di sini adalah kekurangan untuk periode itu. */}
+      <PemilihPeriode periode={periode} setPeriode={setPeriode} />
+      <PemilihModel model={model} setModel={setModel} />
       <Field label={t("tf.search")}>
         <TextInput value={cari} onChange={setCari} placeholder={t("tf.search")} />
       </Field>

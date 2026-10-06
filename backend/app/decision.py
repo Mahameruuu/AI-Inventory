@@ -1291,6 +1291,16 @@ def lapisan_keputusan(
         lang=lang,
     )
 
+    if mode_periode and qty_reorder is not None and kebutuhan_horizon is not None:
+        # Alasan jumlahnya menyebut periode; kalimat bawaan di atas menyebut
+        # masa tunggu, yang pada mode ini bukan lagi dasar jumlahnya.
+        u_ = f" {unit_code}".rstrip()
+        alasan_pengadaan = i18n.t(
+            "order.periode.some.body" if qty_reorder > 0
+            else "order.periode.none.body",
+            lang, t=bulat(tersedia), n=hari_keputusan,
+            b=bulat(kebutuhan_horizon), s=bulat(sasaran_isi), u=u_)
+
     hari_hist = int(hari_histori or 0)
     tingkat, alasan = mutu_data(hari_hist, hari_aktif, lang=lang)
     sebab_lemah = alasan_estimasi_lemah(hari, hari_hist, tingkat, lang=lang)

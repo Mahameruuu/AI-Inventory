@@ -51,6 +51,7 @@ import {
   TabTransfer,
   usePilihTransfer,
 } from "@/components/transfer-sections";
+import { usePilihanModel, usePilihanPeriode } from "@/components/forecast-ui";
 import { ErrorBox, PageHeader, PageSkeleton, Pager } from "@/components/ui";
 import { useApi } from "@/lib/api";
 import { useT } from "@/lib/i18n";
@@ -82,6 +83,9 @@ export default function TransferPage() {
   const [cari, setCari] = useState("");
   const [fuzzy, setFuzzy] = useState(false);
   const [page, setPage] = useState(1);
+  // Dibagi dengan Prakiraan dan Pemesanan Ulang; lihat usePilihanPeriode.
+  const [hari, setHari] = usePilihanPeriode();
+  const [model, setModel] = usePilihanModel();
 
   /*
    * Pencarian DITUNDA sebelum dikirim. Tiap permintaan menjalankan rantai
@@ -100,7 +104,7 @@ export default function TransferPage() {
   // layar kosong yang terbaca seolah tidak ada hasilnya.
   useEffect(() => {
     setPage(1);
-  }, [warehouseId, tab, cariKirim, fuzzy, layar]);
+  }, [warehouseId, tab, cariKirim, fuzzy, layar, hari, model]);
 
   const gudang = useApi<{ items: GudangApi[] }>("/api/warehouses", { page_size: 200 });
   const daftarGudang = gudang.data?.items ?? TANPA_GUDANG;
@@ -112,6 +116,8 @@ export default function TransferPage() {
       decision: tab || undefined,
       q: cariKirim || undefined,
       fuzzy: fuzzy ? "true" : undefined,
+      days: hari,
+      model,
       page,
       page_size: PER_HALAMAN,
     },
@@ -169,6 +175,10 @@ export default function TransferPage() {
           setCari={setCari}
           fuzzy={fuzzy}
           setFuzzy={setFuzzy}
+          periode={hari}
+          setPeriode={setHari}
+          model={model}
+          setModel={setModel}
         />
       </PageHeader>
 

@@ -301,7 +301,7 @@ export const DICT: Record<string, Entry> = {
   "tf.col.plus_more": { id: "+{n} gudang lagi", en: "+{n} more" },
 
   "tf.detail.available": { id: "Stok tersedia", en: "Available stock" },
-  "tf.detail.erop": { id: "Titik pesan efektif", en: "Effective reorder point" },
+  "tf.detail.demand": { id: "Kebutuhan {n} hari", en: "{n}-day demand" },
   "tf.detail.need": { id: "Kekurangan", en: "Shortfall" },
   "tf.detail.need_basis": {
     id: "angka yang sama dengan halaman Pemesanan Ulang",

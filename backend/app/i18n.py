@@ -332,6 +332,15 @@ TEKS: dict[str, dict[str, str]] = {
         "id": "Stok tersedia {t}{u} masih di atas titik pesan efektif, jadi tidak ada kekurangan yang perlu ditutup hari ini.",
         "en": "Available stock {t}{u} is still above the effective reorder point, so there is no shortfall to cover today.",
     },
+    # Mode periode: alasan jumlahnya menyebut periode, bukan masa tunggu.
+    "order.periode.none.body": {
+        "id": "Stok tersedia {t}{u} cukup untuk kebutuhan {n} hari ({b}{u}), jadi belum ada yang perlu dipesan.",
+        "en": "Available stock {t}{u} covers the {n}-day need ({b}{u}), so nothing needs ordering yet.",
+    },
+    "order.periode.some.body": {
+        "id": "Sasaran pengisian {s}{u} — kebutuhan {n} hari ({b}{u}) ditambah stok pengaman, tidak pernah di bawah titik pesan efektif — dikurangi stok tersedia {t}{u}.",
+        "en": "Order-up-to level {s}{u} — the {n}-day need ({b}{u}) plus safety stock, never below the effective reorder point — minus available stock {t}{u}.",
+    },
     "order.some.title": {"id": "Pesan {qty}{u}", "en": "Order {qty}{u}"},
     # Kalimat pembukanya DIHAPUS: "stok tersedia sekian sudah menyentuh titik
     # pesan efektif sekian" adalah kalimat yang sama persis dengan sub-headline

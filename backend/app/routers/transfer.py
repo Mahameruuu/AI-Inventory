@@ -46,6 +46,7 @@ from ..config import (APP_TZ, TRANSFER_BATAS_BARIS, TRANSFER_FUZZY_BAWAAN,
                       TRANSFER_KEMIRIPAN_MIN)
 from ..db import readonly, transaction
 from ..errors import AppError, invalid, not_found
+from ..ml import klasik
 from . import forecasting as fr
 
 router = APIRouter(tags=["transfer"])
@@ -121,7 +122,21 @@ def _pasangan(q: str | None) -> tuple[list[dict], bool]:
     return baris[:BATAS_BARIS], len(baris) > BATAS_BARIS
 
 
-def _keadaan(item_id: int, warehouse_id: int, lang: str) -> dict | None:
+def _periode(days, model) -> tuple[int, str]:
+    """
+    Periode dan model yang sah, dengan bawaan yang SAMA seperti daftar
+    Pemesanan Ulang -- diambil dari sana, bukan ditulis ulang, supaya kedua
+    halaman mustahil memakai bawaan yang berbeda.
+    """
+    from . import reorder as ro  # impor tunda: kedua router saling mengenal
+    model = _diminta(model, "")
+    return (ro._hari(_diminta(days, None)),
+            fr._model_sah(model if isinstance(model, str) else ""))
+
+
+def _keadaan(item_id: int, warehouse_id: int, lang: str,
+             days: int = fr.HORIZON_KEPUTUSAN,
+             model: str = klasik.KUNCI_STATISTIK) -> dict | None:
     """
     Keadaan satu pasangan barang/gudang menurut mesin keputusan.
 
@@ -131,8 +146,12 @@ def _keadaan(item_id: int, warehouse_id: int, lang: str) -> dict | None:
     perulangan tidak boleh membuat sembilan belas baris lain ikut hilang.
     """
     try:
-        h = fr._susun(item_id, warehouse_id, fr.HORIZON_KEPUTUSAN,
-                      fr.HISTORICAL_DAYS_DEFAULT, lang)
+        # MODE PERIODE, sama dengan daftar Pemesanan Ulang (6 Oktober 2026):
+        # barang yang di sana terbaca kurang untuk periode yang dipilih, di
+        # sini terbaca sebagai tujuan transfer dengan jumlah yang sama.
+        h = fr._susun(item_id, warehouse_id, days,
+                      fr.HISTORICAL_DAYS_DEFAULT, lang, model=model,
+                      keputusan_periode=True)
     except Exception:
         return None
 
@@ -150,6 +169,9 @@ def _keadaan(item_id: int, warehouse_id: int, lang: str) -> dict | None:
         "safety_stock_int": h["safety_stock_int"],
         "lead_time_days_int": h["lead_time_days_int"],
         "days_of_cover_int": h["days_of_cover_int"],
+        "decision_horizon_days": h["decision_horizon_days"],
+        "forecast_usage_int": h["decision_horizon_usage_int"],
+        "period_shortage_int": h["period_shortage_int"],
         "action_status": h["action_status"],
         "action_status_label": h["action_status_label"],
         "priority": h["priority"],
@@ -350,6 +372,11 @@ def _rekomendasi(*, tujuan: dict, semua: list[dict], gudang: dict[int, dict],
         "safety_stock_int": tujuan["safety_stock_int"],
         "lead_time_days_int": tujuan["lead_time_days_int"],
         "days_of_cover_int": tujuan["days_of_cover_int"],
+        # Kebutuhan periode yang dipilih: angka yang menjelaskan kekurangannya,
+        # sama dengan kolom Kebutuhan pada daftar Pemesanan Ulang.
+        "decision_horizon_days": tujuan.get("decision_horizon_days",
+                                            fr.HORIZON_KEPUTUSAN),
+        "forecast_usage_int": tujuan.get("forecast_usage_int"),
         "action_status": tujuan["action_status"],
         "action_status_label": tujuan["action_status_label"],
         "priority": tujuan["priority"],
@@ -387,6 +414,10 @@ def daftar_transfer(
     fuzzy: bool = Query(TRANSFER_FUZZY_BAWAAN,
                         description="Cocokkan juga lewat kemiripan nama barang"),
     similarity: float = Query(TRANSFER_KEMIRIPAN_MIN, ge=0.5, le=1.0),
+    days: int = Query(fr.HORIZON_KEPUTUSAN, ge=1, le=fr.FORECAST_DAYS_MAX,
+                      description="Periode kebutuhan, sama dengan /api/reorder"),
+    model: str = Query(klasik.KUNCI_STATISTIK,
+                       description="Model prakiraan, sama dengan /api/reorder"),
     page: int = 1,
     page_size: int = PAGE_SIZE_DEFAULT,
     lang: str = Query(i18n.BAHASA_BAWAAN),
@@ -409,9 +440,11 @@ def daftar_transfer(
     similarity = float(_diminta(similarity, TRANSFER_KEMIRIPAN_MIN))
     page, page_size, offset = clamp_page(page, page_size)
     lang = i18n.normalisasi(_diminta(lang, i18n.BAHASA_BAWAAN))
+    days, model = _periode(days, model)
 
     pasangan, terpotong = _pasangan(q)
-    semua = [k for k in (_keadaan(p["item_id"], p["warehouse_id"], lang)
+    semua = [k for k in (_keadaan(p["item_id"], p["warehouse_id"], lang,
+                                  days, model)
                          for p in pasangan) if k is not None]
 
     gudang, matriks = _gudang(), _matriks()
@@ -460,6 +493,8 @@ def daftar_transfer(
     return {
         "items": halaman,
         "summary": ringkas,
+        # Periode yang dipakai menakar kekurangan seluruh daftar ini.
+        "horizon_days": days,
         "total": total,
         "page": page,
         "page_size": page_size,
@@ -630,6 +665,8 @@ def detail_transfer(
     warehouse_id: int = Query(..., gt=0, description="Gudang TUJUAN"),
     fuzzy: bool = Query(TRANSFER_FUZZY_BAWAAN),
     similarity: float = Query(TRANSFER_KEMIRIPAN_MIN, ge=0.5, le=1.0),
+    days: int = Query(fr.HORIZON_KEPUTUSAN, ge=1, le=fr.FORECAST_DAYS_MAX),
+    model: str = Query(klasik.KUNCI_STATISTIK),
     lang: str = Query(i18n.BAHASA_BAWAAN),
 ) -> dict:
     """
@@ -644,12 +681,14 @@ def detail_transfer(
     similarity = float(_diminta(similarity, TRANSFER_KEMIRIPAN_MIN))
     lang = i18n.normalisasi(_diminta(lang, i18n.BAHASA_BAWAAN))
 
-    tujuan = _keadaan(item_id, warehouse_id, lang)
+    days, model = _periode(days, model)
+    tujuan = _keadaan(item_id, warehouse_id, lang, days, model)
     if tujuan is None:
         raise not_found("item", item_id, "item_id")
 
     pasangan, terpotong = _pasangan(None)
-    semua = [k for k in (_keadaan(p["item_id"], p["warehouse_id"], lang)
+    semua = [k for k in (_keadaan(p["item_id"], p["warehouse_id"], lang,
+                                  days, model)
                          for p in pasangan) if k is not None]
     # Tujuan wajib ikut walau ia berada di luar potongan BATAS_BARIS: tanpa
     # itu, membuka detail satu baris dapat menjawab keadaan yang berbeda dari

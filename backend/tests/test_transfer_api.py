@@ -302,6 +302,29 @@ class TestKasusYangDiminta:
         assert b["need_qty"] == sama["recommended_order_qty"], nama
         assert b["effective_reorder_point_int"] == sama["effective_reorder_point_int"]
 
+    @pytest.mark.parametrize("hari", [30, 90])
+    def test_kebutuhan_tetap_sama_pada_periode_lain(self, klien, dunia, hari):
+        """
+        Invarian yang sama, pada periode SELAIN bawaan: sejak kedua layar
+        mengikuti periode yang dipilih, keduanya harus bergerak bersama.
+        """
+        t = klien.get(f"/api/transfer?page_size=200&days={hari}",
+                      headers=dunia["h"]).json()
+        r = klien.get(f"/api/reorder?page_size=200&days={hari}",
+                      headers=dunia["h"]).json()
+        assert t["horizon_days"] == hari
+        reorder = {(x["sku"], x["warehouse_code"]): x for x in r["items"]}
+        assert t["items"], "data uji tidak memuat kekurangan pada periode ini"
+        for b in t["items"]:
+            sama = reorder[(b["sku"], b["to_warehouse_code"])]
+            assert b["need_qty"] == sama["recommended_order_qty"], b["sku"]
+            assert b["forecast_usage_int"] == sama["forecast_usage_int"], b["sku"]
+            assert b["decision_horizon_days"] == hari
+        # Dan sebaliknya: tidak ada kekurangan di Pemesanan Ulang yang luput.
+        perlu = {k for k, x in reorder.items()
+                 if (x["recommended_order_qty"] or 0) > 0}
+        assert perlu == {(b["sku"], b["to_warehouse_code"]) for b in t["items"]}
+
     @pytest.mark.parametrize("nama", list(KASUS))
     def test_keputusan(self, baris, nama):
         assert baris[_sku(nama)]["decision"] == KASUS[nama]["keputusan"], nama
