@@ -163,7 +163,7 @@ export default function ReorderPage() {
           </div>
 
           {data.pages > 1 && (
-            <Pager page={data.page} pages={data.pages} total={data.total} onPage={setPage} />
+            <Pager page={data.page} pages={data.pages} onPage={setPage} />
           )}
         </div>
       )}

@@ -310,8 +310,6 @@ export default function StockIssuePage() {
               <Pager
                 page={daftar.data.page}
                 pages={daftar.data.pages}
-                total={daftar.data.total}
-                label={t("is.label")}
                 onPage={setPage}
               />
             </>

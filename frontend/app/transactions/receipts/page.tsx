@@ -318,8 +318,6 @@ export default function StockReceiptPage() {
               <Pager
                 page={daftar.data.page}
                 pages={daftar.data.pages}
-                total={daftar.data.total}
-                label={t("rc.label")}
                 onPage={setPage}
               />
             </>

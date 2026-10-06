@@ -281,7 +281,6 @@ export default function TransferPage() {
               <Pager
                 page={rekomendasi.data.page}
                 pages={rekomendasi.data.pages}
-                total={rekomendasi.data.total}
                 onPage={setPage}
               />
             )}
@@ -299,7 +298,6 @@ export default function TransferPage() {
             <Pager
               page={dokumen.data.page}
               pages={dokumen.data.pages}
-              total={dokumen.data.total}
               onPage={setPage}
             />
           )}

@@ -786,13 +786,8 @@ export const DICT: Record<string, Entry> = {
     en: "Item master reference price",
   },
   "c.page_only": { id: "Halaman {page} dari {pages}", en: "Page {page} of {pages}" },
-  "c.page_of": {
-    id: "Halaman {page} dari {pages} · {total} {label}",
-    en: "Page {page} of {pages} · {total} {label}",
-  },
   "c.prev": { id: "Sebelumnya", en: "Previous" },
   "c.next": { id: "Berikutnya", en: "Next" },
-  "c.rows_label": { id: "baris", en: "rows" },
   "c.movement_in": { id: "Masuk", en: "Inbound" },
   "c.movement_out": { id: "Keluar", en: "Outbound" },
 
@@ -1010,7 +1005,6 @@ export const DICT: Record<string, Entry> = {
     id: "{no} tersimpan — {lines} baris, {qty} unit, {value}.",
     en: "{no} saved — {lines} lines, {qty} units, {value}.",
   },
-  "rc.label": { id: "penerimaan", en: "receipts" },
 
   /* ---------------- pengeluaran / stock issue ---------------- */
   "is.title": { id: "Pengeluaran Barang", en: "Stock Issue" },
@@ -1031,7 +1025,6 @@ export const DICT: Record<string, Entry> = {
   "is.search": { id: "Cari nomor / keperluan…", en: "Search number or purpose…" },
   "is.empty": { id: "Belum ada pengeluaran.", en: "No issue yet." },
   "is.saved": { id: "{no} tersimpan — {detail}.", en: "{no} saved — {detail}." },
-  "is.label": { id: "pengeluaran", en: "issues" },
 
   /* ---------------- laporan stok / stock report ---------------- */
   "rs.title": { id: "Laporan Stok", en: "Stock Report" },

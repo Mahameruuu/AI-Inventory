@@ -323,7 +323,6 @@ export default function MasterCrud({
         <Card
           icon={ikon}
           title={t("md.list")}
-          meta={daftar.data ? `${num(daftar.data.total)}` : undefined}
           right={
             <div className="w-full sm:w-44">
               <TextInput
@@ -412,7 +411,6 @@ export default function MasterCrud({
                 page={page}
                 pages={daftar.data.pages}
                 onPage={setPage}
-                total={daftar.data.total}
               />
             </>
           )}
