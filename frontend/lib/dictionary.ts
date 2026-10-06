@@ -785,6 +785,7 @@ export const DICT: Record<string, Entry> = {
     id: "Harga referensi master barang",
     en: "Item master reference price",
   },
+  "c.page_only": { id: "Halaman {page} dari {pages}", en: "Page {page} of {pages}" },
   "c.page_of": {
     id: "Halaman {page} dari {pages} · {total} {label}",
     en: "Page {page} of {pages} · {total} {label}",

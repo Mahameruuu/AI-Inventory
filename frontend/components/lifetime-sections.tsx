@@ -601,7 +601,7 @@ export function RiwayatPenggantian({
         </tbody>
       </Table>
       {jumlahHal > 1 && (
-        <Pager page={hal} pages={jumlahHal} total={kejadian.length} onPage={setHal} />
+        <Pager page={hal} pages={jumlahHal} onPage={setHal} />
       )}
       {total > kejadian.length && (
         <p className="mt-3 text-xs text-muted">

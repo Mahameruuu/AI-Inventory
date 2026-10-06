@@ -165,7 +165,6 @@ export default function LifetimePage() {
           icon={<Timer size={15} />}
           title={t("lt.chart.title")}
           subtitle={t("lt.chart.subtitle")}
-          meta={`${num(d.total)} ${t("c.rows_label")}`}
           dim={refreshing}
           delay={80}
         >
@@ -184,7 +183,7 @@ export default function LifetimePage() {
                   ) : null
                 }
               />
-              <Pager page={d.page} pages={d.pages} total={d.total} onPage={setPage} />
+              <Pager page={d.page} pages={d.pages} onPage={setPage} />
             </>
           ) : (
             <Empty message={tanpaReferensi ? t("lt.empty_all") : t("lt.empty")} />

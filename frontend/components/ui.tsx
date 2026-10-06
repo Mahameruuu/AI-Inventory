@@ -715,7 +715,8 @@ export function Pager({
 }: {
   page: number;
   pages: number;
-  total: number;
+  /** jumlah seluruh baris; bila tidak diberikan hanya "Halaman x dari y" */
+  total?: number;
   /** satuan baris; bila kosong dipakai kata "baris"/"rows" */
   label?: string;
   onPage: (p: number) => void;
@@ -727,12 +728,14 @@ export function Pager({
       style={{ borderColor: "var(--border)" }}
     >
       <span className="text-xs text-muted">
-        {t("c.page_of", {
-          page: num(page),
-          pages: num(pages),
-          total: num(total),
-          label: label ?? t("c.rows_label"),
-        })}
+        {total === undefined
+          ? t("c.page_only", { page: num(page), pages: num(pages) })
+          : t("c.page_of", {
+              page: num(page),
+              pages: num(pages),
+              total: num(total),
+              label: label ?? t("c.rows_label"),
+            })}
       </span>
       <div className="flex gap-2">
         <Button onClick={() => onPage(Math.max(1, page - 1))} disabled={page <= 1}>
