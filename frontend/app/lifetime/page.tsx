@@ -149,14 +149,9 @@ export default function LifetimePage() {
     <>
       {kepala}
 
-      {/*
-       * ASUMSI DICETAK, TIDAK DISEMBUNYIKAN. Konversi jam operasi dan lebar
-       * pita toleransi menentukan setiap angka di bawahnya; menyembunyikannya
-       * membuat halaman ini terlihat lebih pasti daripada yang sebenarnya.
-       */}
-      <Insight tone="neutral">
-        {tanpaReferensi ? t("lt.no_reference") : d.assumptions.note}
-      </Insight>
+      {/* Catatan asumsi (jam operasi, lebar pita) dihapus atas permintaan
+          pengguna; yang tersisa hanya panduan saat belum ada standar sama sekali. */}
+      {tanpaReferensi && <Insight tone="neutral">{t("lt.no_reference")}</Insight>}
 
       <RingkasanUmurPakai ringkas={d.summary} />
 
