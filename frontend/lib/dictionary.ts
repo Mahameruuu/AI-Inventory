@@ -117,7 +117,9 @@ export const DICT: Record<string, Entry> = {
   /* ---------------- data induk / master data ---------------- */
   "md.list": { id: "Daftar", en: "List" },
   "md.search": { id: "Cari…", en: "Search…" },
-  "md.empty": { id: "Belum ada data. Tambahkan lewat formulir di sebelah kanan.", en: "Nothing here yet. Add one using the form on the right." },
+  "md.empty": { id: "Belum ada data. Tambahkan lewat tombol tambah di atas.", en: "Nothing here yet. Add one with the add button above." },
+  "md.item_add": { id: "Tambah Barang", en: "Add item" },
+  "md.wh_add": { id: "Tambah Gudang", en: "Add warehouse" },
   "md.add": { id: "Tambah Baru", en: "Add new" },
   "md.add_sub": { id: "Kolom yang dikosongkan tidak akan diisi.", en: "Fields left blank stay empty." },
   "md.edit": { id: "Ubah", en: "Edit" },

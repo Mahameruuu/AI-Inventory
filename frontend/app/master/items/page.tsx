@@ -16,6 +16,7 @@ export default function HalamanMasterBarang() {
   return (
     <MasterCrud
       judul="md.item_title"
+      labelTambah="md.item_add"
       deskripsi="md.item_desc"
       ikon={<Package size={20} />}
       jalur="/api/items"

@@ -8,6 +8,7 @@ export default function HalamanGudang() {
   return (
     <MasterCrud
       judul="md.wh_title"
+      labelTambah="md.wh_add"
       deskripsi="md.wh_desc"
       ikon={<Warehouse size={20} />}
       jalur="/api/warehouses"

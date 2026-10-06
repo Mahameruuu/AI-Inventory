@@ -23,6 +23,7 @@
  */
 
 import { ReactNode, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 
 import {
@@ -85,6 +86,8 @@ interface Props {
   ruas: RuasMaster[];
   /** kolom yang memuat nama baris, dipakai pada konfirmasi hapus */
   namaKolom?: string;
+  /** kunci kamus tombol tambah, mis. "md.item_add" -> "Tambah Barang" */
+  labelTambah?: string;
   /** kolom hitungan pemakaian yang ikut ditampilkan, mis. item_count */
   kolomPemakaian?: { key: string; label: string };
 }
@@ -167,6 +170,7 @@ export default function MasterCrud({
   jalur,
   ruas,
   namaKolom = "name",
+  labelTambah = "md.add",
   kolomPemakaian,
 }: Props) {
   const { t } = useI18n();
@@ -175,6 +179,8 @@ export default function MasterCrud({
   const [page, setPage] = useState(1);
   const [isian, setIsian] = useState<Isian>(() => kosong(ruas));
   const [sedangUbah, setSedangUbah] = useState<number | null>(null);
+  /** formulir tambah/ubah tampil sebagai jendela di atas halaman */
+  const [formBuka, setFormBuka] = useState(false);
   const [sibuk, setSibuk] = useState(false);
   const [pesan, setPesan] = useState<{ ok: boolean; teks: string } | null>(null);
   /** ruas -> kalimat penolakan; dikosongkan setiap kali penyimpanan dimulai */
@@ -199,7 +205,33 @@ export default function MasterCrud({
     setIsian(kosong(ruas));
     setSedangUbah(null);
     setPesan(null);
+    setGalatRuas({});
+    setFormBuka(false);
   }
+
+  function mulaiTambah() {
+    setIsian(kosong(ruas));
+    setSedangUbah(null);
+    setPesan(null);
+    setGalatRuas({});
+    setFormBuka(true);
+  }
+
+  // Esc menutup formulir; latar tidak ikut menggulir selama ia terbuka.
+  useEffect(() => {
+    if (!formBuka) return;
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") batal();
+    };
+    document.addEventListener("keydown", esc);
+    const sebelum = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", esc);
+      document.body.style.overflow = sebelum;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formBuka]);
 
   function mulaiUbah(baris: Record<string, any>) {
     const isi: Isian = {};
@@ -210,7 +242,8 @@ export default function MasterCrud({
     setIsian(isi);
     setSedangUbah(baris.id);
     setPesan(null);
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    setGalatRuas({});
+    setFormBuka(true);
   }
 
   /** Isian layar menjadi muatan JSON: teks kosong berarti "tidak diisi". */
@@ -244,6 +277,7 @@ export default function MasterCrud({
       }
       setIsian(kosong(ruas));
       setSedangUbah(null);
+      setFormBuka(false);
       daftar.reload();
     } catch (e) {
       /*
@@ -300,7 +334,7 @@ export default function MasterCrud({
         description={t(deskripsi)}
       />
 
-      {pesan && (
+      {pesan && !(formBuka && !pesan.ok) && (
         <div className="mb-4">
           {pesan.ok ? (
             <div
@@ -319,18 +353,24 @@ export default function MasterCrud({
         </div>
       )}
 
-      <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
+      <div>
         <Card
           icon={ikon}
           title={t("md.list")}
           right={
-            <div className="w-full sm:w-44">
-              <TextInput
-                value={q}
-                onChange={setQ}
-                placeholder={t("md.search")}
-                className="w-full"
-              />
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+              <div className="min-w-0 flex-1 sm:w-44 sm:flex-none">
+                <TextInput
+                  value={q}
+                  onChange={setQ}
+                  placeholder={t("md.search")}
+                  className="w-full"
+                />
+              </div>
+              <Button variant="solid" onClick={mulaiTambah}>
+                <Plus size={14} aria-hidden />
+                {t(labelTambah)}
+              </Button>
             </div>
           }
         >
@@ -416,38 +456,94 @@ export default function MasterCrud({
           )}
         </Card>
 
-        <Card
-          icon={sedangUbah === null ? <Plus size={15} /> : <Pencil size={15} />}
-          title={sedangUbah === null ? t("md.add") : t("md.edit_title")}
-          subtitle={sedangUbah === null ? t("md.add_sub") : t("md.edit_sub")}
-        >
-          <div className="flex flex-col gap-3.5">
-            {ruas.map((r) => (
-              <IsianRuas
-                key={r.key}
-                r={r}
-                nilai={isian[r.key] ?? ""}
-                galat={galatRuas[r.key]}
-                ubah={(v) => {
-                  setIsian((s) => ({ ...s, [r.key]: v }));
-                  // Penolakan hilang begitu kolomnya disentuh: membiarkannya
-                  // menempel setelah diperbaiki membuat formulir terlihat
-                  // masih salah padahal sudah benar.
-                  setGalatRuas((g) => (g[r.key] ? { ...g, [r.key]: "" } : g));
-                }}
-              />
-            ))}
-            <div className="flex gap-2">
-              <Button variant="solid" onClick={simpan} disabled={sibuk}>
-                {sibuk ? t("md.saving") : t("md.save")}
-              </Button>
-              {sedangUbah !== null && (
-                <Button onClick={batal}>{t("md.cancel")}</Button>
-              )}
-            </div>
-          </div>
-        </Card>
       </div>
+
+      {/*
+        FORMULIR SEBAGAI JENDELA. Dulu ia kartu tetap di samping tabel dan
+        memakan sepertiga lebar halaman walau tidak sedang dipakai. Diportalkan
+        ke <body> dengan alasan yang sama seperti DialogKonfirmasi. Klik pada
+        latar SENGAJA tidak menutupnya: isian yang sudah diketik tidak boleh
+        hilang karena salah klik.
+      */}
+      {formBuka &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6"
+            style={{ background: "color-mix(in srgb, var(--text-primary) 45%, transparent)" }}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="md-form-judul"
+              className="flex max-h-full w-full max-w-2xl flex-col rounded-[var(--r-lg)]"
+              style={{
+                background: "var(--surface-1)",
+                boxShadow: "var(--elev-3), inset 0 0 0 1px var(--border)",
+              }}
+            >
+              <div
+                className="flex items-start justify-between gap-3 border-b px-5 py-4"
+                style={{ borderColor: "var(--border)" }}
+              >
+                <div className="min-w-0">
+                  <h2 id="md-form-judul" className="font-display t-lead font-bold text-ink">
+                    {sedangUbah === null ? t(labelTambah) : t("md.edit_title")}
+                  </h2>
+                  <p className="mt-0.5 t-small text-muted">
+                    {sedangUbah === null ? t("md.add_sub") : t("md.edit_sub")}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={batal}
+                  title={t("md.cancel")}
+                  aria-label={t("md.cancel")}
+                  className="rounded-lg p-1.5 text-muted transition hover:bg-[var(--surface-sunken)]"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="overflow-y-auto px-5 py-4">
+                {pesan && !pesan.ok && (
+                  <div className="mb-4">
+                    <ErrorBox message={pesan.teks} />
+                  </div>
+                )}
+                <div className="grid gap-3.5 sm:grid-cols-2">
+                  {ruas.map((r) => (
+                    <IsianRuas
+                      key={r.key}
+                      r={r}
+                      nilai={isian[r.key] ?? ""}
+                      galat={galatRuas[r.key]}
+                      ubah={(v) => {
+                        setIsian((s) => ({ ...s, [r.key]: v }));
+                        // Penolakan hilang begitu kolomnya disentuh: membiarkannya
+                        // menempel setelah diperbaiki membuat formulir terlihat
+                        // masih salah padahal sudah benar.
+                        setGalatRuas((g) => (g[r.key] ? { ...g, [r.key]: "" } : g));
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div
+                className="flex justify-end gap-2 border-t px-5 py-3.5"
+                style={{ borderColor: "var(--border)" }}
+              >
+                <Button onClick={batal} disabled={sibuk}>
+                  {t("md.cancel")}
+                </Button>
+                <Button variant="solid" onClick={simpan} disabled={sibuk}>
+                  {sibuk ? t("md.saving") : t("md.save")}
+                </Button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
 
       <DialogKonfirmasi
         terbuka={kandidatHapus !== null}
