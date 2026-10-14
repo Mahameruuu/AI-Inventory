@@ -50,11 +50,15 @@ export default function RuteView({
   hasil, tampilPembanding, jalan,
 }: { hasil: HasilRute; tampilPembanding: boolean; jalan: boolean }) {
   const garis = useMemo(() => hasil.jalur.map(([x, z]) => [x, Y, z] as [number, number, number]), [hasil]);
-  const garisBanding = useMemo(() => hasil.pembanding.jalur.map(([x, z]) => [x, Y - 0.01, z] as [number, number, number]), [hasil]);
+  // Semua rute berjalan di garis lorong yang SAMA, jadi rute pembanding (yang hanya bolak-balik
+  // di lorong itu) tertutup total oleh garis utama. Digeser 0,4 m ke samping agar terlihat sejajar;
+  // lorong selebar 2,6 m sehingga geseran ini tetap berada di dalamnya.
+  const garisBanding = useMemo(
+    () => hasil.pembanding.jalur.map(([x, z]) => [x + 0.4, Y - 0.01, z + 0.4] as [number, number, number]), [hasil]);
   return (
     <group>
       {tampilPembanding && (
-        <Line points={garisBanding} color="#94a3b8" lineWidth={2.5} dashed dashSize={0.5} gapSize={0.3} />
+        <Line points={garisBanding} color="#64748b" lineWidth={3} dashed dashSize={0.6} gapSize={0.35} />
       )}
       <Line points={garis} color="#2563eb" lineWidth={5} />
       {hasil.urutan.map((l) => (

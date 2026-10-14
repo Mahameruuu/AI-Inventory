@@ -63,6 +63,7 @@ import {
 
 import {
   Card,
+  Button,
   Empty,
   ErrorBox,
   Insight,
@@ -81,8 +82,10 @@ import { AKSI, PillAksi } from "@/components/status";
 import PanggungTwin from "@/components/warehouse-twin/stage";
 import { DetailRak, Legenda } from "@/components/warehouse-twin/panels";
 import PanelPicking from "@/components/warehouse-twin/picking-panel";
+import PanduDemo, { JUMLAH_LANGKAH } from "@/components/warehouse-twin/pandu-demo";
 import PanelWhatIf from "@/components/warehouse-twin/whatif-panel";
-import { Penempatan, barangBerpindah, penempatanAwal, terapkanPenempatan } from "@/lib/whatif";
+import { useAuth } from "@/lib/auth";
+import { Evaluasi, Penempatan, barangBerpindah, bayKeluar, bobotPrakiraan, penempatanAwal, terapkanPenempatan, usulanPenempatan } from "@/lib/whatif";
 import { HasilRute, adalahGalat, hitungRute } from "@/lib/picking";
 import type { Pilihan } from "@/components/warehouse-twin/scene";
 import { segarkanSemua, useApi } from "@/lib/api";
@@ -178,8 +181,10 @@ function useSegarOtomatis(aktif: boolean) {
 
 /** Kartu yang dapat dilipat, supaya panggung 3D tetap mendapat ruang. */
 function Lipat({
-  icon, title, subtitle, right, defaultOpen = true, children,
+  icon, title, subtitle, right, defaultOpen = true, paksaBuka = 0, children,
 }: {
+  /** naik tiap kali pemanggil ingin panel ini dibuka (mis. pemandu demo) */
+  paksaBuka?: number;
   icon: ReactNode;
   title: string;
   subtitle?: string;
@@ -189,6 +194,7 @@ function Lipat({
 }) {
   const { t } = useI18n();
   const [buka, setBuka] = useState(defaultOpen);
+  useEffect(() => { if (paksaBuka > 0) setBuka(true); }, [paksaBuka]);
   return (
     <Card
       icon={icon}
@@ -226,6 +232,7 @@ export default function DashboardPage() {
   }, [daftar, gudangId]);
   useEffect(() => { setPilihan(null); setRutePicking(null); setSkenario(null); setTampilan("awal"); }, [gudangId]);
 
+
   const { data, error, loading } = useApi<Dashboard>(
     gudangId ? "/api/dashboard" : null, { warehouse_id: gudangId });
   const twin = useApi<JawabanTwin>(gudangId ? "/api/warehouse-twin" : null, { warehouse_id: gudangId });
@@ -255,6 +262,59 @@ export default function DashboardPage() {
     () => (lihatSkenario && awalPenempatan ? barangBerpindah(awalPenempatan, skenarioSah!) : undefined), [lihatSkenario, awalPenempatan, skenarioSah]);
   const [rutePicking, setRutePicking] = useState<HasilRute | null>(null);
   const [rutePembanding, setRutePembanding] = useState(false);
+
+  // ---------- demo terpandu: hanya tenant demo; menggerakkan state tampilan, tidak menulis data ----------
+  const { perusahaan } = useAuth();
+  const demo = perusahaan?.is_demo === true;
+  const [langkahDemo, setLangkahDemo] = useState<number | null>(null);
+  const [perintahPicking, setPerintahPicking] = useState<{ id: number; jalankan: boolean } | null>(null);
+  const [paksaPicking, setPaksaPicking] = useState(0);
+  const [paksaWhatIf, setPaksaWhatIf] = useState(0);
+  const [evaluasiWI, setEvaluasiWI] = useState<Evaluasi | null>(null);
+
+  // Tiap langkah demo hanya mengubah state tampilan di atas; tidak ada panggilan tulis.
+  useEffect(() => {
+    if (langkahDemo === null || !demo) return;
+    const gulir = (id: string) => window.setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 400);
+    const atas = () => window.scrollTo({ top: 0, behavior: "smooth" });
+    let tm: number | undefined;
+    const bersihSkenario = () => { setSkenario(null); setTampilan("awal"); };
+    switch (langkahDemo) {
+      case 0:
+        setLapis("reorder"); bersihSkenario(); setRutePicking(null); setRutePembanding(false); setPilihan(null); setPerintahPicking(null); atas(); break;
+      case 1:
+        bersihSkenario(); atas(); break;
+      case 2: {
+        setLapis("reorder"); bersihSkenario(); setRutePicking(null); setRutePembanding(false);
+        const urut = (st: string) => twinData?.items.find((b) => b.status === st);
+        const b = urut("kritis") ?? urut("perhatian");
+        const rak = b && tata?.rak.find((r) => r.slots.some((x) => x.item.item_id === b.item_id));
+        if (b && rak) setPilihan({ rakId: rak.id, itemId: b.item_id });
+        tm = gulir("demo-3d"); break;
+      }
+      case 3:
+        bersihSkenario(); setRutePicking(null); setRutePembanding(false); setPilihan(null);
+        setPaksaPicking((n) => n + 1); setPerintahPicking({ id: Date.now(), jalankan: false }); tm = gulir("demo-picking"); break;
+      case 4:
+        bersihSkenario(); setRutePembanding(false);
+        setPaksaPicking((n) => n + 1); setPerintahPicking({ id: Date.now(), jalankan: true }); tm = gulir("demo-picking"); break;
+      case 5:
+        bersihSkenario(); setRutePembanding(false); tm = gulir("demo-3d"); break;
+      case 6:
+        bersihSkenario(); setRutePembanding(true); tm = gulir("demo-3d"); break;
+      case 7:
+        if (twinData && tata) {
+          const { bobot } = bobotPrakiraan(twinData.items);
+          setSkenario({ p: usulanPenempatan(tata, twinData.items, bobot, bayKeluar(tata)), tanda: tandaAwal });
+          setTampilan("skenario");
+        }
+        setPaksaWhatIf((n) => n + 1); tm = gulir("demo-whatif"); break;
+      default:
+        atas();
+    }
+    return () => { if (tm) window.clearTimeout(tm); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [langkahDemo]);
   // Rute yang digambar: pada tampilan skenario, pesanan yang sama dihitung ulang di layout baru.
   const ruteTampil = useMemo(() => {
     if (!rutePicking) return null;
@@ -299,7 +359,12 @@ export default function DashboardPage() {
       title={t("dash.title")}
       description={t("dash.desc")}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {demo && (
+          <Button variant="solid" onClick={() => setLangkahDemo(0)}>
+            <FlaskConical size={14} /> {t("dm.start")}
+          </Button>
+        )}
         <label className="t-small text-muted">{t("dash.warehouse")}</label>
         <Select
           value={gudangId}
@@ -327,6 +392,23 @@ export default function DashboardPage() {
   const a = d.attention;
   const f = d.forecast;
   const rakTerpilih = tataTampil?.rak.find((r) => r.id === pilihan?.rakId) ?? null;
+  /** Angka hidup untuk kartu pemandu: diambil dari hasil yang benar-benar dihitung, bukan teks tetap. */
+  const infoDemo = (n: number): string[] => {
+    const out: string[] = [];
+    const rute = rutePicking;
+    if (n === 2 && pilihan) {
+      const b = twinData?.items.find((x) => x.item_id === pilihan.itemId);
+      const r = tata?.rak.find((x) => x.id === pilihan.rakId);
+      if (b && r) out.push(t("dm.live.risk", { r: r.kode, b: b.name }));
+    }
+    if ((n === 4 || n === 5 || n === 6 || n === 8) && rute) {
+      out.push(t("dm.live.picking", { a: num(rute.jarak, 1), b: num(rute.pembanding.jarak, 1), p: num(rute.hemat * 100, 0) }));
+    }
+    if ((n === 7 || n === 8) && evaluasiWI) {
+      out.push(t("dm.live.whatif", { a: num(evaluasiWI.awal.jarakRata, 1), b: num(evaluasiWI.skenario.jarakRata, 1), p: num(evaluasiWI.hemat * -100, 0) }));
+    }
+    return out;
+  };
   const namaGudang = twinData ? `${twinData.warehouse.code} · ${twinData.warehouse.name}` : "";
 
   return (
@@ -391,7 +473,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ---------- gudang 3D: tokoh utama ---------- */}
-      <div className="mt-4 grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div id="demo-3d" className="mt-4 grid scroll-mt-4 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
         <Card
           icon={<Boxes size={15} />}
           title={t("tw.view.title")}
@@ -475,8 +557,8 @@ export default function DashboardPage() {
 
       {/* ---------- optimasi rute picking ---------- */}
       {twinData && tata && tata.rak.length > 0 && (
-        <div className="mt-4">
-          <Lipat icon={<Route size={15} />} title={t("pk.title")} subtitle={t("pk.sub")}>
+        <div id="demo-picking" className="mt-4 scroll-mt-4">
+          <Lipat icon={<Route size={15} />} title={t("pk.title")} subtitle={t("pk.sub")} paksaBuka={paksaPicking}>
             <PanelPicking
               key={gudangId}
               items={twinData.items}
@@ -486,6 +568,8 @@ export default function DashboardPage() {
               onPilihItem={(rakId, itemId) => setPilihan({ rakId, itemId })}
               tampilPembanding={rutePembanding}
               onTampilPembanding={setRutePembanding}
+              perintah={perintahPicking}
+              onPerintahSelesai={() => setPerintahPicking(null)}
             />
           </Lipat>
         </div>
@@ -493,8 +577,8 @@ export default function DashboardPage() {
 
       {/* ---------- what-if penempatan ---------- */}
       {twinData && tata && tata.rak.length > 0 && (
-        <div className="mt-4">
-          <Lipat icon={<FlaskConical size={15} />} title={t("wi.title")} subtitle={t("wi.sub")} defaultOpen={false}>
+        <div id="demo-whatif" className="mt-4 scroll-mt-4">
+          <Lipat icon={<FlaskConical size={15} />} title={t("wi.title")} subtitle={t("wi.sub")} defaultOpen={false} paksaBuka={paksaWhatIf}>
             <PanelWhatIf
               key={gudangId}
               tata={tata}
@@ -504,6 +588,7 @@ export default function DashboardPage() {
               onSkenario={(p) => setSkenario(p ? { p, tanda: tandaAwal } : null)}
               tampilan={lihatSkenario ? "skenario" : "awal"}
               onTampilan={setTampilan}
+              onEvaluasi={setEvaluasiWI}
             />
           </Lipat>
         </div>
@@ -657,6 +742,15 @@ export default function DashboardPage() {
           )}
         </Lipat>
       </div>
+
+      {demo && langkahDemo !== null && (
+        <PanduDemo
+          langkah={langkahDemo}
+          onLangkah={(n) => setLangkahDemo(Math.min(JUMLAH_LANGKAH - 1, Math.max(0, n)))}
+          onKeluar={() => setLangkahDemo(null)}
+          info={infoDemo(langkahDemo)}
+        />
+      )}
 
       <p className="mt-4 text-xs text-muted">{d.value_basis}</p>
       {(d.truncated || twinData?.truncated) && (

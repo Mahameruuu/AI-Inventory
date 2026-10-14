@@ -7,7 +7,7 @@
  */
 
 import { Calculator, FlaskConical, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Badge, Button, Select } from "@/components/ui";
 import { num } from "@/lib/format";
@@ -38,8 +38,11 @@ function durasi(detik: number, t: ReturnType<typeof useT>): string {
 }
 
 export default function PanelPicking({
-  items, tata, hasil, onHasil, onPilihItem, tampilPembanding, onTampilPembanding,
+  items, tata, hasil, onHasil, onPilihItem, tampilPembanding, onTampilPembanding, perintah, onPerintahSelesai,
 }: {
+  /** perintah dari pemandu demo: isi contoh pesanan, lalu (opsional) hitung */
+  perintah?: { id: number; jalankan: boolean } | null;
+  onPerintahSelesai?: () => void;
   items: BarisTwin[];
   tata: TataLetak;
   hasil: HasilRute | null;
@@ -81,6 +84,18 @@ export default function PanelPicking({
     } else onHasil(h);
   };
   const ubah = (next: BarisPesanan[]) => { setBaris(next); if (hasil) onHasil(null); };
+  // Pemandu demo: isi contoh pesanan dan/atau jalankan, sekali per perintah.
+  useEffect(() => {
+    if (!perintah) return;
+    const contoh = contohPesanan(items, tata);
+    setBaris(contoh);
+    if (perintah.jalankan) {
+      const h = hitungRute({ tata, items, pesanan: contoh, bayAwal, bayAkhir, blokir, asumsi });
+      if (!adalahGalat(h)) onHasil(h);
+    } else onHasil(null);
+    onPerintahSelesai?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [perintah?.id]);
   const opsiBay = dock.bay.map((b, i) => ({ value: String(i), label: t(`pk.bay.${b.jenis}`) }));
 
   return (

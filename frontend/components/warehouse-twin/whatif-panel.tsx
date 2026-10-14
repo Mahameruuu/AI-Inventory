@@ -8,7 +8,7 @@
  */
 
 import { Shuffle, Undo2, Wand2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Button, Select } from "@/components/ui";
 import { num } from "@/lib/format";
@@ -17,7 +17,7 @@ import { HasilRute, adalahGalat, hitungRute } from "@/lib/picking";
 import { BarisTwin, TataLetak } from "@/lib/twin";
 import {
   Penempatan, bandingkan, barangBerpindah, bayKeluar, bobotPrakiraan, buatPesananSimulasi, penempatanAwal,
-  terapkanPenempatan, tukar, usulanPenempatan,
+  Evaluasi, terapkanPenempatan, tukar, usulanPenempatan,
 } from "@/lib/whatif";
 
 const KELAS_INPUT = "h-8 w-20 rounded-lg border bg-surface px-2 text-right t-body tabular-nums text-ink outline-none focus:border-[var(--brand)]";
@@ -42,8 +42,9 @@ function Delta({ awal, skenario, satuan, t }: { awal: number; skenario: number; 
 }
 
 export default function PanelWhatIf({
-  tata, items, hasil, skenario, onSkenario, tampilan, onTampilan,
+  tata, items, hasil, skenario, onSkenario, tampilan, onTampilan, onEvaluasi,
 }: {
+  onEvaluasi?: (e: Evaluasi | null) => void;
   tata: TataLetak;
   items: BarisTwin[];
   hasil: HasilRute | null;
@@ -72,6 +73,9 @@ export default function PanelWhatIf({
     const pesanan = buatPesananSimulasi([...awal.keys()], bobot, jumlah, baris, seed);
     return bandingkan(tata, items, skenario, pesanan, { bayAwal: bay, bayAkhir: bay, blokir, asumsi });
   }, [skenario, tata, items, awal, bobot, jumlah, baris, seed, bay, blokir, asumsi]);
+
+  useEffect(() => { onEvaluasi?.(eval_); }, [eval_, onEvaluasi]);
+  useEffect(() => () => onEvaluasi?.(null), [onEvaluasi]);
 
   const pesananAnda = useMemo(() => {
     if (!skenario || !hasil) return null;
