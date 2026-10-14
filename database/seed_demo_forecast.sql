@@ -92,16 +92,22 @@ DELETE FROM items          WHERE id IN (SELECT id FROM demo_lama);
 -- Kolom stok_akhir menyatakan saldo yang DIKEHENDAKI setelah seluruh
 -- pengeluaran; jumlah penerimaan awal diturunkan darinya, bukan sebaliknya --
 -- itulah yang membuat tiap barang mendarat di kondisi yang dirancang.
+--
+-- KATEGORI DAN SATUAN DITULIS SEBAGAI NAMA/KODE, BUKAN ID. Versi sebelumnya
+-- menulis id tetap (1, 7, 85, ...) yang hanya berlaku di Perusahaan Utama;
+-- pada tenant Demo id itu menunjuk kategori milik perusahaan lain, RLS
+-- menyembunyikannya, dan keenam barang jadi tak dapat dinilai mesin reorder.
+-- Kini nama dicari PADA TENANT YANG SEDANG AKTIF (app.company_id).
 CREATE TEMP TABLE demo_rancangan AS
-SELECT *,
+SELECT t.*, c.id AS category_id, u.id AS unit_id,
        -- Penerimaan awal = saldo yang dikehendaki + seluruh yang keluar.
-       stok_akhir + (SELECT COALESCE(SUM(q), 0)
-                     FROM unnest(keluar_qty) AS q) AS qty_masuk
+       t.stok_akhir + (SELECT COALESCE(SUM(q), 0)
+                       FROM unnest(t.keluar_qty) AS q) AS qty_masuk
 FROM (VALUES
   -- Pompa sentrifugal: ~1 unit per bulan. Dipasang lalu dipakai bertahun-
   -- tahun, jadi yang keluar hanyalah unit pengganti sesekali.
   -- Stok 12 jauh di atas titik pesan efektif -> STOK AMAN.
-  ('BRU-000001', 'Pompa Sentrifugal Grundfos G-2200',  1::bigint, 1::bigint,
+  ('BRU-000001', 'Pompa Sentrifugal Grundfos G-2200', 'Sparepart Mesin', 'PCS',
    18500000::numeric, 2::numeric, 6::numeric, 21, 3::numeric, 24::numeric,
    89, ARRAY[12,41,68,86], ARRAY[1,1,1,1]::numeric[], 12::numeric,
    'AMAN — stok jauh di atas titik pesan efektif'),
@@ -109,7 +115,7 @@ FROM (VALUES
   -- Bearing: ~5 PCS per bulan, barang perawatan berkala yang paling sering
   -- diganti di antara keenamnya.
   -- Stok 5 sudah DI BAWAH titik pesan efektif -> SEGERA PESAN, jumlahnya > 0.
-  ('BRU-000002', 'Bearing SKF 6312-2RS1',              7::bigint, 2::bigint,
+  ('BRU-000002', 'Bearing SKF 6312-2RS1',             'Sparepart Mesin', 'PCS',
    1250000::numeric,  6::numeric, 12::numeric, 14, 8::numeric, 60::numeric,
    89, ARRAY[8,19,33,47,61,74,88], ARRAY[2,2,2,2,2,3,2]::numeric[], 5::numeric,
    'SEGERA PESAN — stok di bawah titik pesan efektif'),
@@ -117,7 +123,7 @@ FROM (VALUES
   -- Filter oli: ~4 unit per bulan.
   -- Stok 11 masih di atas titik pesan efektif tetapi sudah menyentuh titik
   -- pesan MASTER (14) -> PERLU DIPANTAU tanpa jumlah yang perlu dipesan.
-  ('BRU-000003', 'Filter Oli Parker P-9540',          85::bigint, 10::bigint,
+  ('BRU-000003', 'Filter Oli Parker P-9540',          'Sparepart Mesin', 'BOX',
    485000::numeric,   4::numeric, 14::numeric, 10, 2::numeric, 48::numeric,
    89, ARRAY[10,25,38,52,66,80,87], ARRAY[2,1,2,2,2,1,2]::numeric[], 11::numeric,
    'PANTAU — di bawah titik pesan master, di atas yang efektif'),
@@ -128,7 +134,7 @@ FROM (VALUES
   -- hari dan baru dua hari yang ada pengeluaran -- keduanya di bawah ambang
   -- minimum mesin prakiraan -> DATA BELUM CUKUP. Stok dan parameter masternya
   -- tetap tampil; yang kosong hanya lapisan yang bersandar pada laju pemakaian.
-  ('BRU-000004', 'V-Belt Mitsuboshi B-75',            91::bigint, 2::bigint,
+  ('BRU-000004', 'V-Belt Mitsuboshi B-75',            'Sparepart Mesin', 'PCS',
    320000::numeric,   4::numeric,  8::numeric,  7, 2::numeric, 40::numeric,
    13, ARRAY[4,11], ARRAY[1,1]::numeric[], 20::numeric,
    'DATA BELUM CUKUP — baru dua kali keluar'),
@@ -139,7 +145,7 @@ FROM (VALUES
   -- sebagai peringatan dini. Titik pesan masternya (6) sendiri lebih rendah
   -- daripada yang efektif, jadi barang ini sekaligus memperagakan kartu
   -- "kecukupan titik pesan master: perlu dikalibrasi".
-  ('BRU-000005', 'Kabel NYY Supreme 4x25mm',          19::bigint, 7::bigint,
+  ('BRU-000005', 'Kabel NYY Supreme 4x25mm',          'Alat Listrik', 'MTR',
    285000::numeric,   3::numeric,  6::numeric, 40, 4::numeric, 40::numeric,
    89, ARRAY[14,30,45,59,73,84,89], ARRAY[1,1,2,1,1,2,1]::numeric[], 11::numeric,
    'PANTAU — titik pesan efektif tersentuh dalam satu masa tunggu'),
@@ -148,26 +154,28 @@ FROM (VALUES
   -- Hanya tiga hari berpengeluaran dari sembilan puluh, jadi pola pemakaiannya
   -- terbaca "sekaligus" dan peringatan lumpy ikut tampil -- penilaian yang
   -- benar untuk barang seperti ini. Stoknya sendiri -> STOK AMAN.
-  ('BRU-000006', 'Selang Hidrolik Gates 4SP-19',      49::bigint, 7::bigint,
+  ('BRU-000006', 'Selang Hidrolik Gates 4SP-19',      'Sparepart Mesin', 'MTR',
    1750000::numeric,  4::numeric, 10::numeric, 45, 5::numeric, 40::numeric,
    89, ARRAY[22,51,80], ARRAY[2,2,2]::numeric[], 18::numeric,
    'AMAN — pola pengambilan sekaligus (lumpy)')
-) AS t(sku, nama, category_id, unit_id, unit_price, minimum_stock,
+) AS t(sku, nama, kategori_nama, satuan_kode, unit_price, minimum_stock,
        reorder_point, lead_time_days, safety_stock, maximum_stock,
-       hari_mulai, keluar_hari, keluar_qty, stok_akhir, target_kondisi);
+       hari_mulai, keluar_hari, keluar_qty, stok_akhir, target_kondisi)
+LEFT JOIN categories c ON c.name = t.kategori_nama
+                      AND c.company_id = current_setting('app.company_id')::bigint
+LEFT JOIN units u      ON u.code = t.satuan_kode
+                      AND u.company_id = current_setting('app.company_id')::bigint;
 
--- Kategori dan unit di atas ditulis sebagai id. Bila master data pernah
--- diurutkan ulang, id itu bisa menunjuk baris lain -- jadi keberadaannya
--- diperiksa, bukan diandaikan.
+-- Nama kategori/satuan harus ada pada tenant ini; kalau tidak, berhenti dengan
+-- pesan yang menyebut barangnya, bukan memasukkan barang tanpa kategori.
 DO $$
 DECLARE hilang text;
 BEGIN
-  SELECT string_agg(sku, ', ') INTO hilang
-  FROM demo_rancangan d
-  WHERE NOT EXISTS (SELECT 1 FROM categories c WHERE c.id = d.category_id)
-     OR NOT EXISTS (SELECT 1 FROM units u      WHERE u.id = d.unit_id);
+  SELECT string_agg(sku || ' (' || kategori_nama || '/' || satuan_kode || ')', ', ') INTO hilang
+  FROM demo_rancangan
+  WHERE category_id IS NULL OR unit_id IS NULL;
   IF hilang IS NOT NULL THEN
-    RAISE EXCEPTION 'category_id/unit_id tidak ada untuk: %', hilang;
+    RAISE EXCEPTION 'kategori/satuan tidak ditemukan pada tenant ini untuk: %', hilang;
   END IF;
 END $$;
 
