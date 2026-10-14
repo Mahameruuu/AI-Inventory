@@ -34,8 +34,9 @@ class BatasGalat extends Component<{ pesan: string; children: ReactNode }, { gag
 }
 
 function PanggungTwin({
-  tata, pilihan, onPilih, rute = null, tampilPembanding = false,
+  tata, pilihan, onPilih, rute = null, tampilPembanding = false, ditandai,
 }: {
+  ditandai?: Set<number>;
   tata: TataLetak;
   pilihan: Pilihan | null;
   onPilih: (p: Pilihan | null) => void;
@@ -49,7 +50,7 @@ function PanggungTwin({
   return (
     <div className="relative h-[420px] overflow-hidden rounded-[inherit] sm:h-[520px] xl:h-[600px]">
       <BatasGalat pesan={t("tw.webgl_error")}>
-        <Scene tata={tata} pilihan={pilihan} onPilih={onPilih} resetKe={resetKe} animasi={animasi} bayangan={bayangan} rute={rute} tampilPembanding={tampilPembanding} />
+        <Scene tata={tata} pilihan={pilihan} onPilih={onPilih} resetKe={resetKe} animasi={animasi} bayangan={bayangan} rute={rute} tampilPembanding={tampilPembanding} ditandai={ditandai} />
       </BatasGalat>
       <div className="absolute left-3 top-3 flex gap-2">
         <Button variant="solid" onClick={() => { setResetKe((n) => n + 1); onPilih(null); }}>
@@ -62,6 +63,11 @@ function PanggungTwin({
           <Sun size={14} /> {bayangan ? t("tw.shadow.on") : t("tw.shadow.off")}
         </Button>
       </div>
+      {ditandai && (
+        <div className="pointer-events-none absolute right-3 top-3 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white" style={{ background: "#7c3aed" }}>
+          {t("wi.badge", { n: ditandai.size })}
+        </div>
+      )}
       <p className="pointer-events-none absolute bottom-2 left-3 right-3 t-small text-muted">
         {t("tw.hint")} · {t("tw.sim_note")}
       </p>

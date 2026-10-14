@@ -46,6 +46,8 @@ interface Props {
   /** hasil optimasi rute picking, atau null */
   rute?: HasilRute | null;
   tampilPembanding?: boolean;
+  /** barang yang dipindah pada skenario what-if; diberi sorotan ungu */
+  ditandai?: Set<number>;
 }
 
 function posisiAwal(tata: TataLetak, dock: Dock, aspek = 1.2): [number, number, number] {
@@ -224,8 +226,9 @@ function tinggiFilm(s: { item: { quantity: number | string }; isi: number | null
 }
 
 function Rak({
-  rak, bersama, terpilih, itemTerpilih, onPilih,
+  rak, bersama, terpilih, itemTerpilih, onPilih, ditandai,
 }: {
+  ditandai?: Set<number>;
   rak: RakTwin;
   bersama: Bersama;
   terpilih: boolean;
@@ -289,7 +292,12 @@ function Rak({
             onPointerOver={(e) => { e.stopPropagation(); setHover(true); }}
             onPointerOut={() => setHover(false)}
           >
-            <meshBasicMaterial color="#2563eb" transparent opacity={dipilih ? 0.28 : 0} depthWrite={false} />
+            <meshBasicMaterial
+              color={dipilih ? "#2563eb" : "#7c3aed"}
+              transparent
+              opacity={dipilih ? 0.28 : ditandai?.has(s.item.item_id) ? 0.3 : 0}
+              depthWrite={false}
+            />
           </mesh>
         );
       })}
@@ -369,7 +377,7 @@ function Kamera({ tata, dock, resetKe }: { tata: TataLetak; dock: Dock; resetKe:
   );
 }
 
-export default function WarehouseScene({ tata, pilihan, onPilih, resetKe, animasi, bayangan, rute = null, tampilPembanding = false }: Props) {
+export default function WarehouseScene({ tata, pilihan, onPilih, resetKe, animasi, bayangan, rute = null, tampilPembanding = false, ditandai }: Props) {
   const bersama = useBersama();
   const dock = useMemo(() => layoutDock(tata), [tata]);
   // lantai beton membentang dari dinding dock sampai ujung belakang deretan rak
@@ -431,6 +439,7 @@ export default function WarehouseScene({ tata, pilihan, onPilih, resetKe, animas
           bersama={bersama}
           terpilih={pilihan?.rakId === r.id}
           itemTerpilih={pilihan?.rakId === r.id ? pilihan.itemId : null}
+          ditandai={ditandai}
           onPilih={onPilih}
         />
       ))}

@@ -82,6 +82,8 @@ export interface HasilRute extends RuteHitung {
   asumsi: Asumsi;
   awal: Titik;
   akhir: Titik;
+  /** masukan yang menghasilkan rute ini; dipakai menghitung ulang pada layout lain (what-if) */
+  masukan: { pesanan: BarisPesanan[]; bayAwal: number; bayAkhir: number; blokir: Blokir; asumsi: Asumsi };
 }
 
 export interface Graf {
@@ -319,6 +321,7 @@ export function hitungRute(m: Masukan): HasilRute | Galat {
     asumsi,
     awal: awalXZ,
     akhir: akhirXZ,
+    masukan: { pesanan, bayAwal: m.bayAwal, bayAkhir: m.bayAkhir, blokir: m.blokir ?? TANPA_BLOKIR, asumsi },
   };
 }
 

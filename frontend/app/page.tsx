@@ -49,6 +49,7 @@ import {
   Info,
   Pause,
   Play,
+  FlaskConical,
   Route,
   LayoutDashboard,
   Sparkles,
@@ -80,7 +81,9 @@ import { AKSI, PillAksi } from "@/components/status";
 import PanggungTwin from "@/components/warehouse-twin/stage";
 import { DetailRak, Legenda } from "@/components/warehouse-twin/panels";
 import PanelPicking from "@/components/warehouse-twin/picking-panel";
-import type { HasilRute } from "@/lib/picking";
+import PanelWhatIf from "@/components/warehouse-twin/whatif-panel";
+import { Penempatan, barangBerpindah, penempatanAwal, terapkanPenempatan } from "@/lib/whatif";
+import { HasilRute, adalahGalat, hitungRute } from "@/lib/picking";
 import type { Pilihan } from "@/components/warehouse-twin/scene";
 import { segarkanSemua, useApi } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -221,7 +224,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!gudangId && daftar && daftar.length) setGudangId(String(daftar[0].id));
   }, [daftar, gudangId]);
-  useEffect(() => { setPilihan(null); setRutePicking(null); }, [gudangId]);
+  useEffect(() => { setPilihan(null); setRutePicking(null); setSkenario(null); setTampilan("awal"); }, [gudangId]);
 
   const { data, error, loading } = useApi<Dashboard>(
     gudangId ? "/api/dashboard" : null, { warehouse_id: gudangId });
@@ -236,8 +239,29 @@ export default function DashboardPage() {
   const tata = useMemo(() => (itemsLapis ? susunTataLetak(itemsLapis) : null), [itemsLapis]);
   const hitung = useMemo(() => (itemsLapis ? hitungStatus(itemsLapis) : undefined), [itemsLapis]);
   const horizon = useMemo(() => (twinData ? horizonHari(twinData.items) : null), [twinData]);
+  // ---------- what-if: sandbox di memori, tidak ditulis ke mana pun ----------
+  const [skenario, setSkenario] = useState<{ p: Penempatan; tanda: string } | null>(null);
+  const [tampilan, setTampilan] = useState<"awal" | "skenario">("awal");
+  const awalPenempatan = useMemo(() => (tata ? penempatanAwal(tata) : null), [tata]);
+  // Skenario hanya sah selama himpunan barang-dan-slotnya sama; bila data berubah, ia dibuang.
+  const tandaAwal = useMemo(
+    () => (awalPenempatan ? JSON.stringify([...awalPenempatan].map(([id, r]) => [id, r.rakId, r.idx])) : ""), [awalPenempatan]);
+  const skenarioSah = skenario && skenario.tanda === tandaAwal ? skenario.p : null;
+  const lihatSkenario = tampilan === "skenario" && !!skenarioSah;
+  const tataAwal = tata;
+  const tataTampil = useMemo(
+    () => (tataAwal && lihatSkenario ? terapkanPenempatan(tataAwal, skenarioSah!) : tataAwal), [tataAwal, lihatSkenario, skenarioSah]);
+  const ditandai = useMemo(
+    () => (lihatSkenario && awalPenempatan ? barangBerpindah(awalPenempatan, skenarioSah!) : undefined), [lihatSkenario, awalPenempatan, skenarioSah]);
   const [rutePicking, setRutePicking] = useState<HasilRute | null>(null);
   const [rutePembanding, setRutePembanding] = useState(false);
+  // Rute yang digambar: pada tampilan skenario, pesanan yang sama dihitung ulang di layout baru.
+  const ruteTampil = useMemo(() => {
+    if (!rutePicking) return null;
+    if (!lihatSkenario || !tataTampil || !twinData) return rutePicking;
+    const h = hitungRute({ ...rutePicking.masukan, tata: tataTampil, items: twinData.items });
+    return adalahGalat(h) ? null : h;
+  }, [rutePicking, lihatSkenario, tataTampil, twinData]);
   const pilihFn = useCallback((p: Pilihan | null) => setPilihan(p), []);
 
   // ---------- data langsung ----------
@@ -302,7 +326,7 @@ export default function DashboardPage() {
 
   const a = d.attention;
   const f = d.forecast;
-  const rakTerpilih = tata?.rak.find((r) => r.id === pilihan?.rakId) ?? null;
+  const rakTerpilih = tataTampil?.rak.find((r) => r.id === pilihan?.rakId) ?? null;
   const namaGudang = twinData ? `${twinData.warehouse.code} · ${twinData.warehouse.name}` : "";
 
   return (
@@ -427,7 +451,7 @@ export default function DashboardPage() {
           ) : tata.rak.length === 0 ? (
             <div className="p-3"><Empty message={t("tw.empty")} /></div>
           ) : (
-            <PanggungTwin tata={tata} pilihan={pilihan} onPilih={pilihFn} rute={rutePicking} tampilPembanding={rutePembanding} />
+            <PanggungTwin tata={tataTampil!} pilihan={pilihan} onPilih={pilihFn} rute={ruteTampil} tampilPembanding={rutePembanding} ditandai={ditandai} />
           )}
         </Card>
 
@@ -462,6 +486,24 @@ export default function DashboardPage() {
               onPilihItem={(rakId, itemId) => setPilihan({ rakId, itemId })}
               tampilPembanding={rutePembanding}
               onTampilPembanding={setRutePembanding}
+            />
+          </Lipat>
+        </div>
+      )}
+
+      {/* ---------- what-if penempatan ---------- */}
+      {twinData && tata && tata.rak.length > 0 && (
+        <div className="mt-4">
+          <Lipat icon={<FlaskConical size={15} />} title={t("wi.title")} subtitle={t("wi.sub")} defaultOpen={false}>
+            <PanelWhatIf
+              key={gudangId}
+              tata={tata}
+              items={twinData.items}
+              hasil={rutePicking}
+              skenario={skenarioSah}
+              onSkenario={(p) => setSkenario(p ? { p, tanda: tandaAwal } : null)}
+              tampilan={lihatSkenario ? "skenario" : "awal"}
+              onTampilan={setTampilan}
             />
           </Lipat>
         </div>
