@@ -27,6 +27,11 @@ const nextConfig = {
    * wajib menanyakan ETag lebih dulu. Bila tidak ada deploy baru jawabannya
    * 304 dan tidak ada byte yang berpindah, jadi ini bukan mematikan cache.
    */
+  // Twin kini bagian dari Dasbor. Alamat lamanya dialihkan supaya bookmark tetap hidup.
+  async redirects() {
+    return [{ source: "/warehouse-twin", destination: "/", permanent: false }];
+  },
+
   async headers() {
     return [
       {

@@ -22,6 +22,14 @@
  *       berstatus aktif. Bukan kondisi persediaan sama sekali.
  *   Transaksi Terakhir (10 baris)                salinan halaman Transaksi.
  *
+ * GUDANG 3D MENJADI TOKOH UTAMA (Oktober 2026). Modul 3D Warehouse Twin tidak
+ * lagi punya halaman, menu, pemilih gudang, maupun deretan KPI sendiri: ia
+ * adalah bagian dari dasbor ini, membaca gudang yang sama dan status yang
+ * sama. Dua definisi "perlu perhatian" dalam satu aplikasi adalah cacat yang
+ * sudah pernah dibereskan di sini; karena itu warna 3D memakai keputusan mesin
+ * pemesanan ulang, bukan aturan stok minimum sendiri. Alamat lama
+ * /warehouse-twin dialihkan ke sini (next.config.mjs).
+ *
  * DASBOR TIDAK PUNYA RUMUS SENDIRI. Sebelumnya ia memakai definisi "stok
  * menipis" miliknya sendiri sementara halaman Pemesanan Ulang memakai titik
  * pesan efektif -- dua definisi untuk satu pertanyaan, dan tidak ada satu pun
@@ -32,10 +40,18 @@
  */
 
 import Link from "next/link";
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  ArrowLeftRight,
   ArrowRight,
   Boxes,
+  ChevronDown,
+  Info,
+  Pause,
+  Play,
   LayoutDashboard,
+  Sparkles,
+  Timer,
   Layers,
   Package,
   RefreshCw,
@@ -49,6 +65,7 @@ import {
   ErrorBox,
   Insight,
   PageHeader,
+  Select,
   SkeletonChart,
   SkeletonTable,
   SkeletonTiles,
@@ -59,9 +76,14 @@ import {
 } from "@/components/ui";
 import { HBar } from "@/components/charts";
 import { AKSI, PillAksi } from "@/components/status";
-import { useApi } from "@/lib/api";
+import PanggungTwin from "@/components/warehouse-twin/stage";
+import { DetailRak, Legenda } from "@/components/warehouse-twin/panels";
+import type { Pilihan } from "@/components/warehouse-twin/scene";
+import { segarkanSemua, useApi } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { idr, num } from "@/lib/format";
+import { GudangApi } from "@/lib/peta";
+import { JawabanTwin, hitungStatus, susunTataLetak } from "@/lib/twin";
 
 interface Dashboard {
   condition: { warehouses: number; items: number; stock: number; value: number };
@@ -118,11 +140,119 @@ const NADA: Record<string, "neutral" | "warning"> = {
   warning: "warning",
 };
 
+const AKSES_CEPAT = [
+  { href: "/forecasting", key: "nav.forecasting", icon: TrendingUp },
+  { href: "/reorder", key: "nav.reorder", icon: RefreshCw },
+  { href: "/transfer", key: "nav.transfer", icon: ArrowLeftRight },
+  { href: "/lifetime", key: "nav.lifetime", icon: Timer },
+  { href: "/assistant", key: "nav.chat", icon: Sparkles },
+];
+
+/** Selang penyegaran otomatis. Mesin reorder menjawab dalam ~0,3 dtk per gudang. */
+const SELANG_SEGAR_MS = 30_000;
+
+/**
+ * Penyegaran otomatis: menarik ulang seluruh data layar tiap SELANG_SEGAR_MS
+ * selama tab terlihat. Tab yang tersembunyi tidak menembak API; begitu terlihat
+ * kembali dan data sudah basi, ditarik seketika.
+ */
+function useSegarOtomatis(aktif: boolean) {
+  const terakhir = useRef(Date.now());
+  useEffect(() => {
+    if (!aktif) return;
+    const tarik = () => { terakhir.current = Date.now(); segarkanSemua(); };
+    const id = window.setInterval(() => { if (!document.hidden) tarik(); }, SELANG_SEGAR_MS);
+    const saatTampil = () => {
+      if (!document.hidden && Date.now() - terakhir.current > SELANG_SEGAR_MS) tarik();
+    };
+    document.addEventListener("visibilitychange", saatTampil);
+    return () => { window.clearInterval(id); document.removeEventListener("visibilitychange", saatTampil); };
+  }, [aktif]);
+}
+
+/** Kartu yang dapat dilipat, supaya panggung 3D tetap mendapat ruang. */
+function Lipat({
+  icon, title, subtitle, right, defaultOpen = true, children,
+}: {
+  icon: ReactNode;
+  title: string;
+  subtitle?: string;
+  right?: ReactNode;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  const { t } = useI18n();
+  const [buka, setBuka] = useState(defaultOpen);
+  return (
+    <Card
+      icon={icon}
+      title={title}
+      subtitle={buka ? subtitle : undefined}
+      right={
+        <div className="flex items-center gap-3">
+          {buka && right}
+          <button
+            type="button"
+            onClick={() => setBuka((v) => !v)}
+            aria-expanded={buka}
+            title={buka ? t("dash.panel.fold") : t("dash.panel.unfold")}
+            className="rounded-md p-1 text-muted hover:text-ink"
+          >
+            <ChevronDown size={16} className={buka ? "" : "-rotate-90"} style={{ transition: "transform .15s" }} />
+          </button>
+        </div>
+      }
+    >
+      {buka ? children : null}
+    </Card>
+  );
+}
+
 export default function DashboardPage() {
   const { t } = useI18n();
-  const { data, error, loading } = useApi<Dashboard>("/api/dashboard");
+  const gudang = useApi<{ items: GudangApi[] }>("/api/warehouses", { page_size: 200 });
+  const [gudangId, setGudangId] = useState("");
+  const [pilihan, setPilihan] = useState<Pilihan | null>(null);
 
-  if (error) return <ErrorBox message={error} />;
+  const daftar = gudang.data?.items;
+  useEffect(() => {
+    if (!gudangId && daftar && daftar.length) setGudangId(String(daftar[0].id));
+  }, [daftar, gudangId]);
+  useEffect(() => setPilihan(null), [gudangId]);
+
+  const { data, error, loading } = useApi<Dashboard>(
+    gudangId ? "/api/dashboard" : null, { warehouse_id: gudangId });
+  const twin = useApi<JawabanTwin>(gudangId ? "/api/warehouse-twin" : null, { warehouse_id: gudangId });
+
+  // useApi menahan data lama selama penarikan baru atau saat galat. Menampilkannya
+  // di bawah gudang lain yang sedang dipilih berarti angka gudang A tampil sebagai gudang B.
+  const twinData = twin.data && !twin.error && String(twin.data.warehouse.id) === gudangId ? twin.data : null;
+  const tata = useMemo(() => (twinData ? susunTataLetak(twinData.items) : null), [twinData]);
+  const hitung = useMemo(() => (twinData ? hitungStatus(twinData.items) : undefined), [twinData]);
+  const pilihFn = useCallback((p: Pilihan | null) => setPilihan(p), []);
+
+  // ---------- data langsung ----------
+  const [otomatis, setOtomatis] = useState(true);
+  useSegarOtomatis(otomatis && !!gudangId);
+  const [diperbarui, setDiperbarui] = useState<Date | null>(null);
+  const [berubah, setBerubah] = useState<string[]>([]);
+  const prevStok = useRef<{ gudang: number; peta: Map<number, number> } | null>(null);
+  useEffect(() => {
+    if (!twinData) return;
+    const peta = new Map(twinData.items.map((b) => [b.item_id, Number(b.quantity)]));
+    const prev = prevStok.current;
+    if (prev && prev.gudang === twinData.warehouse.id) {
+      // Selisih dihitung dari DATA, bukan dari animasi: hanya barang yang stoknya
+      // benar-benar berbeda dari penarikan sebelumnya yang dilaporkan.
+      setBerubah(twinData.items.filter((b) => prev.peta.get(b.item_id) !== Number(b.quantity)).map((b) => b.name));
+    } else {
+      setBerubah([]);
+    }
+    prevStok.current = { gudang: twinData.warehouse.id, peta };
+    setDiperbarui(new Date());
+  }, [twinData]);
+
+  if (error || gudang.error) return <ErrorBox message={(error || gudang.error) as string} />;
 
   /*
    * Kepala halaman berdiri di LUAR cabang memuat: judul dan kalimat
@@ -135,29 +265,36 @@ export default function DashboardPage() {
       eyebrow={t("brand.name")}
       title={t("dash.title")}
       description={t("dash.desc")}
-    />
+    >
+      <div className="flex items-center gap-2">
+        <label className="t-small text-muted">{t("dash.warehouse")}</label>
+        <Select
+          value={gudangId}
+          onChange={setGudangId}
+          options={(daftar ?? []).map((g) => ({ value: String(g.id), label: `${g.code} · ${g.name}` }))}
+        />
+      </div>
+    </PageHeader>
   );
 
-  if (loading && !data) {
+  // data lama dari gudang sebelumnya tidak ditampilkan di bawah pilihan baru
+  const d = loading || !data || String(gudangId) === "" ? null : data;
+  if (!d) {
     return (
       <>
         {kepala}
         <SkeletonTiles count={4} />
-        <div className="mt-4 grid gap-4 xl:grid-cols-3">
-          <SkeletonChart className="xl:col-span-2" height={168} delay={90} />
-          <SkeletonChart height={168} delay={150} />
-        </div>
         <div className="mt-4">
-          <SkeletonTable rows={6} cols={5} delay={220} />
+          <SkeletonChart height={420} delay={90} />
         </div>
       </>
     );
   }
 
-  const d = data!;
   const a = d.attention;
   const f = d.forecast;
-  const total = a.healthy + a.need_reorder + a.stockout_risk;
+  const rakTerpilih = tata?.rak.find((r) => r.id === pilihan?.rakId) ?? null;
+  const namaGudang = twinData ? `${twinData.warehouse.code} · ${twinData.warehouse.name}` : "";
 
   return (
     <>
@@ -168,7 +305,7 @@ export default function DashboardPage() {
       <Insight tone={NADA[d.state.level] ?? "neutral"}>{d.state.text}</Insight>
 
       {/* ---------- 1 & 2: kondisi sekarang, lalu yang perlu perhatian ---------- */}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <StatTile
           label={t("dash.kpi.items")}
           value={num(d.condition.items)}
@@ -205,65 +342,83 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* ---------- komposisi status dan sebaran stok ---------- */}
-      <div className="mt-4 grid gap-4 xl:grid-cols-2">
+      {/* ---------- akses cepat ke modul AI ---------- */}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span className="t-small font-semibold uppercase tracking-wide text-muted">{t("dash.quick")}</span>
+        {AKSES_CEPAT.map((q) => (
+          <Link
+            key={q.href}
+            href={q.href}
+            className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold text-ink-2 hover:text-ink"
+            style={{ borderColor: "var(--border)", background: "var(--surface-1)" }}
+          >
+            <q.icon size={13} /> {t(q.key)}
+          </Link>
+        ))}
+      </div>
+
+      {/* ---------- gudang 3D: tokoh utama ---------- */}
+      <div className="mt-4 grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
         <Card
           icon={<Boxes size={15} />}
-          title={t("dash.status")}
-          subtitle={t("dash.status_sub")}
-          delay={80}
+          title={t("tw.view.title")}
+          subtitle={t("tw.view.sub")}
+          right={
+            <div className="flex items-center gap-2 t-small text-muted">
+              <span
+                className="inline-block h-2 w-2 rounded-full"
+                style={{ background: otomatis ? "var(--status-good)" : "var(--status-neutral)" }}
+              />
+              <span title={berubah.slice(0, 5).join(", ")}>
+                {diperbarui ? t("dash.live.updated", { jam: diperbarui.toLocaleTimeString() }) : ""}
+                {berubah.length > 0 && ` · ${t("dash.live.changed", { n: berubah.length })}`}
+              </span>
+              <button
+                type="button"
+                onClick={() => setOtomatis((v) => !v)}
+                title={otomatis ? t("dash.live.pause") : t("dash.live.resume")}
+                className="rounded-md p-1 hover:text-ink"
+              >
+                {otomatis ? <Pause size={13} /> : <Play size={13} />}
+              </button>
+            </div>
+          }
+          className="!p-0"
         >
-          {total ? (
-            <HBar
-              data={[
-                {
-                  label: t("dash.status.stockout"),
-                  value: a.stockout_risk,
-                  color: AKSI.RISIKO_STOCKOUT.warna,
-                },
-                {
-                  label: t("dash.status.reorder"),
-                  value: a.need_reorder,
-                  color: AKSI.PERLU_REORDER.warna,
-                },
-                { label: t("dash.status.healthy"), value: a.healthy, color: AKSI.AMAN.warna },
-              ]}
-              height={124}
-              labelWidth={140}
-              valueWidth={64}
-              colorKey
-            />
+          <div className="mx-3 mb-3 flex items-start gap-2 rounded-lg p-2.5" style={{ background: "color-mix(in srgb, var(--status-warning) 12%, transparent)", boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--status-warning) 35%, transparent)" }}>
+            <Info size={15} className="mt-0.5 shrink-0" style={{ color: "var(--status-warning)" }} />
+            <p className="t-small text-ink"><b>{t("tw.virtual.title")}.</b> {t("tw.virtual.body")}</p>
+          </div>
+          {twin.error ? (
+            <div className="p-3"><ErrorBox message={twin.error} /></div>
+          ) : !tata ? (
+            <div className="p-3"><SkeletonChart height={420} /></div>
+          ) : tata.rak.length === 0 ? (
+            <div className="p-3"><Empty message={t("tw.empty")} /></div>
           ) : (
-            <Empty message={t("dash.empty_stock")} />
+            <PanggungTwin tata={tata} pilihan={pilihan} onPilih={pilihFn} />
           )}
         </Card>
 
-        <Card
-          icon={<Layers size={15} />}
-          title={t("dash.by_warehouse")}
-          subtitle={t("dash.by_warehouse_sub")}
-          delay={140}
-        >
-          {d.stock_by_warehouse.length ? (
-            <HBar
-              data={d.stock_by_warehouse.map((w) => ({
-                label: w.code,
-                value: Number(w.total_stock),
-                display: `${num(w.total_stock)} ${t("dash.units")} · ${idr(w.stock_value)}`,
-              }))}
-              height={124}
-              labelWidth={84}
-              valueWidth={200}
+        <div className="space-y-4">
+          {rakTerpilih ? (
+            <DetailRak
+              rak={rakTerpilih}
+              gudang={namaGudang}
+              itemId={pilihan?.itemId ?? null}
+              onPilihItem={(id) => setPilihan({ rakId: rakTerpilih.id, itemId: id })}
+              onTutup={() => setPilihan(null)}
             />
           ) : (
-            <Empty message={t("dash.empty_stock")} />
+            <Card><p className="t-body text-muted">{t("tw.detail.empty")}</p></Card>
           )}
-        </Card>
+          <Legenda hitung={hitung} />
+        </div>
       </div>
 
       {/* ---------- tabel: yang perlu ditangani ---------- */}
       <div className="mt-4">
-        <Card
+        <Lipat
           icon={<TriangleAlert size={15} />}
           title={t("dash.attention")}
           subtitle={t("dash.attention_sub")}
@@ -277,7 +432,6 @@ export default function DashboardPage() {
               <ArrowRight size={12} />
             </Link>
           }
-          delay={80}
         >
           {a.rows.length ? (
             <Table kartuPonsel>
@@ -342,13 +496,13 @@ export default function DashboardPage() {
           ) : (
             <Empty message={t("dash.attention_empty")} />
           )}
-        </Card>
+        </Lipat>
       </div>
 
       {/* ---------- 3: apa yang diprakirakan terjadi ---------- */}
       {f.horizon_days !== null && (
         <div className="mt-4">
-          <Card
+          <Lipat
             icon={<TrendingUp size={15} />}
             title={t("dash.forecast", { n: num(f.horizon_days) })}
             subtitle={t("dash.forecast_sub")}
@@ -362,7 +516,6 @@ export default function DashboardPage() {
                 <ArrowRight size={12} />
               </Link>
             }
-            delay={80}
           >
             <div className="grid gap-5 sm:grid-cols-3">
               <AngkaPrakiraan label={t("dash.forecast.usage")} nilai={num(f.forecast_usage)} />
@@ -383,12 +536,37 @@ export default function DashboardPage() {
                 {t("dash.forecast.unknown", { n: num(f.without_forecast) })}
               </p>
             )}
-          </Card>
+          </Lipat>
         </div>
       )}
 
+      {/* ---------- perbandingan antargudang; selalu SEMUA gudang ---------- */}
+      <div className="mt-4">
+        <Lipat
+          icon={<Layers size={15} />}
+          title={t("dash.by_warehouse")}
+          subtitle={t("dash.by_warehouse_sub")}
+          defaultOpen={false}
+        >
+          {d.stock_by_warehouse.length ? (
+            <HBar
+              data={d.stock_by_warehouse.map((w) => ({
+                label: w.code,
+                value: Number(w.total_stock),
+                display: `${num(w.total_stock)} ${t("dash.units")} · ${idr(w.stock_value)}`,
+              }))}
+              height={124}
+              labelWidth={84}
+              valueWidth={200}
+            />
+          ) : (
+            <Empty message={t("dash.empty_stock")} />
+          )}
+        </Lipat>
+      </div>
+
       <p className="mt-4 text-xs text-muted">{d.value_basis}</p>
-      {d.truncated && (
+      {(d.truncated || twinData?.truncated) && (
         <p className="mt-1 text-xs" style={{ color: "var(--status-serious)" }}>
           {t("dash.truncated")}
         </p>

@@ -29,7 +29,7 @@ from .ml import predict
 from .routers import (assistant, auth, catalog, dashboard, demo,
                       forecast_api, forecasting, inventory, lifetime, master,
                       purchase_orders, reorder, reports, stock_issues,
-                      stock_receipts, transfer, users)
+                      stock_receipts, transfer, users, warehouse_twin)
 
 # Tanpa ini seluruh log.info di app/ hilang tanpa jejak: uvicorn hanya memasang
 # handler untuk logger miliknya sendiri, dan logger akar bawaannya berada di
@@ -206,6 +206,7 @@ app.include_router(reorder.router, dependencies=WAJIB_MASUK)
 # app/transfer.py.
 app.include_router(transfer.router, dependencies=WAJIB_MASUK)
 app.include_router(lifetime.router, dependencies=WAJIB_MASUK)
+app.include_router(warehouse_twin.router, dependencies=WAJIB_MASUK)
 app.include_router(assistant.router, dependencies=WAJIB_MASUK)
 app.include_router(demo.router, dependencies=WAJIB_MASUK)
 app.include_router(master.router, dependencies=WAJIB_MASUK)

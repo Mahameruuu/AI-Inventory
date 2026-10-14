@@ -50,6 +50,10 @@ BATAS_PERHATIAN = 6
 def dashboard(
     lang: str = Query(i18n.BAHASA_BAWAAN,
                       description="Bahasa kalimat temuan: id atau en."),
+    warehouse_id: int | None = Query(
+        None, gt=0,
+        description="Batasi kondisi, perhatian, dan prakiraan pada satu gudang; "
+                    "kosong = seluruh gudang aktif."),
 ) -> dict:
     lang = i18n.normalisasi(lang)
 
@@ -72,15 +76,27 @@ def dashboard(
     with readonly() as cur:
         cur.execute(
             """
-            SELECT (SELECT count(*) FROM warehouses WHERE is_active) AS warehouses,
-                   (SELECT count(*) FROM items WHERE is_active)      AS items,
+            SELECT (SELECT count(*) FROM warehouses
+                     WHERE is_active
+                       AND (%(gid)s::bigint IS NULL OR id = %(gid)s::bigint)) AS warehouses,
+                   -- Dibatasi satu gudang, "SKU" berarti barang yang BENAR-BENAR
+                   -- ada di gudang itu; tanpa batas tetap seluruh katalog aktif.
+                   CASE WHEN %(gid)s::bigint IS NULL
+                        THEN (SELECT count(*) FROM items WHERE is_active)
+                        ELSE (SELECT count(DISTINCT i2.item_id)
+                                FROM inventory i2
+                                JOIN items t2 ON t2.id = i2.item_id AND t2.is_active
+                               WHERE i2.warehouse_id = %(gid)s::bigint)
+                   END                                               AS items,
                    COALESCE(SUM(inv.quantity), 0)                    AS stock,
                    COALESCE(SUM(inv.quantity * it.unit_price), 0)    AS value
               FROM inventory inv
               JOIN items it      ON it.id = inv.item_id
               JOIN warehouses w  ON w.id = inv.warehouse_id
              WHERE it.is_active AND w.is_active
-            """
+               AND (%(gid)s::bigint IS NULL OR w.id = %(gid)s::bigint)
+            """,
+            {"gid": warehouse_id},
         )
         kondisi = dict(cur.fetchone())
         # Satuan gudang diskrit: yang sampai ke layar bilangan bulat, satu
@@ -125,7 +141,7 @@ def dashboard(
     # juga, jadi ukuran halaman tidak lagi dapat menggeser satu pun dari
     # mereka.
     hasil = ro.daftar_reorder(
-        warehouse_id=None, status=None, priority=None, q=None,
+        warehouse_id=warehouse_id, status=None, priority=None, q=None,
         page=1, page_size=BATAS_PERHATIAN, lang=lang,
     )
     baris = hasil["items"]
