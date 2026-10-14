@@ -12,35 +12,35 @@ import { Badge, Card } from "@/components/ui";
 import { num } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 import {
-  BarisTwin, RakTwin, StatusTwin, URUT_STATUS, WARNA_STATUS, kapasitasRak,
+  BarisTwin, LapisRisiko, RakTwin, StatusTwin, URUT_STATUS, WARNA_STATUS, kapasitasRak,
 } from "@/lib/twin";
 
 const pct = (v: number) => `${num(v * 100, 0)}%`;
 
-const LABEL_STATUS: Record<StatusTwin, string> = {
-  normal: "dash.status.healthy",
-  perhatian: "dash.status.reorder",
-  kritis: "dash.status.stockout",
-  tidak_diketahui: "tw.st.tidak_diketahui",
-};
-
-export function LabelStatus({ s }: { s: StatusTwin }) {
+export function LabelStatus({ s, lapis = "reorder", h }: { s: StatusTwin; lapis?: LapisRisiko; h?: number | null }) {
   const t = useT();
-  return <Badge label={t(LABEL_STATUS[s])} color={WARNA_STATUS[s]} title={t(`tw.st.${s}_d`)} />;
+  return <Badge label={t(`tw.l.${lapis}.${s}`)} color={WARNA_STATUS[s]} title={t(`tw.l.${lapis}.${s}_d`, vars(h))} />;
 }
 
-export function Legenda({ hitung }: { hitung?: Record<StatusTwin, number> }) {
+/** Variabel {h}/{h2} untuk deskripsi lapisan "habis"; kosong bila horizon tidak diketahui. */
+function vars(h?: number | null) {
+  return h ? { h, h2: 2 * h } : { h: "?", h2: "?" };
+}
+
+export function Legenda({
+  hitung, lapis = "reorder", horizon,
+}: { hitung?: Record<StatusTwin, number>; lapis?: LapisRisiko; horizon?: number | null }) {
   const t = useT();
   return (
-    <Card title={t("tw.legend")}>
+    <Card title={t("tw.legend")} subtitle={t(`tw.layer.src.${lapis}`, { h: horizon ?? "?" })}>
       <ul className="space-y-2">
         {URUT_STATUS.map((s) => (
           <li key={s} className="flex items-start gap-2.5">
             <span className="mt-1 h-3 w-3 shrink-0 rounded-sm" style={{ background: WARNA_STATUS[s] }} />
             <span className="t-body text-ink">
-              <b>{t(LABEL_STATUS[s])}</b>
+              <b>{t(`tw.l.${lapis}.${s}`)}</b>
               {hitung && <span className="ml-1.5 tabular-nums text-muted">· {t("tw.counts", { n: hitung[s] })}</span>}
-              <span className="block t-small text-muted">{t(`tw.st.${s}_d`)}</span>
+              <span className="block t-small text-muted">{t(`tw.l.${lapis}.${s}_d`, vars(horizon))}</span>
             </span>
           </li>
         ))}
@@ -60,8 +60,10 @@ function Baris({ k, v }: { k: string; v: React.ReactNode }) {
 }
 
 export function DetailRak({
-  rak, gudang, itemId, onPilihItem, onTutup,
+  rak, gudang, itemId, onPilihItem, onTutup, lapis = "reorder", horizon,
 }: {
+  lapis?: LapisRisiko;
+  horizon?: number | null;
   rak: RakTwin;
   gudang: string;
   itemId: number | null;
@@ -86,7 +88,7 @@ export function DetailRak({
       <dl>
         <Baris k={t("tw.zone")} v={<span className="text-muted">{t("tw.zone_na")}</span>} />
         <Baris k={t("tw.group")} v={rak.kategori} />
-        <Baris k={t("tw.col.status")} v={<LabelStatus s={rak.status} />} />
+        <Baris k={t("tw.col.status")} v={<LabelStatus s={rak.status} lapis={lapis} h={horizon} />} />
         <Baris
           k={t("tw.capacity")}
           v={kap.persen == null ? <span className="text-muted">{t("tw.slot.not_set")}</span> : pct(kap.persen)}
@@ -107,7 +109,7 @@ export function DetailRak({
             <Baris k={t("tw.slot.min")} v={ada(terpilih.minimum_stock)} />
             <Baris k={t("tw.slot.reorder")} v={ada(terpilih.reorder_point)} />
             <Baris k={t("tw.slot.max")} v={ada(terpilih.maximum_stock)} />
-            <Baris k={t("tw.col.status")} v={<LabelStatus s={terpilih.status} />} />
+            <Baris k={t("tw.col.status")} v={<LabelStatus s={terpilih.status} lapis={lapis} h={horizon} />} />
           </dl>
           <div className="mt-3 t-small font-semibold uppercase tracking-wide text-muted">{t("tw.dec.title")}</div>
           {terpilih.decision ? (
@@ -120,6 +122,20 @@ export function DetailRak({
           ) : (
             <p className="mt-1 t-small text-muted">{t("tw.dec.none")}</p>
           )}
+          <div className="mt-3 t-small font-semibold uppercase tracking-wide text-muted">{t("tw.life.title")}</div>
+          {terpilih.lifetime ? (
+            <dl className="mt-1">
+              <Baris k={t("tw.col.status")} v={terpilih.lifetime.status_label} />
+              <Baris k={t("tw.life.deviation")} v={terpilih.lifetime.deviation_percentage == null ? "—" : `${num(terpilih.lifetime.deviation_percentage, 0)}%`} />
+              <p className="mt-1 t-small text-muted">{terpilih.lifetime.basis}</p>
+            </dl>
+          ) : (
+            <p className="mt-1 t-small text-muted">{t("tw.life.none")}</p>
+          )}
+          <Link href="/lifetime" className="mt-2 inline-flex items-center gap-1 text-xs font-semibold" style={{ color: "var(--brand)" }}>
+            {t("tw.life.open")} <ArrowRight size={12} />
+          </Link>
+          <br />
           <Link href="/reorder" className="mt-2 inline-flex items-center gap-1 text-xs font-semibold" style={{ color: "var(--brand)" }}>
             {t("tw.dec.open")} <ArrowRight size={12} />
           </Link>

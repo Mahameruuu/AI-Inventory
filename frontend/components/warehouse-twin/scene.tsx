@@ -22,6 +22,8 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
 import AktorGudang from "@/components/warehouse-twin/aktor";
 import AreaDock from "@/components/warehouse-twin/dock";
+import RuteView from "@/components/warehouse-twin/rute";
+import type { HasilRute } from "@/lib/picking";
 import { AsetAman, URL_ASET, buatGeometriRak, paletBersama, useGeometriGLB } from "@/components/warehouse-twin/aset";
 import { Dock, RakTwin, StatusTwin, TataLetak, UKURAN, WARNA_STATUS, layoutDock } from "@/lib/twin";
 
@@ -41,6 +43,9 @@ interface Props {
   animasi: boolean;
   /** bayangan dinamis; matikan pada perangkat tanpa GPU kuat */
   bayangan: boolean;
+  /** hasil optimasi rute picking, atau null */
+  rute?: HasilRute | null;
+  tampilPembanding?: boolean;
 }
 
 function posisiAwal(tata: TataLetak, dock: Dock, aspek = 1.2): [number, number, number] {
@@ -241,6 +246,8 @@ function Rak({
     onPilih({ rakId: rak.id, itemId: null });
   };
   const sorot = terpilih || hover;
+  // barang berstatus perhatian/kritis pada lapisan yang sedang aktif
+  const risiko = rak.slots.filter((x) => x.item.status === "kritis" || x.item.status === "perhatian").length;
 
   return (
     <group position={[rak.x, 0, rak.z]}>
@@ -300,6 +307,12 @@ function Rak({
           }}
         >
           {rak.kode} · {rak.kategori}
+          {risiko > 0 && (
+            <span style={{
+              marginLeft: 6, display: "inline-block", minWidth: 16, padding: "0 4px", borderRadius: 8, textAlign: "center",
+              background: WARNA_STATUS.kritis, color: "#fff", fontSize: 11, fontWeight: 700,
+            }}>{risiko}</span>
+          )}
         </div>
       </Html>
     </group>
@@ -356,7 +369,7 @@ function Kamera({ tata, dock, resetKe }: { tata: TataLetak; dock: Dock; resetKe:
   );
 }
 
-export default function WarehouseScene({ tata, pilihan, onPilih, resetKe, animasi, bayangan }: Props) {
+export default function WarehouseScene({ tata, pilihan, onPilih, resetKe, animasi, bayangan, rute = null, tampilPembanding = false }: Props) {
   const bersama = useBersama();
   const dock = useMemo(() => layoutDock(tata), [tata]);
   // lantai beton membentang dari dinding dock sampai ujung belakang deretan rak
@@ -423,6 +436,7 @@ export default function WarehouseScene({ tata, pilihan, onPilih, resetKe, animas
       ))}
       <AktorGudang tata={tata} jalan={animasi} />
       <AreaDock tata={tata} jalan={animasi} />
+      {rute && <RuteView hasil={rute} tampilPembanding={tampilPembanding} jalan={animasi} />}
       <Kamera tata={tata} dock={dock} resetKe={resetKe} />
       <Detak aktif={animasi} />
     </Canvas>

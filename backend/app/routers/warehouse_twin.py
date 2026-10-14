@@ -25,6 +25,7 @@ from fastapi import APIRouter, Query
 from .. import decision, i18n
 from ..db import readonly
 from ..errors import invalid
+from . import lifetime as lt_router
 from . import reorder as ro
 
 router = APIRouter(tags=["warehouse-twin"])
@@ -77,6 +78,18 @@ def warehouse_twin(
         page=1, page_size=ro.BATAS_BARIS, lang=lang,
     )
     mesin = {b["item_id"]: b for b in hasil["items"]}
+
+    # Umur pakai DIPINJAM dari modul Analisis Umur Pakai, bukan dihitung ulang.
+    # Kegagalannya tidak boleh menjatuhkan tampilan stok: lapisan itu saja yang
+    # menjadi "belum dinilai", dan jawabannya menyebutnya terus terang.
+    umur: dict = {}
+    umur_tersedia = True
+    try:
+        hu = lt_router.daftar(warehouse_id=warehouse_id, status=None, q=None,
+                              page=1, page_size=200, lang=lang)
+        umur = {b["item"]["id"]: b for b in hu["items"]}
+    except Exception:
+        umur_tersedia = False
     for b in baris:
         m = mesin.get(b["item_id"])
         b["status"] = status_dari_aksi(m["action_status"] if m else None)
@@ -91,8 +104,18 @@ def warehouse_twin(
             "horizon_days": m["decision_horizon_days"],
             "priority_label": m["priority_label"],
         }
+    for b in baris:
+        u = umur.get(b["item_id"])
+        b["lifetime"] = None if u is None else {
+            "status": u["status"],
+            "status_label": u["status_label"],
+            "deviation_percentage": u["deviation_percentage"],
+            "has_reference": u["has_reference"],
+            "basis": u["basis"],
+        }
     return {
         "warehouse": gudang,
+        "lifetime_available": umur_tersedia,
         "items": baris,
         "truncated": hasil["truncated"],
         "location_mapping": {"available": False, "source": "none"},

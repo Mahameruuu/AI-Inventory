@@ -18,6 +18,7 @@ import { Pause, Play, RotateCcw, Sun } from "lucide-react";
 import type { Pilihan } from "@/components/warehouse-twin/scene";
 import { Button, ErrorBox, Skeleton } from "@/components/ui";
 import { useT } from "@/lib/i18n";
+import type { HasilRute } from "@/lib/picking";
 import { TataLetak } from "@/lib/twin";
 
 const Scene = dynamic(() => import("@/components/warehouse-twin/scene"), {
@@ -33,11 +34,13 @@ class BatasGalat extends Component<{ pesan: string; children: ReactNode }, { gag
 }
 
 function PanggungTwin({
-  tata, pilihan, onPilih,
+  tata, pilihan, onPilih, rute = null, tampilPembanding = false,
 }: {
   tata: TataLetak;
   pilihan: Pilihan | null;
   onPilih: (p: Pilihan | null) => void;
+  rute?: HasilRute | null;
+  tampilPembanding?: boolean;
 }) {
   const t = useT();
   const [resetKe, setResetKe] = useState(0);
@@ -46,7 +49,7 @@ function PanggungTwin({
   return (
     <div className="relative h-[420px] overflow-hidden rounded-[inherit] sm:h-[520px] xl:h-[600px]">
       <BatasGalat pesan={t("tw.webgl_error")}>
-        <Scene tata={tata} pilihan={pilihan} onPilih={onPilih} resetKe={resetKe} animasi={animasi} bayangan={bayangan} />
+        <Scene tata={tata} pilihan={pilihan} onPilih={onPilih} resetKe={resetKe} animasi={animasi} bayangan={bayangan} rute={rute} tampilPembanding={tampilPembanding} />
       </BatasGalat>
       <div className="absolute left-3 top-3 flex gap-2">
         <Button variant="solid" onClick={() => { setResetKe((n) => n + 1); onPilih(null); }}>

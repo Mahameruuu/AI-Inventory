@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { BarisTwin, UKURAN, isiSlot, DOCK, SIKLUS_TRUK, bukaPintu, fasaTruk, jalurGudang, jarakBolakBalik, kegiatanDock, layoutDock, offsetTruk, ruteBalik, ruteBawa, jarakForklift, panjangJalur, posisiPadaJalur, kapasitasRak, ringkas, statusTerburuk, susunTataLetak } from "@/lib/twin";
+import { BarisTwin, UKURAN, isiSlot, DOCK, SIKLUS_TRUK, horizonHari, statusLapis, terapkanLapis, bukaPintu, fasaTruk, jalurGudang, jarakBolakBalik, kegiatanDock, layoutDock, offsetTruk, ruteBalik, ruteBawa, jarakForklift, panjangJalur, posisiPadaJalur, kapasitasRak, ringkas, statusTerburuk, susunTataLetak } from "@/lib/twin";
 
 const b = (i: number, kat: string, over: Partial<BarisTwin> = {}): BarisTwin => ({
   item_id: i, sku: `S${i}`, name: `Barang ${i}`, category_id: 1, category_name: kat,
   unit_code: "pcs", quantity: 10, reserved_quantity: 0, minimum_stock: 2,
-  reorder_point: 5, maximum_stock: 20, status: "normal", decision: null, ...over,
+  reorder_point: 5, maximum_stock: 20, status: "normal", decision: null, lifetime: null, ...over,
 });
 
 describe("susunTataLetak", () => {
@@ -183,5 +183,35 @@ describe("dock", () => {
       for (const r of [ruteBawa(d, bay, i), ruteBalik(d, bay, i)])
       for (let k = 1; k < r.length; k++) expect(r[k][0] === r[k - 1][0] || r[k][1] === r[k - 1][1]).toBe(true);
     }
+  });
+});
+
+describe("lapisan risiko", () => {
+  const dec = (cover: number | null) => ({
+    status_label: "x", recommended_order_qty: null, days_of_cover: cover, effective_reorder_point: 1,
+    available_stock: 1, forecast_usage: 1, horizon_days: 14, priority_label: "x",
+  });
+  const umur = (status: "PREMATURE" | "NORMAL" | "EXTENDED" | "INSUFFICIENT") =>
+    ({ status, status_label: status, deviation_percentage: 10, has_reference: true, basis: "b" });
+  it("reorder memakai status mesin apa adanya", () => {
+    expect(statusLapis(b(1, "A", { status: "kritis" }), "reorder")).toBe("kritis");
+  });
+  it("habis: batas tepat pada horizon dan 2x horizon", () => {
+    const s = (c: number | null) => statusLapis(b(1, "A", { decision: dec(c) }), "habis");
+    expect([s(5), s(14), s(15), s(28), s(29), s(null)]).toEqual(
+      ["kritis", "kritis", "perhatian", "perhatian", "normal", "tidak_diketahui"]);
+    expect(statusLapis(b(1, "A"), "habis")).toBe("tidak_diketahui");
+  });
+  it("umur: pemetaan status modul Analisis Umur Pakai", () => {
+    const s = (u: "PREMATURE" | "NORMAL" | "EXTENDED" | "INSUFFICIENT") => statusLapis(b(1, "A", { lifetime: umur(u) }), "umur");
+    expect([s("PREMATURE"), s("EXTENDED"), s("NORMAL"), s("INSUFFICIENT")]).toEqual(
+      ["kritis", "perhatian", "normal", "tidak_diketahui"]);
+    expect(statusLapis(b(1, "A"), "umur")).toBe("tidak_diketahui");
+  });
+  it("terapkanLapis tidak mengubah data asal dan horizon diambil dari mesin", () => {
+    const x = [b(1, "A", { decision: dec(3) })];
+    expect(terapkanLapis(x, "habis")[0].status).toBe("kritis");
+    expect(x[0].status).toBe("normal");
+    expect(horizonHari(x)).toBe(14);
   });
 });

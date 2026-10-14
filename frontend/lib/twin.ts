@@ -29,6 +29,16 @@ export interface BarisTwin {
   status: StatusTwin;
   /** keputusan mesin Pemesanan Ulang; null bila mesin tak menilai barang ini */
   decision: KeputusanTwin | null;
+  /** hasil Analisis Umur Pakai; null bila barang tidak dinilai modul itu */
+  lifetime: UmurTwin | null;
+}
+
+export interface UmurTwin {
+  status: "PREMATURE" | "NORMAL" | "EXTENDED" | "INSUFFICIENT";
+  status_label: string;
+  deviation_percentage: number | null;
+  has_reference: boolean;
+  basis: string;
 }
 
 export interface KeputusanTwin {
@@ -46,6 +56,7 @@ export interface JawabanTwin {
   warehouse: { id: number; code: string; name: string; location: string | null };
   items: BarisTwin[];
   truncated: boolean;
+  lifetime_available: boolean;
   location_mapping: { available: boolean; source: string };
 }
 
@@ -620,4 +631,59 @@ export function kegiatanDock(d: Dock, bay: BayDock, fase: FaseTruk, f: number): 
     }
   }
   return { x, z, arah, garpu, bawa, staging, trailer };
+}
+
+/* ------------------------------------------------------------------ */
+/* Lapisan risiko                                                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Tiga lapisan, SEMUANYA dipinjam dari modul yang sudah ada -- tidak ada model
+ * atau ambang baru di sini:
+ *
+ *   reorder  status mesin Pemesanan Ulang (sama dengan dasbor)
+ *   habis    sisa hari stok menurut mesin yang sama, dibandingkan dengan
+ *            horizon keputusannya sendiri (`habis_dalam_horizon` pada dasbor):
+ *              <= horizon      kritis   (diproyeksikan habis dalam horizon)
+ *              <= 2 x horizon  perhatian
+ *              selebihnya      normal
+ *   umur     Analisis Umur Pakai:
+ *              PREMATURE  kritis    (diganti lebih cepat dari umur harapan)
+ *              EXTENDED   perhatian (bertahan lebih lama dari umur harapan)
+ *              NORMAL     normal
+ *              selain itu tidak_diketahui (belum ada referensi / data kurang)
+ *
+ * "Berpotensi", bukan "akan": modul umur pakai sendiri tidak menyebut sebab
+ * dan tidak meramalkan kerusakan, dan lapisan ini tidak boleh melampauinya.
+ */
+export type LapisRisiko = "reorder" | "habis" | "umur";
+export const URUT_LAPIS: LapisRisiko[] = ["reorder", "habis", "umur"];
+
+export function statusLapis(b: BarisTwin, lapis: LapisRisiko): StatusTwin {
+  if (lapis === "reorder") return b.status;
+  if (lapis === "habis") {
+    const d = b.decision;
+    if (!d || d.days_of_cover == null || !d.horizon_days) return "tidak_diketahui";
+    if (d.days_of_cover <= d.horizon_days) return "kritis";
+    if (d.days_of_cover <= 2 * d.horizon_days) return "perhatian";
+    return "normal";
+  }
+  const u = b.lifetime;
+  if (!u) return "tidak_diketahui";
+  if (u.status === "PREMATURE") return "kritis";
+  if (u.status === "EXTENDED") return "perhatian";
+  if (u.status === "NORMAL") return "normal";
+  return "tidak_diketahui";
+}
+
+/** Salinan barang dengan `status` diganti menurut lapisan; scene dan panel tak perlu tahu lapisan. */
+export function terapkanLapis(items: BarisTwin[], lapis: LapisRisiko): BarisTwin[] {
+  if (lapis === "reorder") return items;
+  return items.map((b) => ({ ...b, status: statusLapis(b, lapis) }));
+}
+
+/** Horizon keputusan (hari) yang dipakai lapisan "habis"; diambil dari barang pertama yang punya keputusan. */
+export function horizonHari(items: BarisTwin[]): number | null {
+  for (const b of items) if (b.decision?.horizon_days) return b.decision.horizon_days;
+  return null;
 }

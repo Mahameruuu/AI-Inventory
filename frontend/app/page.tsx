@@ -49,6 +49,7 @@ import {
   Info,
   Pause,
   Play,
+  Route,
   LayoutDashboard,
   Sparkles,
   Timer,
@@ -78,12 +79,14 @@ import { HBar } from "@/components/charts";
 import { AKSI, PillAksi } from "@/components/status";
 import PanggungTwin from "@/components/warehouse-twin/stage";
 import { DetailRak, Legenda } from "@/components/warehouse-twin/panels";
+import PanelPicking from "@/components/warehouse-twin/picking-panel";
+import type { HasilRute } from "@/lib/picking";
 import type { Pilihan } from "@/components/warehouse-twin/scene";
 import { segarkanSemua, useApi } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { idr, num } from "@/lib/format";
 import { GudangApi } from "@/lib/peta";
-import { JawabanTwin, hitungStatus, susunTataLetak } from "@/lib/twin";
+import { JawabanTwin, LapisRisiko, URUT_LAPIS, hitungStatus, horizonHari, susunTataLetak, terapkanLapis } from "@/lib/twin";
 
 interface Dashboard {
   condition: { warehouses: number; items: number; stock: number; value: number };
@@ -218,7 +221,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!gudangId && daftar && daftar.length) setGudangId(String(daftar[0].id));
   }, [daftar, gudangId]);
-  useEffect(() => setPilihan(null), [gudangId]);
+  useEffect(() => { setPilihan(null); setRutePicking(null); }, [gudangId]);
 
   const { data, error, loading } = useApi<Dashboard>(
     gudangId ? "/api/dashboard" : null, { warehouse_id: gudangId });
@@ -227,8 +230,14 @@ export default function DashboardPage() {
   // useApi menahan data lama selama penarikan baru atau saat galat. Menampilkannya
   // di bawah gudang lain yang sedang dipilih berarti angka gudang A tampil sebagai gudang B.
   const twinData = twin.data && !twin.error && String(twin.data.warehouse.id) === gudangId ? twin.data : null;
-  const tata = useMemo(() => (twinData ? susunTataLetak(twinData.items) : null), [twinData]);
-  const hitung = useMemo(() => (twinData ? hitungStatus(twinData.items) : undefined), [twinData]);
+  // Lapisan risiko hanya mengganti `status` tiap barang; tata letak tetap sama.
+  const [lapis, setLapis] = useState<LapisRisiko>("reorder");
+  const itemsLapis = useMemo(() => (twinData ? terapkanLapis(twinData.items, lapis) : null), [twinData, lapis]);
+  const tata = useMemo(() => (itemsLapis ? susunTataLetak(itemsLapis) : null), [itemsLapis]);
+  const hitung = useMemo(() => (itemsLapis ? hitungStatus(itemsLapis) : undefined), [itemsLapis]);
+  const horizon = useMemo(() => (twinData ? horizonHari(twinData.items) : null), [twinData]);
+  const [rutePicking, setRutePicking] = useState<HasilRute | null>(null);
+  const [rutePembanding, setRutePembanding] = useState(false);
   const pilihFn = useCallback((p: Pilihan | null) => setPilihan(p), []);
 
   // ---------- data langsung ----------
@@ -389,6 +398,28 @@ export default function DashboardPage() {
             <Info size={15} className="mt-0.5 shrink-0" style={{ color: "var(--status-warning)" }} />
             <p className="t-small text-ink"><b>{t("tw.virtual.title")}.</b> {t("tw.virtual.body")}</p>
           </div>
+          <div className="mx-3 mb-2 flex flex-wrap items-center gap-2">
+            <span className="t-small font-semibold uppercase tracking-wide text-muted">{t("tw.layer.title")}</span>
+            {URUT_LAPIS.map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setLapis(l)}
+                aria-pressed={lapis === l}
+                className="rounded-lg border px-2.5 py-1 text-xs font-semibold"
+                style={{
+                  borderColor: lapis === l ? "var(--brand)" : "var(--border)",
+                  background: lapis === l ? "color-mix(in srgb, var(--brand) 12%, transparent)" : "var(--surface-1)",
+                  color: lapis === l ? "var(--brand)" : "var(--text-secondary)",
+                }}
+              >
+                {t(`tw.layer.${l}`)}
+              </button>
+            ))}
+            {lapis === "umur" && twinData && !twinData.lifetime_available && (
+              <span className="t-small" style={{ color: "var(--status-serious)" }}>{t("tw.layer.umur_na")}</span>
+            )}
+          </div>
           {twin.error ? (
             <div className="p-3"><ErrorBox message={twin.error} /></div>
           ) : !tata ? (
@@ -396,7 +427,7 @@ export default function DashboardPage() {
           ) : tata.rak.length === 0 ? (
             <div className="p-3"><Empty message={t("tw.empty")} /></div>
           ) : (
-            <PanggungTwin tata={tata} pilihan={pilihan} onPilih={pilihFn} />
+            <PanggungTwin tata={tata} pilihan={pilihan} onPilih={pilihFn} rute={rutePicking} tampilPembanding={rutePembanding} />
           )}
         </Card>
 
@@ -405,6 +436,8 @@ export default function DashboardPage() {
             <DetailRak
               rak={rakTerpilih}
               gudang={namaGudang}
+              lapis={lapis}
+              horizon={horizon}
               itemId={pilihan?.itemId ?? null}
               onPilihItem={(id) => setPilihan({ rakId: rakTerpilih.id, itemId: id })}
               onTutup={() => setPilihan(null)}
@@ -412,9 +445,27 @@ export default function DashboardPage() {
           ) : (
             <Card><p className="t-body text-muted">{t("tw.detail.empty")}</p></Card>
           )}
-          <Legenda hitung={hitung} />
+          <Legenda hitung={hitung} lapis={lapis} horizon={horizon} />
         </div>
       </div>
+
+      {/* ---------- optimasi rute picking ---------- */}
+      {twinData && tata && tata.rak.length > 0 && (
+        <div className="mt-4">
+          <Lipat icon={<Route size={15} />} title={t("pk.title")} subtitle={t("pk.sub")}>
+            <PanelPicking
+              key={gudangId}
+              items={twinData.items}
+              tata={tata}
+              hasil={rutePicking}
+              onHasil={setRutePicking}
+              onPilihItem={(rakId, itemId) => setPilihan({ rakId, itemId })}
+              tampilPembanding={rutePembanding}
+              onTampilPembanding={setRutePembanding}
+            />
+          </Lipat>
+        </div>
+      )}
 
       {/* ---------- tabel: yang perlu ditangani ---------- */}
       <div className="mt-4">
