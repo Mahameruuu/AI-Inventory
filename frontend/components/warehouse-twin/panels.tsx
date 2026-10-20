@@ -28,12 +28,12 @@ function vars(h?: number | null) {
 }
 
 export function Legenda({
-  hitung, lapis = "reorder", horizon,
-}: { hitung?: Record<StatusTwin, number>; lapis?: LapisRisiko; horizon?: number | null }) {
+  hitung, lapis = "reorder", horizon, mendatar = false,
+}: { hitung?: Record<StatusTwin, number>; lapis?: LapisRisiko; horizon?: number | null; mendatar?: boolean }) {
   const t = useT();
   return (
     <Card title={t("tw.legend")} subtitle={t(`tw.layer.src.${lapis}`, { h: horizon ?? "?" })}>
-      <ul className="space-y-2">
+      <ul className={mendatar ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-4" : "space-y-2"}>
         {URUT_STATUS.map((s) => (
           <li key={s} className="flex items-start gap-2.5">
             <span className="mt-1 h-3 w-3 shrink-0 rounded-sm" style={{ background: WARNA_STATUS[s] }} />

@@ -12,8 +12,8 @@
  */
 
 import dynamic from "next/dynamic";
-import { Component, ReactNode, memo, useState } from "react";
-import { Pause, Play, RotateCcw, Sun } from "lucide-react";
+import { Component, ReactNode, memo, useEffect, useRef, useState } from "react";
+import { Maximize, Minimize, Pause, Play, RotateCcw, Sun } from "lucide-react";
 
 import type { Pilihan } from "@/components/warehouse-twin/scene";
 import { Button, ErrorBox, Skeleton } from "@/components/ui";
@@ -47,8 +47,24 @@ function PanggungTwin({
   const [resetKe, setResetKe] = useState(0);
   const [animasi, setAnimasi] = useState(true);
   const [bayangan, setBayangan] = useState(true);
+  // Layar penuh seperti pemutar video: tombol di pojok kanan bawah, Esc untuk keluar.
+  const bingkai = useRef<HTMLDivElement>(null);
+  const [penuh, setPenuh] = useState(false);
+  useEffect(() => {
+    const ubah = () => setPenuh(document.fullscreenElement === bingkai.current);
+    document.addEventListener("fullscreenchange", ubah);
+    return () => document.removeEventListener("fullscreenchange", ubah);
+  }, []);
+  const alihPenuh = () => {
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else void bingkai.current?.requestFullscreen?.();
+  };
   return (
-    <div className="relative h-[420px] overflow-hidden rounded-[inherit] sm:h-[520px] xl:h-[600px]">
+    <div
+      ref={bingkai}
+      className={penuh ? "relative h-screen w-screen overflow-hidden" : "relative h-[420px] overflow-hidden rounded-[inherit] sm:h-[520px] xl:h-[600px]"}
+      style={penuh ? { background: "var(--surface-1)" } : undefined}
+    >
       <BatasGalat pesan={t("tw.webgl_error")}>
         <Scene tata={tata} pilihan={pilihan} onPilih={onPilih} resetKe={resetKe} animasi={animasi} bayangan={bayangan} rute={rute} tampilPembanding={tampilPembanding} ditandai={ditandai} />
       </BatasGalat>
@@ -68,7 +84,16 @@ function PanggungTwin({
           {t("wi.badge", { n: ditandai.size })}
         </div>
       )}
-      <p className="pointer-events-none absolute bottom-2 left-3 right-3 t-small text-muted">
+      <button
+        type="button"
+        onClick={alihPenuh}
+        title={penuh ? t("tw.fs.exit") : t("tw.fs.enter")}
+        aria-label={penuh ? t("tw.fs.exit") : t("tw.fs.enter")}
+        className="absolute bottom-2 right-3 z-10 rounded-md bg-black/55 p-2 text-white hover:bg-black/75"
+      >
+        {penuh ? <Minimize size={16} /> : <Maximize size={16} />}
+      </button>
+      <p className="pointer-events-none absolute bottom-2 left-3 right-14 t-small text-muted">
         {t("tw.hint")} · {t("tw.sim_note")}
       </p>
     </div>

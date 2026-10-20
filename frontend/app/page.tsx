@@ -415,8 +415,12 @@ export default function DashboardPage() {
           ) : (
             <Card><p className="t-body text-muted">{t("tw.detail.empty")}</p></Card>
           )}
-          <Legenda hitung={hitung} lapis={lapis} horizon={horizon} />
         </div>
+      </div>
+
+      {/* legenda di bawah 3D, mendatar */}
+      <div className="mt-4">
+        <Legenda hitung={hitung} lapis={lapis} horizon={horizon} mendatar />
       </div>
 
       {/* ---------- tabel: yang perlu ditangani ---------- */}

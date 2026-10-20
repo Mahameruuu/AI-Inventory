@@ -2009,6 +2009,8 @@ export const DICT: Record<string, Entry> = {
   "tw.view.title": { id: "Gudang 3D", en: "3D warehouse" },
   "tw.view.sub": { id: "Tata letak virtual; warna mengikuti status Pemesanan Ulang", en: "Virtual layout; colours follow Reorder status" },
   "tw.counts": { id: "{n} barang", en: "{n} items" },
+  "tw.fs.enter": { id: "Layar penuh", en: "Full screen" },
+  "tw.fs.exit": { id: "Keluar layar penuh (Esc)", en: "Exit full screen (Esc)" },
   "dash.quick": { id: "Akses cepat", en: "Quick access" },
   "dash.warehouse": { id: "Gudang", en: "Warehouse" },
   "dash.panel.fold": { id: "Lipat", en: "Collapse" },
