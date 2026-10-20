@@ -337,7 +337,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ---------- gudang 3D: tokoh utama ---------- */}
-      <div className="mt-4 grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className={`mt-4 grid items-start gap-4 ${rakTerpilih ? "xl:grid-cols-[minmax(0,1fr)_340px]" : ""}`}>
         <Card
           icon={<Boxes size={15} />}
           title={t("tw.view.title")}
@@ -401,8 +401,8 @@ export default function DashboardPage() {
           )}
         </Card>
 
-        <div className="space-y-4">
-          {rakTerpilih ? (
+        {rakTerpilih && (
+          <div className="space-y-4">
             <DetailRak
               rak={rakTerpilih}
               gudang={namaGudang}
@@ -412,10 +412,8 @@ export default function DashboardPage() {
               onPilihItem={(id) => setPilihan({ rakId: rakTerpilih.id, itemId: id })}
               onTutup={() => setPilihan(null)}
             />
-          ) : (
-            <Card><p className="t-body text-muted">{t("tw.detail.empty")}</p></Card>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* legenda di bawah 3D, mendatar */}
