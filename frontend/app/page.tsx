@@ -42,7 +42,6 @@
 import Link from "next/link";
 import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ArrowLeftRight,
   ArrowRight,
   Boxes,
   ChevronDown,
@@ -50,12 +49,9 @@ import {
   Pause,
   Play,
   LayoutDashboard,
-  Sparkles,
-  Timer,
   Layers,
   Package,
   RefreshCw,
-  TrendingUp,
   TriangleAlert,
 } from "lucide-react";
 
@@ -74,14 +70,13 @@ import {
   Td,
   Th,
 } from "@/components/ui";
-import { HBar } from "@/components/charts";
 import { AKSI, PillAksi } from "@/components/status";
 import PanggungTwin from "@/components/warehouse-twin/stage";
 import { DetailRak, Legenda } from "@/components/warehouse-twin/panels";
 import type { Pilihan } from "@/components/warehouse-twin/scene";
 import { segarkanSemua, useApi } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
-import { idr, num } from "@/lib/format";
+import { num } from "@/lib/format";
 import { GudangApi } from "@/lib/peta";
 import { JawabanTwin, LapisRisiko, URUT_LAPIS, hitungStatus, horizonHari, susunTataLetak, terapkanLapis } from "@/lib/twin";
 
@@ -139,14 +134,6 @@ const NADA: Record<string, "neutral" | "warning"> = {
   info: "neutral",
   warning: "warning",
 };
-
-const AKSES_CEPAT = [
-  { href: "/forecasting", key: "nav.forecasting", icon: TrendingUp },
-  { href: "/reorder", key: "nav.reorder", icon: RefreshCw },
-  { href: "/transfer", key: "nav.transfer", icon: ArrowLeftRight },
-  { href: "/lifetime", key: "nav.lifetime", icon: Timer },
-  { href: "/assistant", key: "nav.chat", icon: Sparkles },
-];
 
 /** Selang penyegaran otomatis. Mesin reorder menjawab dalam ~0,3 dtk per gudang. */
 const SELANG_SEGAR_MS = 30_000;
@@ -300,7 +287,6 @@ export default function DashboardPage() {
   }
 
   const a = d.attention;
-  const f = d.forecast;
   const rakTerpilih = tata?.rak.find((r) => r.id === pilihan?.rakId) ?? null;
   const namaGudang = twinData ? `${twinData.warehouse.code} · ${twinData.warehouse.name}` : "";
 
@@ -348,21 +334,6 @@ export default function DashboardPage() {
           accent={a.stockout_risk > 0 ? AKSI.RISIKO_STOCKOUT.warna : AKSI.AMAN.warna}
           delay={180}
         />
-      </div>
-
-      {/* ---------- akses cepat ke modul AI ---------- */}
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="t-small font-semibold uppercase tracking-wide text-muted">{t("dash.quick")}</span>
-        {AKSES_CEPAT.map((q) => (
-          <Link
-            key={q.href}
-            href={q.href}
-            className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold text-ink-2 hover:text-ink"
-            style={{ borderColor: "var(--border)", background: "var(--surface-1)" }}
-          >
-            <q.icon size={13} /> {t(q.key)}
-          </Link>
-        ))}
       </div>
 
       {/* ---------- gudang 3D: tokoh utama ---------- */}
@@ -531,72 +502,6 @@ export default function DashboardPage() {
         </Lipat>
       </div>
 
-      {/* ---------- 3: apa yang diprakirakan terjadi ---------- */}
-      {f.horizon_days !== null && (
-        <div className="mt-4">
-          <Lipat
-            icon={<TrendingUp size={15} />}
-            title={t("dash.forecast", { n: num(f.horizon_days) })}
-            subtitle={t("dash.forecast_sub")}
-            right={
-              <Link
-                href="/forecasting"
-                className="inline-flex items-center gap-1 text-xs font-semibold"
-                style={{ color: "var(--brand)" }}
-              >
-                {t("dash.forecast_open")}
-                <ArrowRight size={12} />
-              </Link>
-            }
-          >
-            <div className="grid gap-5 sm:grid-cols-3">
-              <AngkaPrakiraan label={t("dash.forecast.usage")} nilai={num(f.forecast_usage)} />
-              <AngkaPrakiraan
-                label={t("dash.forecast.qty")}
-                nilai={num(f.recommended_order_qty)}
-              />
-              <AngkaPrakiraan
-                label={t("dash.forecast.stockout", { n: num(f.horizon_days) })}
-                nilai={num(f.projected_stockout)}
-                warna={f.projected_stockout > 0 ? AKSI.RISIKO_STOCKOUT.warna : undefined}
-              />
-            </div>
-            {/* Barang yang belum dapat diprakirakan disebutkan, tidak
-                dibulatkan menjadi nol di dalam angka-angka di atas. */}
-            {f.without_forecast > 0 && (
-              <p className="mt-4 text-xs text-muted">
-                {t("dash.forecast.unknown", { n: num(f.without_forecast) })}
-              </p>
-            )}
-          </Lipat>
-        </div>
-      )}
-
-      {/* ---------- perbandingan antargudang; selalu SEMUA gudang ---------- */}
-      <div className="mt-4">
-        <Lipat
-          icon={<Layers size={15} />}
-          title={t("dash.by_warehouse")}
-          subtitle={t("dash.by_warehouse_sub")}
-          defaultOpen={false}
-        >
-          {d.stock_by_warehouse.length ? (
-            <HBar
-              data={d.stock_by_warehouse.map((w) => ({
-                label: w.code,
-                value: Number(w.total_stock),
-                display: `${num(w.total_stock)} ${t("dash.units")} · ${idr(w.stock_value)}`,
-              }))}
-              height={124}
-              labelWidth={84}
-              valueWidth={200}
-            />
-          ) : (
-            <Empty message={t("dash.empty_stock")} />
-          )}
-        </Lipat>
-      </div>
-
       <p className="mt-4 text-xs text-muted">{d.value_basis}</p>
       {(d.truncated || twinData?.truncated) && (
         <p className="mt-1 text-xs" style={{ color: "var(--status-serious)" }}>
@@ -604,29 +509,5 @@ export default function DashboardPage() {
         </p>
       )}
     </>
-  );
-}
-
-function AngkaPrakiraan({
-  label,
-  nilai,
-  warna,
-}: {
-  label: string;
-  nilai: string;
-  warna?: string;
-}) {
-  return (
-    <div>
-      <div className="t-micro font-semibold uppercase tracking-[0.07em] text-muted">
-        {label}
-      </div>
-      <div
-        className="stat-figure mt-1.5 text-[22px] font-bold leading-none"
-        style={{ color: warna ?? "var(--text-primary)" }}
-      >
-        {nilai}
-      </div>
-    </div>
   );
 }
