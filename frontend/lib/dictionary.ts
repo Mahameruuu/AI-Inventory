@@ -1691,14 +1691,27 @@ export const DICT: Record<string, Entry> = {
   "lt.chart.legend_actual": { id: "Aktual (umur tiap unit)", en: "Actual (each unit's lifetime)" },
   "lt.chart.history_title": { id: "Grafik standar vs aktual", en: "Standard vs actual chart" },
   "lt.chart.history_note": {
-    id: "Satu titik = satu penggantian; tingginya lama unit itu bertahan (hari). Warna titik mengikuti statusnya.",
-    en: "One dot = one replacement; its height is how long that unit lasted (days). Dot colour follows its status.",
+    id: "Satu titik = satu penggantian; tingginya lama unit itu bertahan (hari). Titik di area merah muda perlu tindak lanjut.",
+    en: "One dot = one replacement; its height is how long that unit lasted (days). Dots in the pink area need follow-up.",
   },
   "lt.chart.no_data": {
     id: "Belum ada grafik: perlu standar umur pakai dan sedikitnya dua penggantian.",
     en: "No chart yet: it needs a standard lifetime and at least two replacements.",
   },
   "lt.chart.events_table": { id: "Lihat sebagai tabel", en: "View as table" },
+  "lt.chart.lower": { id: "Batas bawah ({n} hari)", en: "Lower bound ({n} days)" },
+  "lt.chart.upper": { id: "Batas atas ({n} hari)", en: "Upper bound ({n} days)" },
+  "lt.chart.outside_zone": { id: "Area di luar batas", en: "Outside the bounds" },
+  "lt.alert.title": { id: "Perlu tindak lanjut ({n})", en: "Needs follow-up ({n})" },
+  "lt.alert.below": {
+    id: "{date} · {doc}: unit hanya bertahan {n} hari, di bawah batas bawah {b} hari. Periksa kondisi alat dan pemasangan komponen.",
+    en: "{date} · {doc}: the unit lasted only {n} days, below the {b}-day lower bound. Inspect the equipment and how the part was fitted.",
+  },
+  "lt.alert.above": {
+    id: "{date} · {doc}: unit bertahan {n} hari, melewati batas atas {b} hari. Pastikan penggantian tercatat lengkap dan komponen dicek berkala.",
+    en: "{date} · {doc}: the unit lasted {n} days, past the {b}-day upper bound. Confirm replacements were all recorded and the part is checked regularly.",
+  },
+  "lt.alert.none": { id: "Semua penggantian berada di dalam batas.", en: "Every replacement is within the bounds." },
 
   /* tautan ke modul yang memang memakai polanya */
   "lt.link.forecast": { id: "Lihat prakiraan", en: "View forecast" },

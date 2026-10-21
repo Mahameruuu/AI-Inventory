@@ -16,6 +16,8 @@ import {
   CartesianGrid,
   ComposedChart,
   Line,
+  ReferenceArea,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -23,6 +25,8 @@ import {
 } from "recharts";
 
 import { WARNA_STATUS } from "@/components/lifetime-sections";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
+
 import { dateLabel, num } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 import { KejadianPenggantian } from "@/lib/lifetime-types";
@@ -30,6 +34,9 @@ import { KejadianPenggantian } from "@/lib/lifetime-types";
 const SUMBU_TEKS = { fontSize: 11, fill: "var(--text-muted)" };
 const WARNA_STANDAR = "var(--text-muted)";
 const WARNA_AKTUAL = "var(--brand)";
+/** Batas & area di luar batas: merah muda, supaya titik yang keluar langsung terlihat. */
+const WARNA_BATAS = "#e11d48";
+const WARNA_ZONA = "rgba(244, 114, 182, 0.16)";
 
 /**
  * Umur standar dan umur aktual tiap unit yang pernah terpasang, berurutan
@@ -46,10 +53,14 @@ const WARNA_AKTUAL = "var(--brand)";
 export function GrafikRiwayatPenggantian({
   kejadian,
   harapan,
+  bawah,
+  atas,
 }: {
   /** terbaru lebih dulu, seperti yang dikirim backend */
   kejadian: KejadianPenggantian[];
   harapan: number;
+  bawah: number;
+  atas: number;
 }) {
   const t = useT();
   const titik = kejadian
@@ -60,9 +71,14 @@ export function GrafikRiwayatPenggantian({
   if (!titik.length) return null;
 
   const nilai = titik.map((e) => e.lifetime_days as number);
-  const min = Math.min(harapan, ...nilai);
-  const maks = Math.max(harapan, ...nilai);
+  const min = Math.min(bawah, ...nilai);
+  const maks = Math.max(atas, ...nilai);
   const jeda = Math.max(1, (maks - min) * 0.2, harapan * 0.1);
+  const yMin = Math.max(0, Math.floor(min - jeda));
+  const yMaks = Math.ceil(maks + jeda);
+  const keluar = (v: number) => v < bawah || v > atas;
+  // Terbaru lebih dulu: yang paling baru paling perlu ditindaklanjuti.
+  const peringatan = titik.filter((e) => keluar(e.lifetime_days as number)).reverse();
 
   return (
     <div>
@@ -83,9 +99,14 @@ export function GrafikRiwayatPenggantian({
             tickLine={false}
             axisLine={false}
             width={48}
-            domain={[Math.max(0, Math.floor(min - jeda)), Math.ceil(maks + jeda)]}
+            domain={[yMin, yMaks]}
             tickFormatter={(v: number) => num(v)}
           />
+          {/* Area di luar batas diarsir merah muda. */}
+          <ReferenceArea y1={yMin} y2={bawah} fill={WARNA_ZONA} stroke="none" ifOverflow="hidden" />
+          <ReferenceArea y1={atas} y2={yMaks} fill={WARNA_ZONA} stroke="none" ifOverflow="hidden" />
+          <ReferenceLine y={bawah} stroke={WARNA_BATAS} strokeWidth={1.5} strokeDasharray="3 3" />
+          <ReferenceLine y={atas} stroke={WARNA_BATAS} strokeWidth={1.5} strokeDasharray="3 3" />
           <Tooltip
             cursor={{ stroke: "var(--border)" }}
             content={({ active, payload }) => {
@@ -104,6 +125,10 @@ export function GrafikRiwayatPenggantian({
                   <div className="mt-1.5 flex items-center gap-2">
                     <span className="h-[2px] w-3" style={{ background: WARNA_STANDAR }} />
                     {t("lt.chart.standard")}: {num(harapan)} {t("lt.unit.days")}
+                  </div>
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="h-[2px] w-3" style={{ background: WARNA_BATAS }} />
+                    {num(bawah)}–{num(atas)} {t("lt.unit.days")}
                   </div>
                   <div className="mt-1 flex items-center gap-2">
                     <span className="h-[2px] w-3" style={{ background: WARNA_AKTUAL }} />
@@ -132,13 +157,14 @@ export function GrafikRiwayatPenggantian({
             isAnimationActive={false}
             dot={(p: any) => {
               const e = p.payload as KejadianPenggantian;
+              const luar = keluar(e.lifetime_days as number);
               return (
                 <circle
                   key={e.id}
                   cx={p.cx}
                   cy={p.cy}
-                  r={4.5}
-                  fill={e.status ? WARNA_STATUS[e.status] : WARNA_AKTUAL}
+                  r={luar ? 6 : 4.5}
+                  fill={luar ? WARNA_BATAS : e.status ? WARNA_STATUS[e.status] : WARNA_AKTUAL}
                   stroke="var(--surface-1)"
                   strokeWidth={2}
                 />
@@ -157,8 +183,51 @@ export function GrafikRiwayatPenggantian({
           <span className="h-[2px] w-5" style={{ background: WARNA_AKTUAL }} />
           {t("lt.chart.legend_actual")}
         </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="w-5 border-t-2 border-dashed" style={{ borderColor: WARNA_BATAS }} />
+          {t("lt.chart.lower", { n: num(bawah) })} · {t("lt.chart.upper", { n: num(atas) })}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-3 w-5 rounded-sm" style={{ background: WARNA_ZONA, boxShadow: `inset 0 0 0 1px ${WARNA_BATAS}55` }} />
+          {t("lt.chart.outside_zone")}
+        </span>
       </div>
       <p className="mt-1.5 t-caption text-muted">{t("lt.chart.history_note")}</p>
+
+      {/* Log tindak lanjut: tiap titik yang keluar batas jadi satu pesan. */}
+      {peringatan.length > 0 ? (
+        <div
+          className="mt-3 rounded-xl px-3.5 py-3"
+          style={{ background: "rgba(244, 114, 182, 0.10)", boxShadow: `inset 0 0 0 1px ${WARNA_BATAS}40` }}
+        >
+          <div className="flex items-center gap-1.5 t-small font-semibold" style={{ color: WARNA_BATAS }}>
+            <AlertTriangle size={14} aria-hidden />
+            {t("lt.alert.title", { n: num(peringatan.length) })}
+          </div>
+          <ul className="mt-2 max-h-48 space-y-1.5 overflow-y-auto t-small text-ink-2">
+            {peringatan.map((e) => {
+              const v = e.lifetime_days as number;
+              const dibawah = v < bawah;
+              return (
+                <li key={e.id} className="flex gap-2">
+                  <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: WARNA_BATAS }} />
+                  {t(dibawah ? "lt.alert.below" : "lt.alert.above", {
+                    date: dateLabel(e.date),
+                    doc: e.document,
+                    n: num(v),
+                    b: num(dibawah ? bawah : atas),
+                  })}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : (
+        <div className="mt-3 inline-flex items-center gap-1.5 t-small" style={{ color: WARNA_STATUS.NORMAL }}>
+          <CheckCircle2 size={14} aria-hidden />
+          {t("lt.alert.none")}
+        </div>
+      )}
     </div>
   );
 }

@@ -68,16 +68,16 @@ export function UmurHarapan({ baris }: { baris: BarisUmurPakai }) {
   const t = useT();
   if (!baris.has_reference) return <span className="text-muted">—</span>;
 
+  // Semua kolom memakai HARI supaya bisa dibandingkan langsung; satuan asli
+  // spesifikasi (jam/tahun) tetap terbaca di tooltip.
   const satuan = baris.expected_unit === "tahun" ? t("lt.unit.years") : t("lt.unit.hours");
   return (
-    <div className="leading-tight">
-      <span className="tnum font-medium text-ink">
-        {num(baris.expected_value)} {satuan}
-      </span>
-      <span className="tnum ml-1.5 t-caption text-muted">
-        ≈ {num(baris.expected_lifetime_days)} {t("lt.unit.days")}
-      </span>
-    </div>
+    <span
+      className="tnum font-medium text-ink"
+      title={`${num(baris.expected_value)} ${satuan}`}
+    >
+      {num(baris.expected_lifetime_days)} {t("lt.unit.days")}
+    </span>
   );
 }
 
@@ -354,18 +354,6 @@ export function TabelUmurPakai({
                 {b.replacement_count ? (
                   <div className="leading-tight">
                     <span className="tnum text-ink">{t("lt.times", { n: num(b.replacement_count) })}</span>
-                    {b.replacements_per_year !== null && (
-                      <div className="tnum t-caption text-muted">
-                        {/* Dua desimal di bawah satu: komponen yang diganti
-                            sekali tiap tujuh tahun berfrekuensi 0,14 -- yang
-                            dibulatkan menjadi "0,1" kehilangan sepertiga
-                            nilainya, dan angka inilah yang berbicara langsung
-                            tentang kebutuhan sparepart setahun. */}
-                        {t("lt.per_year", {
-                          n: num(b.replacements_per_year, b.replacements_per_year < 1 ? 2 : 1),
-                        })}
-                      </div>
-                    )}
                   </div>
                 ) : (
                   <span className="text-muted">—</span>

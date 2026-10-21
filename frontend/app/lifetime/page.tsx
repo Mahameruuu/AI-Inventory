@@ -241,7 +241,7 @@ function PanelDetail({ detail }: { detail: DetailUmurPakai }) {
        * lain membuat panelnya kosong untuk barang yang datanya justru ada.
        */}
       {detail.last_replacement_date && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           {detail.actual_lifetime_days !== null && (
             <>
               <Ruas label={t("lt.detail.shortest")}>
@@ -249,16 +249,6 @@ function PanelDetail({ detail }: { detail: DetailUmurPakai }) {
               </Ruas>
               <Ruas label={t("lt.detail.longest")}>
                 {num(detail.longest_lifetime_days)} {t("lt.unit.days")}
-              </Ruas>
-              <Ruas label={t("lt.detail.frequency")}>
-                {detail.replacements_per_year !== null
-                  ? t("lt.per_year", {
-                      n: num(
-                        detail.replacements_per_year,
-                        detail.replacements_per_year < 1 ? 2 : 1,
-                      ),
-                    })
-                  : "—"}
               </Ruas>
             </>
           )}
@@ -314,6 +304,8 @@ function PanelDetail({ detail }: { detail: DetailUmurPakai }) {
               <GrafikRiwayatPenggantian
                 kejadian={detail.events}
                 harapan={detail.expected_lifetime_days!}
+                bawah={detail.lower_lifetime_days!}
+                atas={detail.upper_lifetime_days!}
               />
               {/* Tabelnya tetap ada, tertutup: nomor dokumen dan tanggal
                   persisnya hanya terbaca di sana. */}
