@@ -153,17 +153,18 @@
 
     <div class="node" style="--c:var(--c-start)">
       <div class="tag">Halaman masuk</div>
-      <div class="t">Punya akun?</div>
+      <div class="t">Ingat kata sandi?</div>
+      <div class="d">Akun dibuat oleh admin perusahaan, tidak ada pendaftaran mandiri.</div>
     </div>
     <div class="arrow"></div>
     <div class="branch">
       <div class="node" style="--c:var(--c-start)">
         <div class="t">Ya → Masuk</div>
-        <div class="d">Isi email dan kata sandi.</div>
+        <div class="d">Isi <b>username</b> dan kata sandi. Ikon mata untuk melihat kata sandi yang diketik.</div>
       </div>
       <div class="node" style="--c:var(--c-start)">
-        <div class="t">Belum → Daftar perusahaan</div>
-        <div class="d">Isi nama perusahaan, nama, email, dan kata sandi. Pendaftar menjadi <b>owner</b>.</div>
+        <div class="t">Tidak → Lupa kata sandi</div>
+        <div class="d">Isi username, lalu admin perusahaan menyetel kata sandi baru dari halaman Pengguna dan menyampaikannya kepada Anda.</div>
       </div>
     </div>
     <div class="arrow"></div>
@@ -221,6 +222,7 @@
       <div class="gh">Menu akun</div>
       <div class="row">
         <div class="node" style="--c:var(--c-acc)"><div class="t">Pengaturan</div><div class="d">Bahasa, tema terang/gelap, status koneksi.</div></div>
+        <div class="node" style="--c:var(--c-acc)"><div class="t">Pengguna</div><div class="d">Tambah pengguna, atur peran, setel kata sandi. Khusus admin/owner.</div></div>
         <div class="node" style="--c:var(--c-acc)"><div class="t">Jejak Audit</div><div class="d">Siapa mengubah apa dan kapan. Khusus admin/owner.</div></div>
       </div>
     </div>
@@ -238,11 +240,12 @@
     <div class="ch"><span class="bar"></span><h3>Masuk dan beranda</h3></div>
 
     <div class="card">
-      <div class="top"><h3>Masuk &amp; Daftar</h3><span class="where">Halaman /login</span></div>
+      <div class="top"><h3>Masuk &amp; Lupa kata sandi</h3><span class="where">Halaman /login</span></div>
       <p class="q">Siapa Anda, dan dari perusahaan mana?</p>
       <ul>
-        <li><b>Masuk</b> dengan email dan kata sandi.</li>
-        <li><b>Daftar perusahaan baru</b>: perusahaan baru langsung dibuat dan pendaftarnya menjadi owner.</li>
+        <li><b>Masuk</b> dengan username dan kata sandi. Ikon mata di kolom kata sandi menampilkan atau menyembunyikan isinya.</li>
+        <li>Tidak ada pendaftaran mandiri: akun hanya dibuat oleh admin/owner perusahaan dari halaman <b>Pengguna</b>.</li>
+        <li><b>Lupa kata sandi?</b> Isi username, dan permintaannya muncul di halaman Pengguna milik admin perusahaan Anda. Admin menyetel kata sandi baru lalu menyampaikannya kepada Anda. Untuk alasan keamanan, jawaban yang tampil selalu sama, terdaftar atau tidak username itu.</li>
         <li>Setiap perusahaan hanya melihat datanya sendiri. Data perusahaan lain dipisahkan oleh basis data, bukan hanya oleh tampilan.</li>
       </ul>
     </div>
@@ -382,6 +385,18 @@
     </div>
 
     <div class="card">
+      <div class="top"><h3>Pengguna</h3><span class="role">admin/owner</span></div>
+      <p class="q">Siapa saja yang boleh masuk, dan sebatas apa haknya?</p>
+      <ul>
+        <li><b>Tambah pengguna</b>: username (3–50 karakter: huruf kecil, angka, titik, garis bawah, tanda hubung), nama, kata sandi awal (minimal 10 karakter), peran, dan email (opsional).</li>
+        <li><b>Ubah peran</b> (admin, staf, peninjau) dan <b>nonaktifkan</b> pengguna. Pengguna yang dinonaktifkan langsung keluar dari semua perangkat.</li>
+        <li><b>Setel kata sandi</b> baru untuk pengguna yang lupa. Semua sesinya di perangkat lain langsung berakhir.</li>
+        <li><b>Permintaan lupa kata sandi</b> tampil paling atas. Pastikan dulu orangnya, lalu setel kata sandi baru, atau abaikan bila tidak dikenal.</li>
+        <li>Pemilik akun (owner) dan akun Anda sendiri tidak bisa diturunkan perannya atau dinonaktifkan dari sini.</li>
+      </ul>
+    </div>
+
+    <div class="card">
       <div class="top"><h3>Jejak Audit</h3><span class="role">admin/owner</span></div>
       <p class="q">Siapa yang mengubah data ini, kapan, dan nilai sebelumnya berapa?</p>
       <ul>
@@ -414,7 +429,7 @@
 
   <!-- ===================================================== -->
   <h2 id="peran">3. Hak akses per peran</h2>
-  <p class="sub">Setiap pengguna punya satu peran. Pendaftar perusahaan otomatis menjadi owner. Saat ini belum ada halaman untuk mengelola pengguna, jadi penambahan pengguna dan perubahan peran masih dilakukan oleh pengelola sistem.</p>
+  <p class="sub">Setiap pengguna punya satu peran. Owner dibuat sekali bersama perusahaannya, dan pengguna lain ditambahkan admin/owner dari halaman Pengguna.</p>
   <div class="tablewrap">
     <table>
       <thead>
@@ -427,6 +442,7 @@
         <tr><td>Mengajukan dan memproses transfer</td><td class="c ok">✓</td><td class="c ok">✓</td><td class="c ok">✓</td><td class="c no">—</td></tr>
         <tr><td>Memposting stok opname</td><td class="c ok">✓</td><td class="c ok">✓</td><td class="c no">—</td><td class="c no">—</td></tr>
         <tr><td>Mengelola barang dan gudang</td><td class="c ok">✓</td><td class="c ok">✓</td><td class="c no">—</td><td class="c no">—</td></tr>
+        <tr><td>Mengelola pengguna dan menangani lupa kata sandi</td><td class="c ok">✓</td><td class="c ok">✓</td><td class="c no">—</td><td class="c no">—</td></tr>
         <tr><td>Membuka jejak audit</td><td class="c ok">✓</td><td class="c ok">✓</td><td class="c no">—</td><td class="c no">—</td></tr>
       </tbody>
     </table>
