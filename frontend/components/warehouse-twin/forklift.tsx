@@ -97,6 +97,11 @@ function bangun() {
   logam.push(kotak(0.66, 0.06, 0.2, 0, 0.2, 0.72));              // palang bawah
   logam.push(kotak(0.5, 0.2, 0.3, 0, 0.55, 0.58));               // kotak transmisi
 
+  /* ---- tiang dalam: bergeser naik saat garpu melampaui tiang luar ---- */
+  const dalam: G[] = [];
+  for (const sx of [-1, 1]) dalam.push(kotak(0.07, 2.0, 0.08, sx * 0.2, 1.1, 0.74));
+  dalam.push(kotak(0.48, 0.06, 0.12, 0, 2.08, 0.74));
+
   /* ---- bagian bergerak: garpu + sandaran muatan ---- */
   const garpuKuas: G[] = [];
   garpuKuas.push(kotak(0.74, 0.06, 0.05, 0, 0.0, 0.0)); // palang bawah carriage
@@ -109,6 +114,7 @@ function bangun() {
   }
   return {
     kuning: gabung(kuning), hitam: gabung(hitam), logam: gabung(logam), garpu: gabung(garpuKuas),
+    tiangDalam: gabung(dalam),
     lampuDepan: kotak(0.12, 0.07, 0.03, 0, 0, 0),
   };
 }
@@ -133,9 +139,11 @@ function bahan() {
  * forklift dock -- memegang ref dan menggerakkannya per frame.
  */
 export function BadanForklift({
-  grup, garpu, muatan, lampu,
+  grup, garpu, muatan, lampu, tiangDalam,
 }: {
   a?: unknown;
+  /** opsional: tiang dalam yang naik untuk menjangkau rak atas */
+  tiangDalam?: React.RefObject<THREE.Group | null>;
   grup: React.RefObject<THREE.Group | null>;
   garpu: React.RefObject<THREE.Group | null>;
   muatan: React.RefObject<THREE.Group | null>;
@@ -149,6 +157,9 @@ export function BadanForklift({
       <mesh geometry={g.kuning} material={b.kuning} castShadow receiveShadow />
       <mesh geometry={g.hitam} material={b.hitam} castShadow receiveShadow />
       <mesh geometry={g.logam} material={b.logam} castShadow />
+      <group ref={tiangDalam}>
+        <mesh geometry={g.tiangDalam} material={b.logam} castShadow />
+      </group>
       {/* lampu depan dan belakang */}
       {[-0.32, 0.32].map((x) => (
         <mesh key={x} geometry={g.lampuDepan} material={b.lampuDepan} position={[x, 0.95, 0.5]} />

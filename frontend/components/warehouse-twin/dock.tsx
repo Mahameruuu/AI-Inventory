@@ -12,11 +12,12 @@
 
 import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
-import { createContext, useContext, useMemo, useRef } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import { Alat, Kotak, useAlat } from "@/components/warehouse-twin/aktor";
 import { BadanForklift } from "@/components/warehouse-twin/forklift";
+import { GEDUNG, bahanGedung, kotakBerUV } from "@/components/warehouse-twin/bangunan";
 import { AsetAman, ModelGLB, PaletBermuatan, URL_ASET, matriksNormal } from "@/components/warehouse-twin/aset";
 import { useGLTF } from "@react-three/drei";
 import { useT } from "@/lib/i18n";
@@ -145,7 +146,21 @@ function BayDockView({ a, d, bay }: { a: Alat; d: Dock; bay: BayDock }) {
       {/* pintu gulung: panel naik ke atas bukaan */}
       <mesh ref={pintu} geometry={a.kotak} material={a.bahan.pintu}
         position={[bay.x, DOCK.pintuTinggi / 2, d.zDinding]} scale={[DOCK.pintuLebar, DOCK.pintuTinggi, 0.12]} />
-      <Html position={[bay.x, DOCK.dindingTinggi + 0.5, d.zDinding + 0.2]} center distanceFactor={14}
+      {/* kusen pintu bergaris kuning-hitam dan bumper dock karet */}
+      {[-1, 1].map((sx) => (
+        <group key={sx}>
+          <mesh material={bahanGedung().bahaya} position={[bay.x + sx * (DOCK.pintuLebar / 2 + 0.08), DOCK.pintuTinggi / 2, d.zDinding + 0.17]}>
+            <boxGeometry args={[0.16, DOCK.pintuTinggi, 0.04]} />
+          </mesh>
+          <mesh material={a.bahan.hitam} position={[bay.x + sx * (DOCK.pintuLebar / 2 - 0.25), 0.55, d.zDinding + 0.2]} castShadow>
+            <boxGeometry args={[0.25, 0.4, 0.12]} />
+          </mesh>
+        </group>
+      ))}
+      <mesh material={bahanGedung().bahaya} position={[bay.x, DOCK.pintuTinggi + 0.08, d.zDinding + 0.17]}>
+        <boxGeometry args={[DOCK.pintuLebar + 0.32, 0.16, 0.04]} />
+      </mesh>
+      <Html position={[bay.x, DOCK.pintuTinggi + 0.7, d.zDinding + 0.3]} center distanceFactor={14}
         zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
         <div style={{
           whiteSpace: "nowrap", fontSize: 12, fontWeight: 700, padding: "2px 10px", borderRadius: 6,
@@ -174,10 +189,38 @@ function BayDockView({ a, d, bay }: { a: Alat; d: Dock; bay: BayDock }) {
 
 const JalanCtx = createContext<{ current: boolean }>({ current: true });
 
+/** Dinding dock setinggi gedung: beton di bawah, panel baja di atas, lintel di atas tiap pintu. */
+function DindingDock({ segmen, lubang, z }: { segmen: [number, number][]; lubang: (readonly [number, number])[]; z: number }) {
+  const m = bahanGedung();
+  const H = GEDUNG.tinggi, Hb = GEDUNG.tinggiBeton, T = 0.3;
+  const geo = useMemo(() => ({
+    beton: segmen.map(([l, r]) => kotakBerUV(r - l, Hb, T)),
+    panel: segmen.map(([l, r]) => kotakBerUV(r - l, H - Hb, T)),
+    lintel: lubang.map(([l, r]) => kotakBerUV(r - l, H - DOCK.pintuTinggi, T)),
+    // kunci isi, bukan identitas larik: data disegarkan tiap 30 dtk dengan bentuk sama
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [JSON.stringify(segmen), JSON.stringify(lubang), H, Hb]);
+  useEffect(() => () => [...geo.beton, ...geo.panel, ...geo.lintel].forEach((x) => x.dispose()), [geo]);
+  return (
+    <group>
+      {segmen.map(([l, r], i) => (
+        <group key={i}>
+          <mesh geometry={geo.beton[i]} material={m.beton} position={[(l + r) / 2, Hb / 2, z]} receiveShadow />
+          <mesh geometry={geo.panel[i]} material={m.panel} position={[(l + r) / 2, Hb + (H - Hb) / 2, z]} receiveShadow />
+        </group>
+      ))}
+      {lubang.map(([l, r], i) => (
+        <mesh key={`l${i}`} geometry={geo.lintel[i]} material={m.panel}
+          position={[(l + r) / 2, (DOCK.pintuTinggi + H) / 2, z]} receiveShadow />
+      ))}
+    </group>
+  );
+}
+
 /** Properti statis berupa model nyata Poly Haven (CC0); semuanya opsional. */
 function Properti({ d }: { d: Dock }) {
   const zW = d.zDinding;
-  const xKiri = -d.lebarLantai / 2, xKanan = d.lebarLantai / 2;
+  const xKiri = -d.lebarLantai / 2;
   const [b0, b1] = d.bay;
   const tiap = (url: string, fit: object, posisi: [number, number, number], putar = 0, key?: string) => (
     <AsetAman key={key ?? `${url}${posisi.join()}`}>
@@ -198,9 +241,6 @@ function Properti({ d }: { d: Dock }) {
       {/* peti plastik dan kayu di dekat staging pengeluaran */}
       {[0, 1].map((k) => tiap(URL_ASET.petiPlastik, { lebar: 0.6 }, [b1.x + 3.3, k * 0.32, zW + 2.0], 0.15 * k, `pp${k}`))}
       {tiap(URL_ASET.petiKayu, { lebar: 0.75 }, [b1.x + 3.5, 0, zW + 3.0], 0.4)}
-      {/* barrier beton di tepi jalan masuk truk */}
-      {[-1, 1].flatMap((sx) => [0, 1].map((k) =>
-        tiap(URL_ASET.barrier, { panjang: 2.4 }, [sx * (xKanan + 1.5), 0, zW - 4 - k * 2.5], Math.PI / 2, `br${sx}${k}`)))}
     </group>
   );
 }
@@ -222,19 +262,10 @@ export default function AreaDock({ tata, jalan }: { tata: TataLetak; jalan: bool
   return (
     <JalanCtx.Provider value={ref}>
       <group>
-        {/* jalan di luar dinding tempat truk berjalan */}
+        {/* halaman dock di luar dinding: hanya selebar gedung, terlihat lewat pintu */}
         <mesh geometry={a.kotak} material={a.bahan.aspal}
-          position={[0, -0.02, d.zDinding - DOCK.jalanDalam / 2 - 0.2]} scale={[panjang + 10, 0.02, DOCK.jalanDalam]} />
-        {/* dinding dock + lintel di atas bukaan */}
-        {segmen.map(([l, r], i) => (
-          <Kotak key={i} a={a} m={a.bahan.dinding} p={[(l + r) / 2, DOCK.dindingTinggi / 2, d.zDinding]}
-            s={[r - l, DOCK.dindingTinggi, 0.3]} />
-        ))}
-        {lubang.map(([l, r], i) => (
-          <Kotak key={`l${i}`} a={a} m={a.bahan.dinding}
-            p={[(l + r) / 2, (DOCK.pintuTinggi + DOCK.dindingTinggi) / 2, d.zDinding]}
-            s={[r - l, DOCK.dindingTinggi - DOCK.pintuTinggi, 0.3]} />
-        ))}
+          position={[0, -0.02, d.zDinding - DOCK.jalanDalam / 2 - 0.2]} scale={[panjang + 2, 0.02, DOCK.jalanDalam]} />
+        <DindingDock segmen={segmen} lubang={lubang} z={d.zDinding} />
         <Properti d={d} />
         {d.bay.map((b, i) => (
           <BayDockView key={i} a={a} d={d} bay={b} />

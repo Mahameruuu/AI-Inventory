@@ -14,10 +14,12 @@ dikomersialkan tanpa kewajiban atribusi. Kredit tetap dicantumkan sebagai itikad
 | `props/concrete_road_barrier_02.glb` | [Poly Haven](https://polyhaven.com/a/concrete_road_barrier_02) | CC0 | idem |
 | `props/steel_frame_shelves_01.glb` | [Poly Haven](https://polyhaven.com/a/steel_frame_shelves_01) | CC0 | idem (belum dipakai) |
 | `kenney/delivery.glb` | [Kenney Car Kit](https://kenney.nl/assets/car-kit) | CC0 | node tidak digabung, tekstur WebP, meshopt |
-| `worker/human.fbx`, `worker/*.png` | [Quaternius Animated Human](https://opengameart.org/content/animated-human-low-poly) | CC0 | tidak diubah |
+| `worker/human.fbx`, `worker/Clothed*.png` | [Quaternius Animated Human](https://opengameart.org/content/animated-human-low-poly) | CC0 | tidak diubah |
+| `worker/Kerja*.png` | turunan palet Quaternius di atas | CC0 | baju diganti rompi keselamatan (oranye/stabilo), celana diganti dongker kerja |
 
-Forklift, pallet kayu, rak baja, dan lantai beton dibuat secara prosedural di kode
-(`components/warehouse-twin/forklift.tsx`, `aset.tsx`, `scene.tsx`). Tidak ada forklift CC0 yang
+Forklift, pallet kayu, rak baja, tangga gudang, papan klip, pemindai, bangunan gudang
+(dinding, atap, rangka baja, lampu), dan lantai beton dibuat secara prosedural di kode
+(`components/warehouse-twin/forklift.tsx`, `aset.tsx`, `bangunan.tsx`, `kegiatan.tsx`, `scene.tsx`). Tidak ada forklift CC0 yang
 layak ditemukan; model GLB berlisensi dapat menggantikannya tanpa mengubah pengendali gerak.
 
 Optimasi: `gltf-transform optimize --compress meshopt --texture-compress webp --texture-size 512`.

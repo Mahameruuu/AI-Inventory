@@ -210,7 +210,8 @@ export function paletBersama() {
 export interface GeometriRak {
   tiang: THREE.BufferGeometry; // biru: tiang, penahan dan diagonal
   balok: THREE.BufferGeometry; // oranye: balok beban
-  alas: THREE.BufferGeometry; // abu: panel dek
+  alas: THREE.BufferGeometry; // dek kawat
+  pelindung: THREE.BufferGeometry; // kuning: pelindung tiang di ujung rak
 }
 
 /** Dibangun sekali untuk ukuran rak yang sama; dipakai bersama semua rak. */
@@ -218,6 +219,7 @@ export function buatGeometriRak(lebar: number, dalam: number): GeometriRak {
   const T = UKURAN.tingkat, H = UKURAN.slotH;
   const tinggi = H * T + 0.1;
   const tiang: THREE.BufferGeometry[] = [], balok: THREE.BufferGeometry[] = [], alas: THREE.BufferGeometry[] = [];
+  const pelindung: THREE.BufferGeometry[] = [];
   const kotak = (arr: THREE.BufferGeometry[], w: number, h: number, d: number, x: number, y: number, z: number,
     rx = 0, rz = 0) => {
     const g = new THREE.BoxGeometry(w, h, d);
@@ -248,8 +250,14 @@ export function buatGeometriRak(lebar: number, dalam: number): GeometriRak {
     for (const sz of [-1, 1]) kotak(balok, lebar - 0.1, 0.13, 0.05, 0, y, sz * (dalam / 2 - 0.1));
     kotak(alas, lebar - 0.12, 0.022, dalam - 0.2, 0, y + 0.075, 0);
   }
+  // pelindung tiang (column guard) berbentuk U di keempat tiang ujung rak
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+    const x = sx * (lebar / 2 - 0.05), z = sz * (dalam / 2 - 0.05);
+    kotak(pelindung, 0.2, 0.42, 0.025, x, 0.21, z + sz * 0.07);
+    kotak(pelindung, 0.025, 0.42, 0.16, x + sx * 0.09, 0.21, z);
+  }
   const gab = (a: THREE.BufferGeometry[]) => { const g = mergeGeometries(a, false)!; a.forEach((x) => x.dispose()); return g; };
-  return { tiang: gab(tiang), balok: gab(balok), alas: gab(alas) };
+  return { tiang: gab(tiang), balok: gab(balok), alas: gab(alas), pelindung: gab(pelindung) };
 }
 
 /**

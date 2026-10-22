@@ -2,11 +2,13 @@
 
 /**
  * Pekerja gudang: model manusia beranimasi (Quaternius "Animated Human", CC0)
- * dengan helm keselamatan. Animasi Walk/Idle berasal dari berkas modelnya;
- * jalur dan jedanya ditentukan lib/twin.ts. SIMULASI, bukan pelacakan.
+ * berseragam kerja (rompi oranye/stabilo, celana dongker) dan helm keselamatan.
  *
- * FBX dimuat saat dibutuhkan (FBXLoader bawaan three). Tekstur modelnya hanya
- * palet warna 1 piksel, dialihkan lewat URL modifier ke public/models/worker.
+ * `useManusia` memuat dan menyiapkan SATU pekerja: model, mixer animasi
+ * (Walk, Idle, Working dari berkas modelnya), tulang yang bisa ditekuk untuk
+ * pose tambahan, dan cara menempelkan benda ke tangan. Dipakai pekerja yang
+ * berjalan di lorong (berkas ini) maupun pekerja yang sedang berkegiatan
+ * (kegiatan.tsx). SIMULASI VISUAL, bukan pelacakan.
  */
 
 import { useFrame, useLoader } from "@react-three/fiber";
@@ -19,25 +21,44 @@ import { matriksNormal } from "@/components/warehouse-twin/aset";
 import { JalurGudang, jarakBolakBalik, panjangJalur, posisiPadaJalur } from "@/lib/twin";
 
 const URL_PEKERJA = "/models/worker/human.fbx";
-const TINGGI = 1.75;
+export const TINGGI_PEKERJA = 1.75;
 const V_PEKERJA = 1.15;
 const JEDA = 2.2;
 /** langkah per meter pada klip Walk; dipakai menyamakan kecepatan kaki dengan gerak */
 const LANGKAH_PER_METER = 0.72;
 
-const PALET_WARNA = [
-  "/models/worker/ClothedLightSkin.png",
-  "/models/worker/ClothedDarkSkin.png",
-  "/models/worker/ClothedLightSkin1.png",
-  "/models/worker/ClothedDarkSkin1.png",
+/** Palet 32x32 asli dengan baju diganti rompi keselamatan dan celana kerja. */
+const PALET_SERAGAM = [
+  "/models/worker/KerjaLightOranye.png",
+  "/models/worker/KerjaDarkStabilo.png",
+  "/models/worker/KerjaDarkOranye.png",
+  "/models/worker/KerjaLightStabilo.png",
 ];
 
-export default function PekerjaFBX({
-  rute, mulai, jalan, varian = 0,
-}: { rute: JalurGudang["pekerja"][number]; mulai: number; jalan: boolean; varian?: number }) {
+export type NamaKlip = "jalan" | "diam" | "kerja";
+
+export interface Manusia {
+  aktor: THREE.Group;
+  mixer: THREE.AnimationMixer;
+  aksi: Partial<Record<NamaKlip, THREE.AnimationAction>>;
+  tulang: Record<string, THREE.Object3D>;
+  /** ganti klip dengan transisi halus; tidak melakukan apa-apa bila sudah aktif */
+  main: (klip: NamaKlip, transisi?: number) => void;
+}
+
+/** Bahan bersama helm, sekali per halaman. */
+let _helm: { kubah: THREE.SphereGeometry; tepi: THREE.CylinderGeometry; mat: THREE.MeshStandardMaterial } | null = null;
+function helmBersama() {
+  return (_helm ??= {
+    kubah: new THREE.SphereGeometry(0.125, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+    tepi: new THREE.CylinderGeometry(0.15, 0.15, 0.012, 24),
+    mat: new THREE.MeshStandardMaterial({ color: "#facc15", roughness: 0.35, metalness: 0.1 }),
+  });
+}
+
+export function useManusia(varian = 0): Manusia {
   const fbx = useLoader(FBXLoader, URL_PEKERJA);
-  // FBX tidak membawa rujukan tekstur; modelnya memakai palet warna 32x32 yang dipasang di sini
-  const palet = useLoader(THREE.TextureLoader, PALET_WARNA[varian % PALET_WARNA.length]);
+  const palet = useLoader(THREE.TextureLoader, PALET_SERAGAM[varian % PALET_SERAGAM.length]);
   useMemo(() => {
     palet.magFilter = THREE.NearestFilter;
     palet.minFilter = THREE.NearestFilter;
@@ -45,9 +66,9 @@ export default function PekerjaFBX({
     palet.generateMipmaps = false;
   }, [palet]);
 
-  const { aktor, klip, kepala, helm } = useMemo(() => {
+  const { aktor, tulang } = useMemo(() => {
     const k = klonSkinned(fbx) as THREE.Group;
-    const { m } = matriksNormal(k, { tinggi: TINGGI });
+    const { m } = matriksNormal(k, { tinggi: TINGGI_PEKERJA });
     const akar = new THREE.Group();
     akar.add(k);
     k.applyMatrix4(m);
@@ -55,71 +76,101 @@ export default function PekerjaFBX({
       const mesh = o as THREE.Mesh;
       if (mesh.isMesh) {
         mesh.castShadow = true; mesh.receiveShadow = true; mesh.frustumCulled = false;
-        mesh.material = new THREE.MeshStandardMaterial({ map: palet, roughness: 0.8, metalness: 0 });
+        mesh.material = new THREE.MeshStandardMaterial({ map: palet, roughness: 0.75, metalness: 0 });
       }
     });
-    let kep: THREE.Object3D | null = null;
-    k.traverse((o) => { if (o.name === "Head") kep = o; });
-    // helm keselamatan kuning: setengah bola + pinggiran
-    const h = new THREE.Group();
-    const kubah = new THREE.Mesh(
-      new THREE.SphereGeometry(0.125, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2),
-      new THREE.MeshStandardMaterial({ color: "#facc15", roughness: 0.35, metalness: 0.1 }));
-    const tepi = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.15, 0.15, 0.012, 24),
-      new THREE.MeshStandardMaterial({ color: "#eab308", roughness: 0.4 }));
-    kubah.castShadow = true;
-    h.add(kubah, tepi);
-    akar.add(h);
-    return { aktor: akar, klip: fbx.animations, kepala: kep as THREE.Object3D | null, helm: h };
+    const t: Record<string, THREE.Object3D> = {};
+    k.traverse((o) => { if ((o as THREE.Bone).isBone) t[o.name] = o; });
+    // helm menempel di tulang kepala; skala tulang dibatalkan supaya ukurannya dalam meter
+    const kepala = t["Head"];
+    if (kepala) {
+      const hb = helmBersama();
+      const h = new THREE.Group();
+      const kubah = new THREE.Mesh(hb.kubah, hb.mat);
+      const tepi = new THREE.Mesh(hb.tepi, hb.mat);
+      kubah.castShadow = true;
+      h.add(kubah, tepi);
+      akar.updateMatrixWorld(true);
+      const s = new THREE.Vector3();
+      kepala.getWorldScale(s);
+      h.scale.setScalar(1 / s.x);
+      h.position.set(0, 0.17 / s.y, 0.01 / s.z);
+      kepala.add(h);
+    }
+    return { aktor: akar, tulang: t };
   }, [fbx, palet]);
 
   const mixer = useMemo(() => new THREE.AnimationMixer(aktor.children[0]), [aktor]);
-  const aksi = useRef<{ jalan?: THREE.AnimationAction; diam?: THREE.AnimationAction }>({});
-  useEffect(() => {
-    const cari = (re: RegExp) => klip.find((c) => re.test(c.name));
-    const cj = cari(/walk/i) ?? cari(/run/i);
-    const cd = cari(/idle/i);
-    aksi.current.jalan = cj ? mixer.clipAction(cj) : undefined;
-    aksi.current.diam = cd ? mixer.clipAction(cd) : undefined;
-    aksi.current.jalan?.play();
-    return () => { mixer.stopAllAction(); mixer.uncacheRoot(aktor.children[0]); };
-  }, [mixer, klip, aktor]);
+  const aksi = useMemo(() => {
+    const cari = (re: RegExp) => fbx.animations.find((c) => re.test(c.name));
+    const a: Partial<Record<NamaKlip, THREE.AnimationAction>> = {};
+    const cj = cari(/\|walk$/i), cd = cari(/\|idle$/i), ck = cari(/\|working$/i);
+    if (cj) a.jalan = mixer.clipAction(cj);
+    if (cd) a.diam = mixer.clipAction(cd);
+    if (ck) a.kerja = mixer.clipAction(ck);
+    return a;
+  }, [mixer, fbx]);
+  // Hanya dihentikan, tidak di-uncache: di mode Strict React memasang efek dua
+  // kali, dan aksi yang sudah di-uncache tidak bisa dimainkan lagi.
+  useEffect(() => () => { mixer.stopAllAction(); }, [mixer]);
 
+  const aktif = useRef<NamaKlip | null>(null);
+  const main = useMemo(() => (klip: NamaKlip, transisi = 0.3) => {
+    if (aktif.current === klip) return;
+    const ke = aksi[klip];
+    const dari = aktif.current ? aksi[aktif.current] : undefined;
+    aktif.current = klip;
+    ke?.reset().fadeIn(dari ? transisi : 0).play();
+    dari?.fadeOut(transisi);
+  }, [aksi]);
+
+  return { aktor, mixer, aksi, tulang, main };
+}
+
+/**
+ * Menempelkan benda (papan klip, pemindai, kardus) ke tulang tangan.
+ * Benda dijadikan anak tulang dengan skala tulang dibatalkan, sehingga ukuran
+ * dan offset-nya ditulis dalam meter, relatif terhadap tangan.
+ */
+export function tempelKeTulang(
+  m: Manusia, namaTulang: string, benda: THREE.Object3D,
+  posisi: [number, number, number], rotasi: [number, number, number] = [0, 0, 0],
+): () => void {
+  const t = m.tulang[namaTulang];
+  if (!t) return () => {};
+  m.aktor.updateMatrixWorld(true);
+  const s = new THREE.Vector3();
+  t.getWorldScale(s);
+  const wadah = new THREE.Group();
+  wadah.scale.setScalar(1 / s.x);
+  wadah.position.set(posisi[0] / s.x, posisi[1] / s.y, posisi[2] / s.z);
+  wadah.rotation.set(...rotasi);
+  wadah.add(benda);
+  t.add(wadah);
+  return () => { t.remove(wadah); };
+}
+
+/** Pekerja yang berjalan bolak-balik di satu lorong dan berhenti sebentar di ujungnya. */
+export default function PekerjaFBX({
+  rute, mulai, jalan, varian = 0,
+}: { rute: JalurGudang["pekerja"][number]; mulai: number; jalan: boolean; varian?: number }) {
+  const m = useManusia(varian);
   const jam = useRef(mulai);
-  const sedangDiam = useRef<boolean | null>(null);
   const { kumulatif, total } = useMemo(() => panjangJalur(rute, false), [rute]);
-  const tmp = useMemo(() => new THREE.Vector3(), []);
-  const posisiKepala = useMemo(() => new THREE.Vector3(), []);
 
   useFrame((_, dt) => {
     const d = Math.min(dt, 0.1);
     if (jalan) jam.current += d;
     const g = jarakBolakBalik(jam.current, total, V_PEKERJA, JEDA);
     const p = posisiPadaJalur(rute, kumulatif, total, g.d, false);
-    aktor.position.set(p.x, 0, p.z);
+    m.aktor.position.set(p.x, 0, p.z);
     // model menghadap +z; saat diam di ujung, menghadap rak
-    aktor.rotation.y = g.diam ? Math.PI : g.maju ? p.arah : p.arah + Math.PI;
-
-    if (sedangDiam.current !== g.diam) {
-      sedangDiam.current = g.diam;
-      const dari = g.diam ? aksi.current.jalan : aksi.current.diam;
-      const ke = g.diam ? aksi.current.diam : aksi.current.jalan;
-      ke?.reset().fadeIn(0.25).play();
-      dari?.fadeOut(0.25);
-    }
+    m.aktor.rotation.y = g.diam ? Math.PI : g.maju ? p.arah : p.arah + Math.PI;
+    m.main(g.diam ? "diam" : "jalan", 0.25);
     if (jalan) {
-      if (aksi.current.jalan && !g.diam) aksi.current.jalan.timeScale = V_PEKERJA * LANGKAH_PER_METER * 1.4;
-      mixer.update(d);
-    }
-    // helm mengikuti tulang kepala
-    if (kepala) {
-      kepala.getWorldPosition(tmp);
-      posisiKepala.copy(tmp);
-      aktor.updateMatrixWorld();
-      aktor.worldToLocal(posisiKepala);
-      helm.position.set(posisiKepala.x, posisiKepala.y + 0.06, posisiKepala.z + 0.0);
+      if (m.aksi.jalan && !g.diam) m.aksi.jalan.timeScale = V_PEKERJA * LANGKAH_PER_METER * 1.4;
+      m.mixer.update(d);
     }
   });
-  return <primitive object={aktor} />;
+  return <primitive object={m.aktor} />;
 }

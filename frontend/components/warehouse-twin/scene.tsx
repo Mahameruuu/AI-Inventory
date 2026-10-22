@@ -15,17 +15,19 @@
  */
 
 import { Canvas, ThreeEvent, useThree } from "@react-three/fiber";
-import { Html, OrbitControls } from "@react-three/drei";
+import { Environment, Html, Lightformer, OrbitControls } from "@react-three/drei";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
 import AktorGudang from "@/components/warehouse-twin/aktor";
 import AreaDock from "@/components/warehouse-twin/dock";
+import BangunanGudang, { GEDUNG, batasGedung, bahanGedung, teksturKawat } from "@/components/warehouse-twin/bangunan";
+import KegiatanGudang, { rencanaKegiatan } from "@/components/warehouse-twin/kegiatan";
 import RuteView from "@/components/warehouse-twin/rute";
 import type { HasilRute } from "@/lib/picking";
 import { AsetAman, URL_ASET, buatGeometriRak, paletBersama, useGeometriGLB } from "@/components/warehouse-twin/aset";
-import { Dock, RakTwin, StatusTwin, TataLetak, UKURAN, WARNA_STATUS, layoutDock } from "@/lib/twin";
+import { Dock, RakTwin, StatusTwin, TataLetak, UKURAN, WARNA_STATUS, jalurGudang, layoutDock } from "@/lib/twin";
 
 export interface Pilihan {
   rakId: string;
@@ -50,10 +52,19 @@ interface Props {
   ditandai?: Set<number>;
 }
 
-function posisiAwal(tata: TataLetak, dock: Dock, aspek = 1.2): [number, number, number] {
-  // Layar sempit (tablet tegak) butuh jarak lebih jauh supaya lebar gudang muat.
-  const jauh = Math.max(dock.bentang, 8) * Math.max(1, 1.25 / aspek) * 0.9;
-  return [jauh * 0.45, jauh * 0.8, dock.pusatZ + jauh * 0.6];
+/**
+ * Kamera awal DI DALAM gedung: sudut belakang-kanan atas, di bawah atap,
+ * memandang ke arah dock. Dari sini dinding seberang, rangka atap, dan lampu
+ * terlihat sehingga gudang terasa sebagai ruangan; menjauh (scroll) tetap
+ * bisa untuk melihat seluruh tata letak dari atas.
+ */
+function posisiAwal(tata: TataLetak, dock: Dock): { posisi: [number, number, number]; target: [number, number, number] } {
+  void tata;
+  const g = batasGedung(dock);
+  return {
+    posisi: [g.xKanan - 2, GEDUNG.tinggi - 2, g.zBelakang - 1.5],
+    target: [g.xKiri * 0.2, 1.2, g.pusatZ - 3],
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -67,7 +78,7 @@ function teksturBeton(): THREE.CanvasTexture {
   const c = document.createElement("canvas");
   c.width = c.height = 512;
   const g = c.getContext("2d")!;
-  g.fillStyle = "#c9ced6"; g.fillRect(0, 0, 512, 512);
+  g.fillStyle = "#b9c0c8"; g.fillRect(0, 0, 512, 512);
   let seed = 11;
   const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   for (let i = 0; i < 9000; i++) {
@@ -96,7 +107,12 @@ function useBersama() {
     const bahan = {
       tiang: new THREE.MeshStandardMaterial({ color: "#1d4f9c", metalness: 0.45, roughness: 0.45 }),
       balok: new THREE.MeshStandardMaterial({ color: "#e8731a", metalness: 0.4, roughness: 0.5 }),
-      dek: new THREE.MeshStandardMaterial({ color: "#aeb6c4", metalness: 0.5, roughness: 0.55 }),
+      // dek kawat: kisi baja dengan celah tembus pandang
+      dek: (() => {
+        const t = teksturKawat();
+        t.repeat.set((UKURAN.slotW * UKURAN.slotPerTingkat) / 0.06, UKURAN.slotD / 0.06);
+        return new THREE.MeshStandardMaterial({ color: "#b7bec9", metalness: 0.8, roughness: 0.35, alphaMap: t, alphaTest: 0.5, side: THREE.DoubleSide });
+      })(),
       label: new THREE.MeshBasicMaterial({ color: "#ffffff" }),
       // putih; warna per-instance datang dari instanceColor
       filmDasar: new THREE.MeshStandardMaterial({ color: "#ffffff", transparent: true, opacity: 0.4, roughness: 0.25, depthWrite: false }),
@@ -120,7 +136,7 @@ function useBersama() {
   useEffect(
     () => () => {
       bersama.kotak.dispose();
-      bersama.rak.tiang.dispose(); bersama.rak.balok.dispose(); bersama.rak.alas.dispose();
+      bersama.rak.tiang.dispose(); bersama.rak.balok.dispose(); bersama.rak.alas.dispose(); bersama.rak.pelindung.dispose();
       Object.values(bersama.bahan).forEach((m) => m.dispose());
       Object.values(bersama.status).forEach((m) => m.dispose());
       Object.values(bersama.film).forEach((m) => m.dispose());
@@ -274,7 +290,9 @@ function Rak({
       {/* rangka baja: tiang biru, balok beban oranye, dek abu (tiga geometri gabungan) */}
       <mesh geometry={bersama.rak.tiang} material={bersama.bahan.tiang} castShadow receiveShadow />
       <mesh geometry={bersama.rak.balok} material={bersama.bahan.balok} castShadow receiveShadow />
-      <mesh geometry={bersama.rak.alas} material={bersama.bahan.dek} receiveShadow />
+      <mesh geometry={bersama.rak.alas} material={bersama.bahan.dek} castShadow receiveShadow />
+      {/* pelindung tiang kuning di sudut rak yang menghadap lorong */}
+      <mesh geometry={bersama.rak.pelindung} material={bahanGedung().pelindung} castShadow />
 
       {/* pallet, film status, dan penanda balok: instancing per rak */}
       <SlotRak rak={rak} bersama={bersama} />
@@ -306,7 +324,7 @@ function Rak({
       </AsetAman>
 
       {/* label rak; DOM, sehingga tajam dan tidak butuh berkas font */}
-      <Html position={[0, tinggi + 0.35, 0]} center distanceFactor={14} zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
+      <Html position={[0, tinggi + 0.35, 0]} center distanceFactor={9} zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
         <div
           style={{
             whiteSpace: "nowrap", fontSize: 12, fontWeight: 600, padding: "2px 8px", borderRadius: 6,
@@ -357,11 +375,11 @@ function Kamera({ tata, dock, resetKe }: { tata: TataLetak; dock: Dock; resetKe:
   // `tata`/`dock` baru yang isinya sama; kamera pengguna tidak boleh ikut ter-reset.
   const kunci = `${tata.rak.length}|${tata.kolom}|${tata.baris}|${Math.round(aspek * 10)}`;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const awal = useMemo(() => posisiAwal(tata, dock, aspek), [kunci]);
+  const awal = useMemo(() => posisiAwal(tata, dock), [kunci]);
   useEffect(() => {
-    camera.position.set(...awal);
-    camera.lookAt(0, 0.5, dock.pusatZ);
-    kontrol.current?.target.set(0, 0.5, dock.pusatZ);
+    camera.position.set(...awal.posisi);
+    camera.lookAt(...awal.target);
+    kontrol.current?.target.set(...awal.target);
     kontrol.current?.update();
     invalidate();
   }, [awal, resetKe, camera, invalidate]);
@@ -371,7 +389,7 @@ function Kamera({ tata, dock, resetKe }: { tata: TataLetak; dock: Dock; resetKe:
       makeDefault
       enableDamping={false}
       maxPolarAngle={Math.PI / 2 - 0.03}
-      minDistance={4}
+      minDistance={2}
       maxDistance={Math.max(dock.bentang, 8) * 3}
     />
   );
@@ -380,57 +398,72 @@ function Kamera({ tata, dock, resetKe }: { tata: TataLetak; dock: Dock; resetKe:
 export default function WarehouseScene({ tata, pilihan, onPilih, resetKe, animasi, bayangan, rute = null, tampilPembanding = false, ditandai }: Props) {
   const bersama = useBersama();
   const dock = useMemo(() => layoutDock(tata), [tata]);
-  // lantai beton membentang dari dinding dock sampai ujung belakang deretan rak
-  const lebar = dock.lebarLantai;
-  const dalam = dock.zMaks - dock.zDinding;
-  const batas = useMemo(() => {
-    const kotak = new THREE.BoxGeometry(lebar, 0.001, dalam);
-    const tepi = new THREE.EdgesGeometry(kotak);
-    kotak.dispose();
-    return tepi;
-  }, [lebar, dalam]);
-  useEffect(() => () => batas.dispose(), [batas]);
+  const gedung = useMemo(() => batasGedung(dock), [dock]);
+  const jalur = useMemo(() => jalurGudang(tata), [tata]);
+  const lorongKegiatan = useMemo(() => rencanaKegiatan(tata).lorongTerpakai, [tata]);
+  // lantai epoksi menutup seluruh ruang di dalam gedung
+  const lebar = gedung.lebar;
+  const dalam = gedung.dalam;
   const lantai = useMemo(() => {
     const t = teksturBeton().clone();
     t.needsUpdate = true;
     t.repeat.set(lebar / 6, dalam / 6);
-    return new THREE.MeshStandardMaterial({ map: t, roughness: 0.92, metalness: 0 });
+    return new THREE.MeshStandardMaterial({ map: t, roughness: 0.42, metalness: 0.05, envMapIntensity: 0.9 });
   }, [lebar, dalam]);
   useEffect(() => () => { lantai.map?.dispose(); lantai.dispose(); }, [lantai]);
   const sh = Math.max(dock.bentang, 20);
+  const H = GEDUNG.tinggi;
+  useEffect(() => { (window as unknown as { __twinGedung?: unknown }).__twinGedung = gedung; }, [gedung]);
   return (
     <Canvas
       shadows={bayangan ? "percentage" : false}
       frameloop="demand"
       dpr={[1, 1.75]}
-      camera={{ fov: 45, near: 0.1, far: 500, position: posisiAwal(tata, dock) }}
-      gl={{ antialias: true, powerPreference: "low-power" }}
+      camera={{ fov: 50, near: 0.1, far: 500, position: posisiAwal(tata, dock).posisi }}
+      gl={{ antialias: true, powerPreference: "low-power", toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
       onPointerMissed={() => onPilih(null)}
     >
-      <color attach="background" args={["#e9eef6"]} />
-      <hemisphereLight args={["#ffffff", "#8d98aa", 0.85]} />
+      {/* luar gedung gelap: yang terang hanya isi gudang */}
+      <color attach="background" args={["#1a2029"]} />
+      <fog attach="fog" args={["#1a2029", sh * 2.2, sh * 4.5]} />
+
+      {/* Pantulan lampu high-bay dan skylight pada lantai epoksi, rak baja, dan
+          forklift. Lingkungannya dibangun dari bidang cahaya di kode (tanpa
+          berkas HDR yang diunduh) dan dirender sekali. */}
+      <Environment resolution={128} frames={1} background={false}>
+        <color attach="background" args={["#3a4250"]} />
+        {Array.from({ length: 5 }, (_, i) => (
+          <Lightformer key={i} form="rect" intensity={2.2} color="#fff3dc"
+            position={[(i - 2) * 6, H, gedung.pusatZ]} rotation={[Math.PI / 2, 0, 0]} scale={[1.2, gedung.dalam, 1]} />
+        ))}
+        <Lightformer form="rect" intensity={0.8} color="#dbe8ff" position={[0, H * 0.6, gedung.zBelakang]} scale={[gedung.lebar, 2, 1]} />
+      </Environment>
+
+      {/* cahaya ruang: langit-langit hangat, pantulan lantai gelap */}
+      <hemisphereLight args={["#fff4e0", "#4a5160", 0.75]} />
       <directionalLight
-        position={[sh * 0.5, sh * 0.9, sh * 0.35]}
-        intensity={2.1}
+        position={[sh * 0.25, H * 3, gedung.pusatZ + sh * 0.15]}
+        intensity={1.5}
+        color="#fff3df"
         castShadow={bayangan}
-        shadow-mapSize={[1024, 1024]}
+        shadow-mapSize={[1536, 1536]}
         shadow-camera-left={-sh * 0.7}
         shadow-camera-right={sh * 0.7}
         shadow-camera-top={sh * 0.7}
         shadow-camera-bottom={-sh * 0.7}
         shadow-camera-near={1}
-        shadow-camera-far={sh * 3}
+        shadow-camera-far={sh * 4}
         shadow-bias={-0.0006}
         shadow-normalBias={0.04}
       />
 
-      {/* lantai beton dan batas area */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, dock.pusatZ]} material={lantai} receiveShadow>
+      {/* lantai beton epoksi */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, gedung.pusatZ]} material={lantai} receiveShadow>
         <planeGeometry args={[lebar, dalam]} />
       </mesh>
-      <lineSegments position={[0, 0.01, dock.pusatZ]} geometry={batas}>
-        <lineBasicMaterial color="#2563eb" />
-      </lineSegments>
+
+      <BangunanGudang dock={dock} zKoridor={jalur.lorongZ[0] - 2.4}
+        xLorongKiri={jalur.koridorKiri} xLorongKanan={jalur.koridorKanan} />
 
       {tata.rak.map((r) => (
         <Rak
@@ -443,7 +476,8 @@ export default function WarehouseScene({ tata, pilihan, onPilih, resetKe, animas
           onPilih={onPilih}
         />
       ))}
-      <AktorGudang tata={tata} jalan={animasi} />
+      <AktorGudang tata={tata} jalan={animasi} lorongDipakai={lorongKegiatan} />
+      <KegiatanGudang tata={tata} jalan={animasi} />
       <AreaDock tata={tata} jalan={animasi} />
       {rute && <RuteView hasil={rute} tampilPembanding={tampilPembanding} jalan={animasi} />}
       <Kamera tata={tata} dock={dock} resetKe={resetKe} />

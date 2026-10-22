@@ -17,15 +17,12 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
-import { BadanForklift } from "@/components/warehouse-twin/forklift";
 import PekerjaFBX from "@/components/warehouse-twin/pekerja";
 import { AsetAman } from "@/components/warehouse-twin/aset";
 import {
-  JalurGudang, TataLetak, UKURAN, jalurGudang, jarakBolakBalik, jarakForklift, panjangJalur, posisiPadaJalur,
+  JalurGudang, TataLetak, UKURAN, jalurGudang, jarakBolakBalik, panjangJalur, posisiPadaJalur,
 } from "@/lib/twin";
 
-const V_FORKLIFT = 1.9; // m/s
-const T_HENTI = 2.6; // detik
 const V_PEKERJA = 1.15; // m/s
 const JEDA_PEKERJA = 2.2;
 
@@ -77,56 +74,6 @@ export type Alat = ReturnType<typeof useAlat>;
 
 export function Kotak({ a, m, p, s }: { a: Alat; m: THREE.Material; p: [number, number, number]; s: [number, number, number] }) {
   return <mesh geometry={a.kotak} material={m} position={p} scale={s} />;
-}
-
-/** Forklift menghadap +z secara lokal. */
-function Forklift({ a, jalur, jalan }: { a: Alat; jalur: JalurGudang; jalan: boolean }) {
-  const grup = useRef<THREE.Group>(null);
-  const garpu = useRef<THREE.Group>(null);
-  const muatan = useRef<THREE.Group>(null);
-  const lampu = useRef<THREE.Mesh>(null);
-  const arahHalus = useRef<number | null>(null);
-  const jam = useRef(0);
-  const { kumulatif, total } = useMemo(() => panjangJalur(jalur.forklift, true), [jalur]);
-  // jarak tiap titik henti; yang ganjil sendirian dibuang supaya angkat-taruh berpasangan
-  const henti = useMemo(() => {
-    const semua = jalur.hentiForklift.map((i) => kumulatif[i]);
-    return semua.slice(0, semua.length - (semua.length % 2));
-  }, [jalur, kumulatif]);
-
-  useFrame((_, dt) => {
-    if (!grup.current) return;
-    if (jalan) jam.current += Math.min(dt, 0.1);
-    const g = jarakForklift(jam.current, total, V_FORKLIFT, henti, T_HENTI);
-    const p = posisiPadaJalur(jalur.forklift, kumulatif, total, g.d, true);
-    // belok halus: arah mengejar arah ruas, lewat jalur terpendek
-    const target = p.arah;
-    if (arahHalus.current === null) arahHalus.current = target;
-    let selisih = ((target - arahHalus.current + Math.PI) % (2 * Math.PI)) - Math.PI;
-    if (selisih < -Math.PI) selisih += 2 * Math.PI;
-    arahHalus.current += selisih * Math.min(1, dt * 6);
-    grup.current.position.set(p.x, 0, p.z);
-    grup.current.rotation.y = arahHalus.current;
-
-    const ganjil = g.indeks >= 0 ? g.indeks % 2 === 1 : g.terakhir % 2 === 0;
-    let tinggi = 0;
-    let bawa = ganjil && g.indeks < 0; // sesudah angkat, sebelum taruh
-    if (g.indeks >= 0) {
-      const f = g.fase;
-      const naik = f < 0.5 ? f * 2 : (1 - f) * 2; // naik lalu turun
-      tinggi = 1.5 * Math.min(1, naik * 1.6);
-      // henti genap = ambil (muatan muncul saat garpu naik); ganjil = taruh (hilang saat turun)
-      bawa = g.indeks % 2 === 0 ? f > 0.5 : f < 0.5;
-    }
-    if (garpu.current) garpu.current.position.y = 0.15 + tinggi;
-    if (muatan.current) muatan.current.visible = bawa;
-    if (lampu.current) {
-      (lampu.current.material as THREE.MeshStandardMaterial).emissiveIntensity =
-        0.3 + 1.2 * (Math.sin(jam.current * 8) > 0 ? 1 : 0);
-    }
-  });
-
-  return <BadanForklift grup={grup} garpu={garpu} muatan={muatan} lampu={lampu} />;
 }
 
 /** Pekerja berjalan bolak-balik di satu lorong. */
@@ -204,22 +151,25 @@ function Marka({ a, tata, jalur }: { a: Alat; tata: TataLetak; jalur: JalurGudan
 }
 
 export default function AktorGudang({
-  tata, jalan,
+  tata, jalan, lorongDipakai,
 }: {
   tata: TataLetak;
   /** false = membeku di tempat (jeda animasi) */
   jalan: boolean;
+  /** lorong yang sudah dipakai kegiatan (kegiatan.tsx); pekerja berjalan menghindarinya */
+  lorongDipakai?: Set<number>;
 }) {
   const a = useAlat();
   const jalur = useMemo(() => jalurGudang(tata), [tata]);
+  // Forklift keliling lorong dilepas (22 Okt 2026): menaruh pallet kini
+  // diperagakan forklift yang benar-benar menghadap rak (kegiatan.tsx).
+  const rute = jalur.pekerja.filter((_, i) => !lorongDipakai?.has(i)).slice(0, 2);
   return (
     <group>
       <Marka a={a} tata={tata} jalur={jalur} />
-      <Forklift a={a} jalur={jalur} jalan={jalan} />
-      {/* satu pekerja per lorong, maksimal empat; fase mulai berbeda-beda */}
-      {jalur.pekerja.slice(0, 4).map((rute, i) => (
-        <AsetAman key={i} cadangan={<Pekerja a={a} rute={rute} mulai={i * 4.3} jalan={jalan} />}>
-          <PekerjaFBX rute={rute} mulai={i * 4.3} jalan={jalan} varian={i} />
+      {rute.map((r, i) => (
+        <AsetAman key={i} cadangan={<Pekerja a={a} rute={r} mulai={i * 4.3} jalan={jalan} />}>
+          <PekerjaFBX rute={r} mulai={i * 4.3} jalan={jalan} varian={i + 1} />
         </AsetAman>
       ))}
     </group>

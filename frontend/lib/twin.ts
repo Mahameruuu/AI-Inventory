@@ -74,7 +74,8 @@ export const URUT_STATUS: StatusTwin[] = ["normal", "perhatian", "kritis", "tida
 export const UKURAN = {
   slotW: 1.2,
   slotD: 1.0,
-  slotH: 0.9,
+  // 1,35 m per tingkat: tinggi lazim satu level pallet racking (pallet + ruang angkat)
+  slotH: 1.35,
   slotPerTingkat: 4,
   tingkat: 3,
   lorong: 2.6,
@@ -381,7 +382,7 @@ export const DOCK = {
   jarakDindingKeLorong: 8.0, // dinding dock ke garis lorong pertama
   pintuLebar: 3.4,
   pintuTinggi: 3.2,
-  dindingTinggi: 4.2,
+  dindingTinggi: 8.5, // = GEDUNG.tinggi (bangunan.tsx)
   trailerPanjang: 7.4,
   trailerLebarDalam: 2.4,
   jalanDalam: 28,
