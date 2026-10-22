@@ -5,7 +5,7 @@ import { AuthProvider } from "@/lib/auth";
 import { LangProvider } from "@/lib/i18n";
 
 export const metadata: Metadata = {
-  title: "Inventory AI — Sistem Pendukung Keputusan Persediaan",
+  title: "Xorca AI Inventory — Sistem Pendukung Keputusan Persediaan",
   description:
     "Visibilitas stok, analisis risiko, rekomendasi pembelian, analisis umur pakai, dan peramalan permintaan. Stock visibility, risk analysis, purchasing recommendations, lifetime analysis and demand forecasting.",
   icons: {

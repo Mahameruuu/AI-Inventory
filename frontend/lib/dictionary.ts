@@ -24,7 +24,7 @@ type Entry = { id: string; en: string };
 
 export const DICT: Record<string, Entry> = {
   /* ---------------- kerangka aplikasi / app shell ---------------- */
-  "brand.name": { id: "Inventory AI", en: "Inventory AI" },
+  "brand.name": { id: "Xorca AI Inventory", en: "Xorca AI Inventory" },
   "brand.tagline": {
     id: "Sistem Pendukung Keputusan Persediaan",
     en: "Inventory Decision Intelligence",

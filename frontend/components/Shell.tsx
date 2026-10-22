@@ -402,11 +402,10 @@ function LaciNavigasi({
             <img src="/logo-sml.svg" alt="" className="h-full w-full object-contain" />
           </span>
           <span
-            className="flex h-9 shrink-0 items-center justify-center rounded-xl px-2 py-1"
-            style={{ background: "#0b1220" }}
+            className="flex h-9 shrink-0 items-center justify-center rounded-xl bg-white p-1"
             aria-hidden
           >
-            <img src="/logo-xorca-light-text.svg" alt="" className="h-full w-auto object-contain" />
+            <img src="/logo-xorca-dark-text.svg" alt="" className="h-full w-auto object-contain" />
           </span>
           <span className="flex-1" />
           <button
@@ -951,11 +950,10 @@ function KerangkaAplikasi({ children }: { children: ReactNode }) {
           </span>
           {!ringkas && (
             <span
-              className="flex h-9 shrink-0 items-center justify-center rounded-xl px-2 py-1"
-              style={{ background: "#0b1220" }}
+              className="flex h-9 shrink-0 items-center justify-center rounded-xl bg-white p-1"
               aria-hidden
             >
-              <img src="/logo-xorca-light-text.svg" alt="" className="h-full w-auto object-contain" />
+              <img src="/logo-xorca-dark-text.svg" alt="" className="h-full w-auto object-contain" />
             </span>
           )}
           {!ringkas && (
@@ -1065,11 +1063,10 @@ function KerangkaAplikasi({ children }: { children: ReactNode }) {
                 <img src="/logo-sml.svg" alt="" className="h-full w-full object-contain" />
               </span>
               <span
-                className="flex h-8 shrink-0 items-center justify-center rounded-lg px-1.5 py-1"
-                style={{ background: "#0b1220" }}
+                className="flex h-8 shrink-0 items-center justify-center rounded-lg bg-white p-1"
                 aria-hidden
               >
-                <img src="/logo-xorca-light-text.svg" alt="" className="h-full w-auto object-contain" />
+                <img src="/logo-xorca-dark-text.svg" alt="" className="h-full w-auto object-contain" />
               </span>
               <span className="font-display hidden min-w-0 truncate t-base font-bold leading-tight text-ink sm:inline">
                 {t("brand.name")}
