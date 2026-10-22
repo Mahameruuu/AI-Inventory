@@ -33,7 +33,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from conftest import INDUK, NAMA_DB_UJI, bangun_basis_uji  # noqa: E402
+from conftest import INDUK, NAMA_DB_UJI, bangun_basis_uji, buat_perusahaan  # noqa: E402
 
 SANDI_A = "kataSandiAlfa1"
 SANDI_B = "kataSandiBeta1"
@@ -64,12 +64,8 @@ def dunia(klien):
     """
     import psycopg
 
-    a = klien.post("/api/auth/signup", json={
-        "company_name": "PT Alfa Sejahtera", "full_name": "Andi Pratama",
-        "email": "andi@alfacorp.id", "password": SANDI_A}).json()
-    b = klien.post("/api/auth/signup", json={
-        "company_name": "PT Beta Makmur", "full_name": "Budi Santoso",
-        "email": "budi@betacorp.id", "password": SANDI_B}).json()
+    a = buat_perusahaan(klien, "PT Alfa Sejahtera", "Andi Pratama", "andi", SANDI_A)
+    b = buat_perusahaan(klien, "PT Beta Makmur", "Budi Santoso", "budi", SANDI_B)
 
     # Diisi sebagai admin basis data, bukan lewat API: modul input master data
     # belum ada, dan yang sedang diuji bukan cara data itu masuk melainkan
@@ -135,10 +131,11 @@ def test_dua_perusahaan_berbeda(dunia):
     assert dunia["a"]["company"]["id"] != dunia["b"]["company"]["id"]
 
 
-def test_email_ganda_ditolak(klien, dunia):
-    r = klien.post("/api/auth/signup", json={
-        "company_name": "PT Lain Sekali", "full_name": "Xavier Tan",
-        "email": "andi@alfacorp.id", "password": "kataSandiLain1"})
+def test_username_ganda_ditolak(klien, dunia):
+    # Username unik sedunia: perusahaan B tidak boleh memakai "andi" milik A.
+    r = klien.post("/api/users", headers=dunia["hB"], json={
+        "username": "andi", "full_name": "Andi Lain",
+        "password": "kataSandiLain1", "role": "staff"})
     assert r.status_code == 409
 
 
@@ -210,21 +207,21 @@ def test_menulis_ke_baris_penyewa_lain_ditolak(klien, dunia):
 
 def test_masuk_dengan_kredensial_benar(klien, dunia):
     r = klien.post("/api/auth/login",
-                   json={"email": "andi@alfacorp.id", "password": SANDI_A})
+                   json={"username": "andi", "password": SANDI_A})
     assert r.status_code == 200
     assert r.json()["company"]["id"] == dunia["a"]["company"]["id"]
 
 
-def test_email_tak_terdaftar_dan_sandi_salah_tak_dapat_dibedakan(klien, dunia):
+def test_username_tak_terdaftar_dan_sandi_salah_tak_dapat_dibedakan(klien, dunia):
     """
-    Kalimat yang berbeda membuat halaman masuk menjadi alat memeriksa email
+    Kalimat yang berbeda membuat halaman masuk menjadi alat memeriksa username
     mana yang terdaftar -- separuh pekerjaan pembobolan selesai sebelum kata
     sandi pertama dicoba.
     """
     salah = klien.post("/api/auth/login",
-                       json={"email": "andi@alfacorp.id", "password": "salahsekali"})
+                       json={"username": "andi", "password": "salahsekali"})
     tiada = klien.post("/api/auth/login",
-                       json={"email": "hantu@alfacorp.id", "password": "salahsekali"})
+                       json={"username": "hantu", "password": "salahsekali"})
     assert salah.status_code == tiada.status_code == 401
     assert salah.json()["error"]["message"] == tiada.json()["error"]["message"]
 
@@ -235,24 +232,24 @@ def test_email_tak_terdaftar_dan_sandi_salah_tak_dapat_dibedakan(klien, dunia):
 
 def test_peran_membatasi_pengelolaan_pengguna(klien, dunia):
     r = klien.post("/api/users", headers=dunia["hA"], json={
-        "email": "citra@alfacorp.id", "full_name": "Citra Dewi",
+        "username": "citra", "full_name": "Citra Dewi",
         "password": "kataSandiCitra1", "role": "viewer"})
     assert r.status_code == 201
 
     v = klien.post("/api/auth/login", json={
-        "email": "citra@alfacorp.id", "password": "kataSandiCitra1"}).json()
+        "username": "citra", "password": "kataSandiCitra1"}).json()
     hV = {"Authorization": "Bearer " + v["access_token"]}
 
     assert klien.get("/api/items", headers=hV).status_code == 200
     assert klien.get("/api/users", headers=hV).status_code == 403
     assert klien.post("/api/users", headers=hV, json={
-        "email": "z@alfacorp.id", "full_name": "Zulkifli Rahman",
+        "username": "zulkifli", "full_name": "Zulkifli Rahman",
         "password": "kataSandiZzz1"}).status_code == 403
 
 
 def test_peran_owner_tidak_dapat_diberikan(klien, dunia):
     r = klien.post("/api/users", headers=dunia["hA"], json={
-        "email": "wawan@alfacorp.id", "full_name": "Wawan Setiawan",
+        "username": "wawan", "full_name": "Wawan Setiawan",
         "password": "kataSandiWww1", "role": "owner"})
     assert r.status_code == 422
 
@@ -269,10 +266,10 @@ def test_owner_tidak_dapat_menurunkan_dirinya(klien, dunia):
 
 def test_menonaktifkan_pengguna_langsung_mematikan_tokennya(klien, dunia):
     klien.post("/api/users", headers=dunia["hA"], json={
-        "email": "dodi@alfacorp.id", "full_name": "Dodi Kurnia",
+        "username": "dodi", "full_name": "Dodi Kurnia",
         "password": "kataSandiDodi1", "role": "staff"})
     s = klien.post("/api/auth/login", json={
-        "email": "dodi@alfacorp.id", "password": "kataSandiDodi1"}).json()
+        "username": "dodi", "password": "kataSandiDodi1"}).json()
     h = {"Authorization": "Bearer " + s["access_token"]}
     assert klien.get("/api/items", headers=h).status_code == 200
 
@@ -299,3 +296,51 @@ def test_ganti_sandi_mencabut_sesi_lama(klien, dunia):
     # Fixture berbagi satu modul, jadi token B yang dipegang uji lain harus
     # ikut diperbarui.
     dunia["hB"] = baru
+
+
+# ==========================================================================
+# Pendaftaran dicabut, lupa kata sandi lewat admin
+# ==========================================================================
+
+def test_pendaftaran_mandiri_sudah_tidak_ada(klien):
+    r = klien.post("/api/auth/signup", json={
+        "company_name": "PT Baru", "full_name": "Orang Baru",
+        "username": "orangbaru", "password": "kataSandiBaru1"})
+    assert r.status_code in (404, 405)
+
+
+def test_lupa_sandi_tidak_membocorkan_username(klien, dunia):
+    ada = klien.post("/api/auth/forgot-password", json={"username": "budi"})
+    tiada = klien.post("/api/auth/forgot-password", json={"username": "hantu-tak-ada"})
+    assert ada.status_code == tiada.status_code == 202
+    assert ada.json() == tiada.json()
+
+
+def test_permintaan_reset_sampai_ke_admin_perusahaannya_saja(klien, dunia):
+    klien.post("/api/auth/forgot-password", json={"username": "budi"})
+    klien.post("/api/auth/forgot-password", json={"username": "BUDI"})  # ganda diabaikan
+
+    milik_b = klien.get("/api/users/reset-requests", headers=dunia["hB"]).json()["items"]
+    assert [x["username"] for x in milik_b] == ["budi"]
+    milik_a = klien.get("/api/users/reset-requests", headers=dunia["hA"]).json()["items"]
+    assert all(x["username"] != "budi" for x in milik_a)
+
+    # admin menyetel sandi baru -> permintaan selesai, sandi baru berlaku
+    uid = milik_b[0]["user_id"]
+    r = klien.post(f"/api/users/{uid}/reset-password", headers=dunia["hB"],
+                   json={"new_password": "kataSandiBaruBudi1"})
+    assert r.status_code == 204
+    # Penyetelan ulang mencabut seluruh sesi pemiliknya -- di sini owner B
+    # sendiri -- jadi masuk lagi dengan sandi baru.
+    r = klien.post("/api/auth/login",
+                   json={"username": "budi", "password": "kataSandiBaruBudi1"})
+    assert r.status_code == 200
+    dunia["hB"] = {"Authorization": "Bearer " + r.json()["access_token"]}
+    assert klien.get("/api/users/reset-requests", headers=dunia["hB"]).json()["items"] == []
+
+
+def test_username_tidak_sah_ditolak(klien, dunia):
+    r = klien.post("/api/users", headers=dunia["hA"], json={
+        "username": "Nama Pakai Spasi", "full_name": "Salah Format",
+        "password": "kataSandiSalah1", "role": "staff"})
+    assert r.status_code == 422

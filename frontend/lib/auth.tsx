@@ -33,7 +33,8 @@ import { akhiriSesi, bacaToken, saatSesiBerakhir, simpanToken } from "@/lib/toke
 
 export interface Pengguna {
   id: number;
-  email: string;
+  username: string;
+  email: string | null;
   full_name: string;
   role: "owner" | "admin" | "staff" | "viewer";
 }
@@ -61,16 +62,8 @@ interface NilaiAuth {
   bolehMengelola: boolean;
   /** true untuk owner, admin, dan staff; viewer hanya membaca. */
   bolehMencatat: boolean;
-  masuk: (email: string, sandi: string) => Promise<void>;
-  daftar: (isi: IsiPendaftaran) => Promise<void>;
+  masuk: (username: string, sandi: string) => Promise<void>;
   keluar: () => void;
-}
-
-export interface IsiPendaftaran {
-  company_name: string;
-  full_name: string;
-  email: string;
-  password: string;
 }
 
 const KonteksAuth = createContext<NilaiAuth | null>(null);
@@ -123,21 +116,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const masuk = useCallback(
-    async (email: string, sandi: string) => {
+    async (username: string, sandi: string) => {
       const sesi = await apiPost<Sesi>("/api/auth/login", {
-        email: email.trim().toLowerCase(),
+        username: username.trim().toLowerCase(),
         password: sandi,
-      });
-      terima(sesi);
-    },
-    [terima],
-  );
-
-  const daftar = useCallback(
-    async (isi: IsiPendaftaran) => {
-      const sesi = await apiPost<Sesi>("/api/auth/signup", {
-        ...isi,
-        email: isi.email.trim().toLowerCase(),
       });
       terima(sesi);
     },
@@ -161,10 +143,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       bolehMengelola: pengguna?.role === "owner" || pengguna?.role === "admin",
       bolehMencatat: pengguna != null && pengguna.role !== "viewer",
       masuk,
-      daftar,
       keluar,
     }),
-    [status, pengguna, perusahaan, masuk, daftar, keluar],
+    [status, pengguna, perusahaan, masuk, keluar],
   );
 
   return <KonteksAuth.Provider value={nilai}>{children}</KonteksAuth.Provider>;

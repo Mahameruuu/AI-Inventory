@@ -1,11 +1,16 @@
 "use client";
 
 /**
- * Halaman masuk dan pendaftaran perusahaan.
+ * Halaman masuk dan lupa kata sandi.
  *
- * SATU HALAMAN, DUA MODE. Masuk dan mendaftar dipisahkan tab, bukan dua alamat
- * berbeda: orang yang salah memilih dapat berpindah tanpa kehilangan apa yang
- * sudah diketik pada kolom yang sama-sama dipakai keduanya.
+ * Masuk memakai USERNAME + kata sandi. Pendaftaran mandiri dicabut pada
+ * 22 Oktober 2026: perusahaan baru dibuat orang dalam, dan pengguna baru
+ * dibuat admin dari halaman Pengguna.
+ *
+ * Lupa kata sandi TIDAK lewat email (sistem ini tidak mengirim surat):
+ * permintaannya diteruskan ke admin perusahaan, yang menyetel kata sandi baru
+ * dari halaman Pengguna. Jawabannya selalu sama, terdaftar atau tidak
+ * username-nya, supaya halaman ini tidak bisa dipakai menebak username.
  *
  * Halaman ini TIDAK memakai kerangka aplikasi -- lihat components/Shell.tsx.
  * Sidebar berisi tautan ke halaman yang semuanya menuntut token akan menjadi
@@ -14,42 +19,34 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { LogIn, ShieldCheck, UserPlus } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, KeyRound, ShieldCheck } from "lucide-react";
 
-import { Button, ErrorBox, Field, TextInput } from "@/components/ui";
+import { Button, ErrorBox, Field, PesanBerhasil, TextInput } from "@/components/ui";
+import { apiPost } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 
-type Mode = "masuk" | "daftar";
+type Mode = "masuk" | "lupa";
 
 export default function HalamanMasuk() {
   const { t } = useI18n();
   const router = useRouter();
-  const { masuk, daftar } = useAuth();
+  const { masuk } = useAuth();
 
   const [mode, setMode] = useState<Mode>("masuk");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [sandi, setSandi] = useState("");
-  const [nama, setNama] = useState("");
-  const [perusahaan, setPerusahaan] = useState("");
+  const [lihatSandi, setLihatSandi] = useState(false);
   const [galat, setGalat] = useState<string | null>(null);
+  const [terkirim, setTerkirim] = useState<string | null>(null);
   const [sibuk, setSibuk] = useState(false);
 
-  async function kirim() {
+  async function kirimMasuk() {
     if (sibuk) return;
     setGalat(null);
     setSibuk(true);
     try {
-      if (mode === "masuk") {
-        await masuk(email, sandi);
-      } else {
-        await daftar({
-          company_name: perusahaan,
-          full_name: nama,
-          email,
-          password: sandi,
-        });
-      }
+      await masuk(username, sandi);
       // replace, bukan push: halaman masuk tidak boleh muncul lagi saat
       // pengguna menekan tombol kembali setelah berhasil masuk.
       router.replace("/");
@@ -59,37 +56,50 @@ export default function HalamanMasuk() {
     }
   }
 
+  async function kirimLupa() {
+    if (sibuk || !username.trim()) return;
+    setGalat(null);
+    setSibuk(true);
+    try {
+      const r = await apiPost<{ message: string }>("/api/auth/forgot-password", {
+        username: username.trim().toLowerCase(),
+      });
+      setTerkirim(r.message);
+    } catch (e) {
+      setGalat(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSibuk(false);
+    }
+  }
+
   function gantiMode(baru: Mode) {
     setMode(baru);
     setGalat(null);
+    setTerkirim(null);
   }
 
-  const daftarMode = mode === "daftar";
+  const lupa = mode === "lupa";
 
   return (
     <div className="flex min-h-[100dvh] items-center justify-center px-4 py-8 sm:px-5 sm:py-10">
       <div className="w-full max-w-[400px]">
-        {/* Identitas produk, disamakan dengan kepala sidebar */}
-        <div className="mb-7 flex items-center gap-3">
-          <span
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white p-1.5"
-            aria-hidden
-          >
-            <img src="/logo-sml.svg" alt="" className="h-full w-full object-contain" />
-          </span>
-          <span
-            className="flex h-11 shrink-0 items-center justify-center rounded-xl bg-white p-1.5"
-            aria-hidden
-          >
-            <img src="/logo-xorca-dark-text.svg" alt="" className="h-full w-auto object-contain" />
-          </span>
-          <div className="min-w-0">
-            <div className="font-display truncate t-lead font-bold leading-tight text-ink">
-              {t("brand.name")}
-            </div>
-            <div className="truncate t-micro font-medium uppercase tracking-[0.09em] text-muted">
-              {t("brand.tagline")}
-            </div>
+        {/* Identitas produk */}
+        <div className="mb-7">
+          {/* Dua logo mitra dalam kotak yang ukuran dan latarnya sama persis */}
+          <div className="flex items-center gap-3">
+            {["/logo-sml.svg", "/logo-xorca-dark-text.svg"].map((src) => (
+              <span
+                key={src}
+                className="flex h-12 w-[132px] shrink-0 items-center justify-center rounded-xl bg-white px-3 py-2"
+                style={{ boxShadow: "inset 0 0 0 1px var(--border)" }}
+                aria-hidden
+              >
+                <img src={src} alt="" className="h-full w-full object-contain" />
+              </span>
+            ))}
+          </div>
+          <div className="mt-4 font-display truncate t-lead font-bold leading-tight text-ink">
+            {t("brand.name")}
           </div>
         </div>
 
@@ -101,126 +111,101 @@ export default function HalamanMasuk() {
             boxShadow: "0 18px 40px -28px rgba(0,0,0,0.45)",
           }}
         >
-          {/* Pemilih mode */}
-          <div
-            className="mb-6 grid grid-cols-2 gap-1 rounded-xl p-1"
-            style={{ background: "color-mix(in srgb, var(--border) 45%, transparent)" }}
-          >
-            {([
-              ["masuk", t("auth.sign_in"), LogIn],
-              ["daftar", t("auth.sign_up"), UserPlus],
-            ] as const).map(([nilai, label, Icon]) => (
-              <button
-                key={nilai}
-                type="button"
-                onClick={() => gantiMode(nilai)}
-                className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 t-small transition"
-                style={{
-                  background: mode === nilai ? "var(--surface-1)" : "transparent",
-                  color: mode === nilai ? "var(--ink)" : "var(--muted)",
-                  fontWeight: mode === nilai ? 600 : 500,
-                  boxShadow:
-                    mode === nilai ? "0 1px 3px rgba(0,0,0,0.12)" : "none",
-                }}
-              >
-                <Icon size={14} aria-hidden />
-                {label}
-              </button>
-            ))}
-          </div>
-
           <h1 className="font-display text-[19px] font-bold leading-tight text-ink">
-            {daftarMode ? t("auth.signup_title") : t("auth.welcome")}
+            {lupa ? t("auth.forgot_title") : t("auth.welcome")}
           </h1>
           <p className="mt-1.5 t-small leading-relaxed text-muted">
-            {daftarMode ? t("auth.signup_sub") : t("auth.welcome_sub")}
+            {lupa ? t("auth.forgot_sub") : t("auth.welcome_sub")}
           </p>
 
           <div className="mt-6 flex flex-col gap-4">
-            {daftarMode && (
+            {lupa && terkirim ? (
+              <PesanBerhasil>{terkirim}</PesanBerhasil>
+            ) : (
               <>
-                <Field label={t("auth.company_name")}>
+                <Field label={t("auth.username")}>
                   <TextInput
-                    value={perusahaan}
-                    onChange={setPerusahaan}
-                    placeholder="PT Contoh Sejahtera"
-                    autoComplete="organization"
+                    value={username}
+                    onChange={setUsername}
+                    placeholder="username"
+                    autoComplete="username"
+                    onEnter={lupa ? kirimLupa : kirimMasuk}
                     className="w-full"
                   />
                 </Field>
-                <Field label={t("auth.full_name")}>
-                  <TextInput
-                    value={nama}
-                    onChange={setNama}
-                    placeholder="Nama Anda"
-                    autoComplete="name"
-                    className="w-full"
-                  />
-                </Field>
+
+                {!lupa && (
+                  <Field label={t("auth.password")}>
+                    <div className="relative">
+                      <TextInput
+                        type={lihatSandi ? "text" : "password"}
+                        value={sandi}
+                        onChange={setSandi}
+                        placeholder="••••••••••"
+                        autoComplete="current-password"
+                        onEnter={kirimMasuk}
+                        className="w-full pr-11"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setLihatSandi((v) => !v)}
+                        aria-label={t(lihatSandi ? "auth.hide_password" : "auth.show_password")}
+                        title={t(lihatSandi ? "auth.hide_password" : "auth.show_password")}
+                        aria-pressed={lihatSandi}
+                        className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-lg text-muted transition-colors hover:text-ink"
+                      >
+                        {lihatSandi ? <EyeOff size={17} aria-hidden /> : <Eye size={17} aria-hidden />}
+                      </button>
+                    </div>
+                  </Field>
+                )}
+
+                {galat && <ErrorBox message={galat} />}
+
+                {/* Satu-satunya tombol pada layar ini, dan di ponsel ia ditekan
+                    dengan ibu jari: memenuhi lebar kartu, setinggi 44px. */}
+                <div className="mt-1">
+                  <Button
+                    variant="solid"
+                    onClick={lupa ? kirimLupa : kirimMasuk}
+                    disabled={sibuk || (lupa && !username.trim())}
+                    className="h-11 w-full justify-center t-base"
+                  >
+                    {sibuk ? t("auth.working") : lupa ? t("auth.forgot_send") : t("auth.sign_in")}
+                  </Button>
+                </div>
               </>
             )}
-
-            <Field label={t("auth.email")}>
-              <TextInput
-                type="email"
-                value={email}
-                onChange={setEmail}
-                placeholder="nama@perusahaan.co.id"
-                autoComplete="username"
-                onEnter={kirim}
-                className="w-full"
-              />
-            </Field>
-
-            <Field label={t("auth.password")}>
-              <TextInput
-                type="password"
-                value={sandi}
-                onChange={setSandi}
-                placeholder="••••••••••"
-                autoComplete={daftarMode ? "new-password" : "current-password"}
-                onEnter={kirim}
-                className="w-full"
-              />
-            </Field>
-            {daftarMode && (
-              <p className="-mt-2 t-caption text-muted">{t("auth.password_hint")}</p>
-            )}
-
-            {galat && <ErrorBox message={galat} />}
-
-            {/* Satu-satunya tombol pada layar ini, dan di ponsel ia ditekan
-                dengan ibu jari: memenuhi lebar kartu, setinggi 44px. */}
-            <div className="mt-1">
-              <Button
-                variant="solid"
-                onClick={kirim}
-                disabled={sibuk}
-                className="h-11 w-full justify-center t-base"
-              >
-                {sibuk
-                  ? t("auth.working")
-                  : daftarMode
-                    ? t("auth.sign_up")
-                    : t("auth.sign_in")}
-              </Button>
-            </div>
           </div>
 
-          <div className="mt-5 flex items-center gap-2 border-t pt-4 t-caption text-muted"
-               style={{ borderColor: "var(--border)" }}>
-            <ShieldCheck size={13} aria-hidden className="shrink-0" />
-            <span>
-              {daftarMode ? t("auth.have_account") : t("auth.no_account")}{" "}
+          <div
+            className="mt-5 flex items-center gap-2 border-t pt-4 t-caption text-muted"
+            style={{ borderColor: "var(--border)" }}
+          >
+            {lupa ? (
               <button
                 type="button"
-                onClick={() => gantiMode(daftarMode ? "masuk" : "daftar")}
-                className="font-semibold underline underline-offset-2"
+                onClick={() => gantiMode("masuk")}
+                className="flex items-center gap-1.5 font-semibold"
                 style={{ color: "var(--brand)" }}
               >
-                {daftarMode ? t("auth.sign_in") : t("auth.sign_up")}
+                <ArrowLeft size={13} aria-hidden />
+                {t("auth.back_to_login")}
               </button>
-            </span>
+            ) : (
+              <>
+                <ShieldCheck size={13} aria-hidden className="shrink-0" />
+                <button
+                  type="button"
+                  onClick={() => gantiMode("lupa")}
+                  className="flex items-center gap-1 font-semibold underline underline-offset-2"
+                  style={{ color: "var(--brand)" }}
+                >
+                  <KeyRound size={12} aria-hidden />
+                  {t("auth.forgot_link")}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

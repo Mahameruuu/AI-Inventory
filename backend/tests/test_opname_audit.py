@@ -22,7 +22,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from conftest import INDUK, NAMA_DB_UJI, bangun_basis_uji  # noqa: E402
+from conftest import INDUK, NAMA_DB_UJI, bangun_basis_uji, buat_perusahaan  # noqa: E402
 
 SANDI = "kataSandiOpname1"
 
@@ -40,8 +40,8 @@ def klien():
         yield c
 
 
-def _masuk(klien, email):
-    r = klien.post("/api/auth/login", json={"email": email, "password": SANDI})
+def _masuk(klien, username):
+    r = klien.post("/api/auth/login", json={"username": username, "password": SANDI})
     assert r.status_code == 200, r.text
     return {"Authorization": "Bearer " + r.json()["access_token"]}
 
@@ -50,17 +50,15 @@ def _masuk(klien, email):
 def dunia(klien):
     import psycopg
 
-    sesi = klien.post("/api/auth/signup", json={
-        "company_name": "PT Uji Opname", "full_name": "Rina Owner",
-        "email": "rina@ujiopname.id", "password": SANDI}).json()
+    sesi = buat_perusahaan(klien, "PT Uji Opname", "Rina Owner", "rina", SANDI)
     cid = sesi["company"]["id"]
     h_owner = {"Authorization": "Bearer " + sesi["access_token"]}
 
     r = klien.post("/api/users", headers=h_owner, json={
-        "email": "staf@ujiopname.id", "full_name": "Sari Staf",
+        "username": "staf", "full_name": "Sari Staf",
         "password": SANDI, "role": "staff"})
     assert r.status_code == 201, r.text
-    h_staf = _masuk(klien, "staf@ujiopname.id")
+    h_staf = _masuk(klien, "staf")
 
     with psycopg.connect(f"{INDUK}/{NAMA_DB_UJI}", autocommit=True) as k, k.cursor() as cur:
         cur.execute("INSERT INTO categories (company_id, name) VALUES (%s,'MRO') RETURNING id", (cid,))
@@ -234,9 +232,7 @@ class TestAudit:
                 cur.execute("DELETE FROM audit_log")
 
     def test_jejak_perusahaan_lain_tidak_terbaca(self, klien, dunia):
-        lain = klien.post("/api/auth/signup", json={
-            "company_name": "PT Lain", "full_name": "Orang Lain",
-            "email": "lain@ujiopname.id", "password": SANDI}).json()
+        lain = buat_perusahaan(klien, "PT Lain", "Orang Lain", "lain", SANDI)
         h = {"Authorization": "Bearer " + lain["access_token"]}
         r = klien.get("/api/audit-log?table=items", headers=h)
         assert r.status_code == 200 and r.json()["total"] == 0

@@ -32,7 +32,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from conftest import INDUK, NAMA_DB_UJI, bangun_basis_uji  # noqa: E402
+from conftest import INDUK, NAMA_DB_UJI, bangun_basis_uji, buat_perusahaan  # noqa: E402
 
 SANDI = "kataSandiTransfer1"
 
@@ -155,9 +155,7 @@ def dunia(klien):
     """
     import psycopg
 
-    sesi = klien.post("/api/auth/signup", json={
-        "company_name": "PT Uji Transfer", "full_name": "Bayu Nugroho",
-        "email": "bayu@ujitransfer.id", "password": SANDI}).json()
+    sesi = buat_perusahaan(klien, "PT Uji Transfer", "Bayu Nugroho", "bayu", SANDI)
     cid = sesi["company"]["id"]
     hari_ini = date.today()
 
@@ -788,9 +786,7 @@ class TestPenjagaan:
         tabel lain. Penyewa kedua tidak boleh melihat, apalagi memindahkan,
         transfer milik penyewa pertama.
         """
-        lain = klien.post("/api/auth/signup", json={
-            "company_name": "PT Tetangga", "full_name": "Rina Kusuma",
-            "email": "rina@tetangga.id", "password": SANDI}).json()
+        lain = buat_perusahaan(klien, "PT Tetangga", "Rina Kusuma", "rina", SANDI)
         h = {"Authorization": "Bearer " + lain["access_token"]}
 
         assert klien.get("/api/transfers", headers=h).json()["items"] == []

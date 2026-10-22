@@ -18,6 +18,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query
 from psycopg import errors as pg_errors
+import re
+
 from pydantic import BaseModel, EmailStr, Field
 
 from .. import i18n, tenant
@@ -32,8 +34,12 @@ router = APIRouter(prefix="/api/users", tags=["users"])
 PERAN_DAPAT_DIBERIKAN = ("admin", "staff", "viewer")
 
 
+POLA_USERNAME = re.compile(r"^[a-z0-9._-]{3,50}$")
+
+
 class PenggunaBaru(BaseModel):
-    email: EmailStr
+    username: str = Field(..., min_length=3, max_length=50)
+    email: EmailStr | None = None
     full_name: str = Field(..., min_length=2, max_length=255)
     password: str = Field(..., min_length=SANDI_MINIMAL)
     role: str = Field(default="staff")
@@ -75,7 +81,7 @@ def _periksa_peran(peran: str) -> str:
 
 @router.get("", dependencies=[Depends(wajib_admin)])
 def daftar_pengguna(
-    q: str | None = Query(None, description="Cari nama atau email"),
+    q: str | None = Query(None, description="Cari nama atau username"),
     only_active: bool = Query(False),
     page: int = 1,
     page_size: int = PAGE_SIZE_DEFAULT,
@@ -83,7 +89,7 @@ def daftar_pengguna(
     page, page_size, offset = clamp_page(page, page_size)
     where, params = "WHERE 1=1", []
     if q:
-        where += " AND (u.full_name ILIKE %s OR u.email ILIKE %s)"
+        where += " AND (u.full_name ILIKE %s OR u.username ILIKE %s)"
         params += [f"%{q}%", f"%{q}%"]
     if only_active:
         where += " AND u.is_active"
@@ -93,8 +99,11 @@ def daftar_pengguna(
         total = cur.fetchone()["n"]
         cur.execute(
             f"""
-            SELECT u.id, u.email, u.full_name, u.role, u.is_active,
-                   u.last_login_at, u.created_at
+            SELECT u.id, u.username, u.email, u.full_name, u.role, u.is_active,
+                   u.last_login_at, u.created_at,
+                   EXISTS (SELECT 1 FROM password_reset_requests r
+                            WHERE r.user_id = u.id AND r.status = 'pending')
+                       AS reset_pending
               FROM users u
             {where}
              ORDER BY (u.role = 'owner') DESC, u.full_name
@@ -109,7 +118,10 @@ def daftar_pengguna(
 def buat_pengguna(body: PenggunaBaru) -> dict:
     periksa_kekuatan_sandi(body.password)
     peran = _periksa_peran(body.role)
-    email = body.email.strip().lower()
+    username = body.username.strip().lower()
+    if not POLA_USERNAME.match(username):
+        raise _galat("err.auth.username_format", 422, "VALIDATION_ERROR")
+    email = body.email.strip().lower() if body.email else None
 
     # company_id tidak disebut: DEFAULT kolomnya membacanya dari setelan sesi,
     # sama seperti seluruh tabel lain sejak migrasi 026.
@@ -117,18 +129,18 @@ def buat_pengguna(body: PenggunaBaru) -> dict:
         with transaction() as cur:
             cur.execute(
                 """
-                INSERT INTO users (email, full_name, password_hash, role)
-                VALUES (%s, %s, %s, %s)
-                RETURNING id, email, full_name, role, is_active, created_at
+                INSERT INTO users (username, email, full_name, password_hash, role)
+                VALUES (%s, %s, %s, %s, %s)
+                RETURNING id, username, email, full_name, role, is_active, created_at
                 """,
-                (email, body.full_name.strip(), hash_sandi(body.password), peran),
+                (username, email, body.full_name.strip(), hash_sandi(body.password), peran),
             )
             return cur.fetchone()
     except pg_errors.UniqueViolation:
-        # Email unik sedunia (lihat migrasi 025), jadi bentrokan bisa datang
-        # dari perusahaan lain yang tidak boleh diketahui keberadaannya.
-        # Kalimatnya karena itu tidak menyebut di mana email itu sudah dipakai.
-        raise _galat("err.auth.email_taken", 409, "CONFLICT", email=email) from None
+        # Username unik sedunia (migrasi 037), jadi bentrokan bisa datang dari
+        # perusahaan lain yang tidak boleh diketahui keberadaannya. Kalimatnya
+        # karena itu tidak menyebut di mana username itu sudah dipakai.
+        raise _galat("err.auth.username_taken", 409, "CONFLICT", username=username) from None
 
 
 @router.patch("/{user_id}")
@@ -179,7 +191,7 @@ def ubah_pengguna(user_id: int, body: PenggunaUbah,
         params.append(user_id)
         cur.execute(
             f"UPDATE users SET {', '.join(set_bagian)} WHERE id = %s "
-            "RETURNING id, email, full_name, role, is_active",
+            "RETURNING id, username, email, full_name, role, is_active",
             params,
         )
         return cur.fetchone()
@@ -190,9 +202,8 @@ def ubah_pengguna(user_id: int, body: PenggunaUbah,
 def setel_ulang_sandi(user_id: int, body: SandiBaru) -> None:
     """
     Menyetel kata sandi pengguna lain -- jalur "saya lupa kata sandi" yang
-    ditempuh lewat admin, bukan lewat email. Pemulihan lewat email menuntut
-    pengiriman surat yang belum ada di sistem ini; menyediakan tombolnya
-    sekarang tanpa itu hanya akan menjadi tombol yang tidak melakukan apa-apa.
+    ditempuh lewat admin, bukan lewat email. Permintaan dari halaman masuk
+    (POST /api/auth/forgot-password) yang masih menunggu ikut ditandai selesai.
 
     Seluruh sesi pengguna yang bersangkutan ikut dicabut: kata sandi diganti
     justru saat kendali atas akun itu diragukan.
@@ -212,3 +223,48 @@ def setel_ulang_sandi(user_id: int, body: SandiBaru) -> None:
         )
         if cur.fetchone() is None:
             raise not_found("user", user_id)
+        cur.execute(
+            """
+            UPDATE password_reset_requests
+               SET status = 'done', handled_at = now(),
+                   handled_by = NULLIF(current_setting('app.user_id', true), '')::bigint
+             WHERE user_id = %s AND status = 'pending'
+            """,
+            (user_id,),
+        )
+
+
+@router.get("/reset-requests", dependencies=[Depends(wajib_admin)])
+def permintaan_reset() -> dict:
+    """Permintaan setel ulang kata sandi yang masih menunggu, terlama dulu."""
+    with readonly() as cur:
+        cur.execute(
+            """
+            SELECT r.id, r.user_id, r.requested_at,
+                   u.username, u.full_name, u.role
+              FROM password_reset_requests r
+              JOIN users u ON u.id = r.user_id
+             WHERE r.status = 'pending'
+             ORDER BY r.requested_at
+            """
+        )
+        return {"items": cur.fetchall()}
+
+
+@router.post("/reset-requests/{req_id}/dismiss", status_code=204,
+             dependencies=[Depends(wajib_admin)])
+def abaikan_permintaan(req_id: int) -> None:
+    """Menolak permintaan yang tidak dikenali, tanpa mengubah kata sandi."""
+    with transaction() as cur:
+        cur.execute(
+            """
+            UPDATE password_reset_requests
+               SET status = 'dismissed', handled_at = now(),
+                   handled_by = NULLIF(current_setting('app.user_id', true), '')::bigint
+             WHERE id = %s AND status = 'pending'
+            RETURNING id
+            """,
+            (req_id,),
+        )
+        if cur.fetchone() is None:
+            raise not_found("user", req_id)

@@ -26,7 +26,7 @@ router = APIRouter(prefix="/api/audit-log", tags=["audit"],
 # baris yang sudah dihapus tetap terbaca namanya.
 LABEL = {
     "items": "sku", "warehouses": "code", "categories": "name", "units": "code",
-    "suppliers": "name", "users": "email",
+    "suppliers": "name", "users": "username",
     "stock_receipts": "receipt_number", "stock_issues": "issue_number",
     "stock_transfers": "transfer_number", "stock_adjustments": "adjustment_number",
     "purchase_orders": "po_number",

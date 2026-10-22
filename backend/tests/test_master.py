@@ -25,7 +25,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from conftest import INDUK, NAMA_DB_UJI, bangun_basis_uji  # noqa: E402
+from conftest import INDUK, NAMA_DB_UJI, bangun_basis_uji, buat_perusahaan  # noqa: E402
 
 SANDI = "kataSandiMaster12"
 
@@ -47,9 +47,7 @@ def klien():
 @pytest.fixture(scope="module")
 def h(klien):
     """Header owner sebuah perusahaan kosong."""
-    s = klien.post("/api/auth/signup", json={
-        "company_name": "PT Uji Master", "full_name": "Master Tester",
-        "email": "master@ujimaster.co.id", "password": SANDI}).json()
+    s = buat_perusahaan(klien, "PT Uji Master", "Master Tester", "master", SANDI)
     return {"Authorization": "Bearer " + s["access_token"]}
 
 
@@ -154,10 +152,10 @@ def test_master_yang_sudah_dipakai_tidak_boleh_dihapus(klien, h, dasar):
 
 def test_staf_tidak_boleh_mengubah_master(klien, h, dasar):
     klien.post("/api/users", headers=h, json={
-        "email": "staf@ujimaster.co.id", "full_name": "Staf Gudang",
+        "username": "staf", "full_name": "Staf Gudang",
         "password": "kataSandiStaf12", "role": "staff"})
     s = klien.post("/api/auth/login", json={
-        "email": "staf@ujimaster.co.id", "password": "kataSandiStaf12"}).json()
+        "username": "staf", "password": "kataSandiStaf12"}).json()
     hs = {"Authorization": "Bearer " + s["access_token"]}
 
     assert klien.get("/api/items", headers=hs).status_code == 200

@@ -282,11 +282,6 @@ JWT_ALGORITHM = "HS256"
 # tertinggal di komputer bersama tidak berlaku keesokan harinya.
 JWT_TTL_HOURS = float(os.getenv("JWT_TTL_HOURS", "12"))
 
-# Pendaftaran mandiri: siapa pun yang membuka halaman dapat membuat perusahaan
-# baru. Dinyalakan saat sistem dijual sebagai layanan terbuka; dimatikan bila
-# penyewa baru hanya boleh dibuat orang dalam.
-ALLOW_SIGNUP = os.getenv("ALLOW_SIGNUP", "true").lower() == "true"
-
 # Penjaga: menolak menyala bila aplikasi tersambung sebagai superuser
 # PostgreSQL. Superuser dibebaskan dari SELURUH Row Level Security tanpa cara
 # mematikannya, sehingga seluruh pemisahan penyewa pada migrasi 028 menjadi

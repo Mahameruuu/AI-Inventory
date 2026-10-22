@@ -857,8 +857,8 @@ TEKS: dict[str, dict[str, str]] = {
     # Membedakannya berarti memberi tahu penebak bahwa satu email terdaftar --
     # separuh pekerjaan pembobolan selesai sebelum kata sandi pertama dicoba.
     "err.auth.credentials_invalid": {
-        "id": "Email atau kata sandi salah.",
-        "en": "Incorrect email or password.",
+        "id": "Username atau kata sandi salah.",
+        "en": "Incorrect username or password.",
     },
     "err.auth.token_missing": {
         "id": "Anda belum masuk. Silakan masuk terlebih dahulu.",
@@ -884,17 +884,17 @@ TEKS: dict[str, dict[str, str]] = {
         "id": "Peran Anda ({peran}) tidak berhak melakukan tindakan ini.",
         "en": "Your role ({peran}) is not allowed to perform this action.",
     },
-    "err.auth.email_taken": {
-        "id": "Email {email} sudah terdaftar.",
-        "en": "Email {email} is already registered.",
+    "err.auth.username_taken": {
+        "id": "Username {username} sudah dipakai.",
+        "en": "Username {username} is already taken.",
     },
-    "err.auth.slug_taken": {
-        "id": "Pengenal perusahaan '{slug}' sudah dipakai.",
-        "en": "Company identifier '{slug}' is already taken.",
+    "err.auth.username_format": {
+        "id": "Username 3-50 karakter: huruf kecil, angka, titik, garis bawah, atau tanda hubung.",
+        "en": "Username must be 3-50 characters: lowercase letters, digits, dot, underscore or hyphen.",
     },
-    "err.auth.signup_disabled": {
-        "id": "Pendaftaran mandiri sedang ditutup.",
-        "en": "Self-service sign-up is currently closed.",
+    "auth.reset_requested": {
+        "id": "Bila username itu terdaftar, permintaan Anda sudah diteruskan ke admin perusahaan. Admin akan memberikan kata sandi baru.",
+        "en": "If that username exists, your request has been sent to your company admin, who will give you a new password.",
     },
     "err.auth.password_weak": {
         "id": "Kata sandi minimal {minimal} karakter.",

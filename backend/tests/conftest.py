@@ -79,7 +79,6 @@ os.environ.setdefault("JWT_SECRET", "kunci-uji-jangan-dipakai-di-produksi")
 # Berkas modelnya ratusan MB dan tidak ada uji di sini yang memerlukannya.
 os.environ.setdefault("FORECAST_MODEL_PRELOAD", "false")
 os.environ.setdefault("FORECAST_USE_MODEL", "false")
-os.environ.setdefault("ALLOW_SIGNUP", "true")
 
 
 def bangun_basis_uji() -> str | None:
@@ -126,8 +125,9 @@ def bangun_basis_uji() -> str | None:
         GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO {ROLE_UJI};
         GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO {ROLE_UJI};
         GRANT EXECUTE ON FUNCTION auth_cari_pengguna(TEXT) TO {ROLE_UJI};
+        GRANT EXECUTE ON FUNCTION auth_minta_reset_sandi(TEXT) TO {ROLE_UJI};
         GRANT EXECUTE ON FUNCTION
-            auth_daftar_perusahaan(TEXT, TEXT, TEXT, TEXT, TEXT) TO {ROLE_UJI};
+            auth_buat_perusahaan(TEXT, TEXT, TEXT, TEXT, TEXT) TO {ROLE_UJI};
         -- Sama seperti inventory_app pada migrasi 036: jejak audit hanya-baca.
         REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON audit_log FROM {ROLE_UJI};
     """)
@@ -135,3 +135,26 @@ def bangun_basis_uji() -> str | None:
         return f"gagal menyiapkan role uji: {h.stderr.strip()[:300]}"
 
     return None
+
+
+def buat_perusahaan(klien, company_name: str, full_name: str, username: str,
+                    password: str) -> dict:
+    """
+    Membuat perusahaan beserta owner-nya lalu masuk, dan mengembalikan sesi
+    dalam bentuk yang sama dengan jawaban /api/auth/login.
+
+    Pendaftaran mandiri sudah dicabut (migrasi 037), jadi uji membuat
+    perusahaan lewat jalan yang sama dengan orang dalam: fungsi
+    auth_buat_perusahaan dengan hak admin.
+    """
+    import psycopg
+
+    from app.auth import hash_sandi
+
+    slug = re.sub(r"[^a-z0-9]+", "-", company_name.lower()).strip("-")
+    with psycopg.connect(f"{INDUK}/{NAMA_DB_UJI}", autocommit=True) as k:
+        k.execute("SELECT * FROM auth_buat_perusahaan(%s, %s, %s, %s, %s)",
+                  (company_name, slug, username, full_name, hash_sandi(password)))
+    r = klien.post("/api/auth/login", json={"username": username, "password": password})
+    assert r.status_code == 200, r.text
+    return r.json()

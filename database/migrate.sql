@@ -76,6 +76,9 @@ BEGIN;
 -- Harus SETELAH 028: ia mencabut hak tulis yang diberikan default privileges.
 \ir migrations/036_audit_dan_opname.sql
 
+-- Masuk dengan username, pendaftaran mandiri dicabut, lupa kata sandi lewat admin.
+\ir migrations/037_username_dan_reset_sandi.sql
+
 COMMIT;
 
 \echo 'Migration selesai.'

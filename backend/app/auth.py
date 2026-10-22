@@ -155,7 +155,7 @@ def _baca_pengguna(company_id: int, user_id: int) -> dict | None:
     with readonly() as cur:
         cur.execute(
             """
-            SELECT u.id, u.company_id, u.email, u.full_name, u.role,
+            SELECT u.id, u.company_id, u.username, u.email, u.full_name, u.role,
                    u.is_active, u.token_version,
                    c.name AS company_name, c.is_active AS company_aktif
               FROM users u
@@ -213,7 +213,8 @@ async def pengguna_saat_ini(request: Request) -> tenant.Penyewa:
         company_id=baris["company_id"],
         company_name=baris["company_name"],
         user_id=baris["id"],
-        email=baris["email"],
+        email=baris["email"] or "",
+        username=baris["username"],
         role=baris["role"],
     )
     tenant.set_penyewa(penyewa)

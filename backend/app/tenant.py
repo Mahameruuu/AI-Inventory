@@ -39,6 +39,7 @@ class Penyewa:
     # yang berjalan atas nama perusahaan, bukan atas nama orang.
     user_id: int | None = None
     email: str = ""
+    username: str = ""
     role: str = ""
 
 

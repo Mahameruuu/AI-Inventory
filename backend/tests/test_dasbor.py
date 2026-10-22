@@ -49,7 +49,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from conftest import INDUK, NAMA_DB_UJI, bangun_basis_uji  # noqa: E402
+from conftest import INDUK, NAMA_DB_UJI, bangun_basis_uji, buat_perusahaan  # noqa: E402
 
 SANDI = "kataSandiDasbor1"
 
@@ -156,9 +156,7 @@ def dunia(klien):
     """
     import psycopg
 
-    sesi = klien.post("/api/auth/signup", json={
-        "company_name": "PT Uji Dasbor", "full_name": "Citra Handayani",
-        "email": "citra@ujidasbor.id", "password": SANDI}).json()
+    sesi = buat_perusahaan(klien, "PT Uji Dasbor", "Citra Handayani", "citra", SANDI)
     cid = sesi["company"]["id"]
     hari_ini = date.today()
 

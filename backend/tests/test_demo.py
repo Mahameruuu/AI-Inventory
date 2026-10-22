@@ -24,7 +24,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from conftest import INDUK, NAMA_DB_UJI, bangun_basis_uji  # noqa: E402
+from conftest import INDUK, NAMA_DB_UJI, bangun_basis_uji, buat_perusahaan  # noqa: E402
 from app import demo  # noqa: E402
 
 SANDI = "kataSandiDemo123"
@@ -61,12 +61,8 @@ def _tandai_demo(company_id: int) -> None:
 @pytest.fixture(scope="module")
 def dunia(klien):
     """Satu perusahaan demo dan satu perusahaan biasa, berdampingan."""
-    demo = klien.post("/api/auth/signup", json={
-        "company_name": "Demo Inventory AI", "full_name": "Akun Demo",
-        "email": "demo@contohdemo.id", "password": SANDI}).json()
-    asli = klien.post("/api/auth/signup", json={
-        "company_name": "PT Pelanggan Sungguhan", "full_name": "Rina Hartati",
-        "email": "rina@pelanggan.co.id", "password": SANDI}).json()
+    demo = buat_perusahaan(klien, "Demo Inventory AI", "Akun Demo", "demo", SANDI)
+    asli = buat_perusahaan(klien, "PT Pelanggan Sungguhan", "Rina Hartati", "rina", SANDI)
 
     _tandai_demo(demo["company"]["id"])
 
@@ -114,10 +110,10 @@ def test_perusahaan_biasa_tidak_dapat_mengosongkan_dirinya(klien, dunia):
 
 def test_viewer_tidak_dapat_mengisi_ulang(klien, dunia):
     klien.post("/api/users", headers=dunia["hDemo"], json={
-        "email": "penonton@contohdemo.id", "full_name": "Penonton Demo",
+        "username": "penonton", "full_name": "Penonton Demo",
         "password": "kataSandiLihat1", "role": "viewer"})
     v = klien.post("/api/auth/login", json={
-        "email": "penonton@contohdemo.id", "password": "kataSandiLihat1"}).json()
+        "username": "penonton", "password": "kataSandiLihat1"}).json()
     h = {"Authorization": "Bearer " + v["access_token"]}
 
     # Boleh TAHU bahwa ini perusahaan demo -- itu yang dipakai antarmuka untuk

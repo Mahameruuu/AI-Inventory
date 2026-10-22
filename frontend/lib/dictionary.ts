@@ -25,6 +25,9 @@ type Entry = { id: string; en: string };
 export const DICT: Record<string, Entry> = {
   /* ---------------- kerangka aplikasi / app shell ---------------- */
   "brand.name": { id: "Xorca AI Inventory", en: "Xorca AI Inventory" },
+  "brand.short": { id: "AI Inventory", en: "AI Inventory" },
+  "auth.show_password": { id: "Tampilkan kata sandi", en: "Show password" },
+  "auth.hide_password": { id: "Sembunyikan kata sandi", en: "Hide password" },
   "brand.tagline": {
     id: "Sistem Pendukung Keputusan Persediaan",
     en: "Inventory Decision Intelligence",
@@ -42,7 +45,6 @@ export const DICT: Record<string, Entry> = {
 
   /* ---------------- masuk dan akun / sign-in and account ---------------- */
   "auth.sign_in": { id: "Masuk", en: "Sign in" },
-  "auth.sign_up": { id: "Daftar", en: "Sign up" },
   "auth.sign_out": { id: "Keluar", en: "Sign out" },
   "auth.account_menu": { id: "Menu akun", en: "Account menu" },
   "auth.sign_out_title": { id: "Keluar dari akun ini?", en: "Sign out of this account?" },
@@ -53,22 +55,23 @@ export const DICT: Record<string, Entry> = {
     id: "Sesi ditutup dan Anda kembali ke halaman masuk. Isian yang belum disimpan akan hilang.",
     en: "Your session will end and you will return to the sign-in page. Any unsaved input will be lost.",
   },
+  "auth.username": { id: "Username", en: "Username" },
   "auth.email": { id: "Email", en: "Email" },
   "auth.password": { id: "Kata sandi", en: "Password" },
   "auth.full_name": { id: "Nama lengkap", en: "Full name" },
-  "auth.company_name": { id: "Nama perusahaan", en: "Company name" },
   "auth.welcome": { id: "Masuk ke akun Anda", en: "Sign in to your account" },
   "auth.welcome_sub": {
-    id: "Gunakan email dan kata sandi yang diberikan admin perusahaan Anda.",
-    en: "Use the email and password issued by your company admin.",
+    id: "Gunakan username dan kata sandi yang diberikan admin perusahaan Anda.",
+    en: "Use the username and password issued by your company admin.",
   },
-  "auth.signup_title": { id: "Buat perusahaan baru", en: "Create a new company" },
-  "auth.signup_sub": {
-    id: "Anda menjadi pemilik akun dan dapat menambahkan anggota tim setelahnya.",
-    en: "You become the account owner and can add team members afterwards.",
+  "auth.forgot_link": { id: "Lupa kata sandi?", en: "Forgot password?" },
+  "auth.forgot_title": { id: "Lupa kata sandi", en: "Forgot password" },
+  "auth.forgot_sub": {
+    id: "Masukkan username Anda. Permintaan diteruskan ke admin perusahaan, yang akan memberikan kata sandi baru.",
+    en: "Enter your username. The request goes to your company admin, who will give you a new password.",
   },
-  "auth.no_account": { id: "Belum punya perusahaan?", en: "No company yet?" },
-  "auth.have_account": { id: "Sudah punya akun?", en: "Already have an account?" },
+  "auth.forgot_send": { id: "Kirim permintaan", en: "Send request" },
+  "auth.back_to_login": { id: "Kembali ke halaman masuk", en: "Back to sign in" },
   "auth.password_hint": {
     id: "Minimal 10 karakter.",
     en: "At least 10 characters.",
@@ -110,6 +113,26 @@ export const DICT: Record<string, Entry> = {
   "us.created": { id: "Pengguna dibuat.", en: "User created." },
   "us.updated": { id: "Perubahan tersimpan.", en: "Changes saved." },
   "us.you": { id: "Anda", en: "You" },
+  "us.username_hint": {
+    id: "Username 3–50 karakter: huruf kecil, angka, titik, garis bawah, atau tanda hubung. Dipakai untuk masuk.",
+    en: "Username of 3–50 characters: lowercase letters, digits, dot, underscore or hyphen. Used to sign in.",
+  },
+  "us.reset_requests": { id: "Permintaan lupa kata sandi ({n})", en: "Forgotten password requests ({n})" },
+  "us.reset_requests_sub": {
+    id: "Dikirim dari halaman masuk. Pastikan dulu orangnya, lalu setel kata sandi baru dan sampaikan kepadanya.",
+    en: "Sent from the sign-in page. Confirm the person first, then set a new password and hand it to them.",
+  },
+  "us.requested_at": { id: "Diminta", en: "Requested" },
+  "us.dismiss": { id: "Abaikan", en: "Dismiss" },
+  "us.dismissed": { id: "Permintaan diabaikan.", en: "Request dismissed." },
+  "us.reset_pending": { id: "Minta kata sandi baru", en: "Requested a new password" },
+  "us.set_password": { id: "Setel kata sandi", en: "Set password" },
+  "us.set_password_sub": {
+    id: "Kata sandi baru untuk {nama} (@{username}). Semua sesinya di perangkat lain langsung berakhir.",
+    en: "New password for {nama} (@{username}). All of their sessions on other devices end immediately.",
+  },
+  "us.new_password": { id: "Kata sandi baru", en: "New password" },
+  "us.reset_done": { id: "Kata sandi {nama} sudah diganti.", en: "{nama}'s password has been changed." },
   "us.owner_locked": {
     id: "Pemilik akun tidak dapat diubah dari sini.",
     en: "The account owner cannot be changed from here.",

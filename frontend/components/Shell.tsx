@@ -33,6 +33,7 @@ import {
   Sun,
   Timer,
   TrendingUp,
+  Users,
   Warehouse,
   X,
 } from "lucide-react";
@@ -149,8 +150,10 @@ const PENGATURAN: NavItem = { href: "/settings", key: "nav.settings", icon: Sett
 
 /** Jejak Audit, khusus admin/owner; pintunya di popup akun seperti Pengaturan. */
 const AUDIT: NavItem = { href: "/audit", key: "nav.audit", icon: History, kelola: true };
+/** Pengguna, khusus admin/owner: satu-satunya pintu menambah pengguna sejak pendaftaran dicabut. */
+const PENGGUNA: NavItem = { href: "/users", key: "nav.users", icon: Users, kelola: true };
 
-const SEMUA = [...NAV.flatMap((g) => g.items), PENGATURAN, AUDIT];
+const SEMUA = [...NAV.flatMap((g) => g.items), PENGATURAN, AUDIT, PENGGUNA];
 
 /** Rute terpilih = pencocokan terpanjang, supaya /inventory/items tidak menyalakan /inventory. */
 function isActive(pathname: string, href: string): boolean {
@@ -394,20 +397,13 @@ function LaciNavigasi({
         className="laci-masuk fixed inset-y-0 left-0 z-50 flex w-[min(84vw,290px)] flex-col border-r outline-none"
         style={{ borderColor: "var(--border)", background: "var(--surface-1)" }}
       >
-        <div className="flex h-14 shrink-0 items-center gap-3 px-4">
-          <span
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white p-1"
-            aria-hidden
-          >
-            <img src="/logo-sml.svg" alt="" className="h-full w-full object-contain" />
+        <div className="flex h-14 shrink-0 items-center gap-2 px-4">
+          {/* Logo tanpa kotak; tulisannya berganti terang/gelap mengikuti tema. */}
+          <img src="/logo-xorca-dark-text.svg" alt="Xorca" className="block h-6 w-auto shrink-0 dark:hidden" />
+          <img src="/logo-xorca-light-text.svg" alt="Xorca" className="hidden h-6 w-auto shrink-0 dark:block" />
+          <span className="font-display min-w-0 flex-1 truncate text-[12px] font-bold uppercase tracking-[0.02em] text-ink">
+            {t("brand.short")}
           </span>
-          <span
-            className="flex h-9 shrink-0 items-center justify-center rounded-xl bg-white p-1"
-            aria-hidden
-          >
-            <img src="/logo-xorca-dark-text.svg" alt="" className="h-full w-auto object-contain" />
-          </span>
-          <span className="flex-1" />
           <button
             type="button"
             onClick={tutup}
@@ -417,16 +413,6 @@ function LaciNavigasi({
           >
             <X size={18} aria-hidden />
           </button>
-        </div>
-        {/* Nama produk turun ke barisnya sendiri: dua logo mitra sudah
-            memenuhi baris atas, dan menumpuknya membuat nama terpotong. */}
-        <div className="-mt-1 shrink-0 px-4 pb-3">
-          <div className="font-display truncate t-base font-bold leading-tight text-ink">
-            {t("brand.name")}
-          </div>
-          <div className="truncate t-micro font-medium uppercase tracking-[0.11em] text-muted">
-            {t("brand.tagline")}
-          </div>
         </div>
 
         <div className="mx-3 h-px shrink-0" style={{ background: "var(--border)" }} />
@@ -690,7 +676,7 @@ function MenuAkun() {
              */}
             <div className="px-3.5 py-3" style={{ background: "var(--surface-2)" }}>
               <div className="truncate t-body font-semibold text-ink">{pengguna.full_name}</div>
-              <div className="truncate t-caption text-muted">{pengguna.email}</div>
+              <div className="truncate t-caption text-muted">@{pengguna.username}</div>
               <div className="mt-1 truncate t-caption text-muted">
                 {perusahaan?.name} &middot; {peran}
               </div>
@@ -708,6 +694,17 @@ function MenuAkun() {
                 <Settings size={15} aria-hidden style={{ color: "var(--text-muted)" }} />
                 {t("nav.settings")}
               </Link>
+              {bolehMengelola && (
+                <Link
+                  href={PENGGUNA.href}
+                  role="menuitem"
+                  onClick={() => setBuka(false)}
+                  className="flex h-9 items-center gap-2.5 rounded-lg px-2.5 t-body text-ink-2 transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)] hover:text-ink"
+                >
+                  <Users size={15} aria-hidden style={{ color: "var(--text-muted)" }} />
+                  {t("nav.users")}
+                </Link>
+              )}
               {bolehMengelola && (
                 <Link
                   href={AUDIT.href}
@@ -939,26 +936,25 @@ function KerangkaAplikasi({ children }: { children: ReactNode }) {
         {/* ---------- identitas produk ---------- */}
         <div
           className={`flex h-[60px] shrink-0 items-center ${
-            ringkas ? "justify-center px-2" : "gap-3 px-4"
+            ringkas ? "justify-center px-2" : "gap-2 px-4"
           }`}
         >
-          <span
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white p-1"
-            aria-hidden
-          >
-            <img src="/logo-sml.svg" alt="" className="h-full w-full object-contain" />
-          </span>
-          {!ringkas && (
+          {ringkas ? (
+            // Rel 68px terlalu sempit untuk logo bertulisan: cukup ikon pausnya.
             <span
-              className="flex h-9 shrink-0 items-center justify-center rounded-xl bg-white p-1"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white p-1"
               aria-hidden
             >
-              <img src="/logo-xorca-dark-text.svg" alt="" className="h-full w-auto object-contain" />
+              <img src="/logo-xorca-icon.svg" alt="" className="h-full w-full object-contain" />
             </span>
-          )}
-          {!ringkas && (
+          ) : (
             <>
-              <span className="flex-1" />
+            {/* Logo tanpa kotak; tulisannya berganti terang/gelap mengikuti tema. */}
+            <img src="/logo-xorca-dark-text.svg" alt="Xorca" className="block h-6 w-auto shrink-0 dark:hidden" />
+            <img src="/logo-xorca-light-text.svg" alt="Xorca" className="hidden h-6 w-auto shrink-0 dark:block" />
+              <span className="font-display min-w-0 flex-1 truncate text-[12px] font-bold uppercase tracking-[0.02em] text-ink">
+                {t("brand.short")}
+              </span>
               <button
                 type="button"
                 onClick={ubahRingkas}
@@ -971,16 +967,6 @@ function KerangkaAplikasi({ children }: { children: ReactNode }) {
             </>
           )}
         </div>
-        {!ringkas && (
-          <div className="-mt-1.5 shrink-0 px-4 pb-3">
-            <div className="font-display truncate t-base font-bold leading-tight text-ink">
-              {t("brand.name")}
-            </div>
-            <div className="truncate t-micro font-medium uppercase tracking-[0.11em] text-muted">
-              {t("brand.tagline")}
-            </div>
-          </div>
-        )}
 
         <div className="mx-3 h-px shrink-0" style={{ background: "var(--border)" }} />
 
@@ -1056,20 +1042,11 @@ function KerangkaAplikasi({ children }: { children: ReactNode }) {
               <Menu size={20} aria-hidden />
             </button>
             <Link href="/" className="flex min-w-0 items-center gap-2">
-              <span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white p-1"
-                aria-hidden
-              >
-                <img src="/logo-sml.svg" alt="" className="h-full w-full object-contain" />
-              </span>
-              <span
-                className="flex h-8 shrink-0 items-center justify-center rounded-lg bg-white p-1"
-                aria-hidden
-              >
-                <img src="/logo-xorca-dark-text.svg" alt="" className="h-full w-auto object-contain" />
-              </span>
-              <span className="font-display hidden min-w-0 truncate t-base font-bold leading-tight text-ink sm:inline">
-                {t("brand.name")}
+              {/* Logo tanpa kotak; tulisannya berganti terang/gelap mengikuti tema. */}
+              <img src="/logo-xorca-dark-text.svg" alt="Xorca" className="block h-6 w-auto shrink-0 dark:hidden" />
+              <img src="/logo-xorca-light-text.svg" alt="Xorca" className="hidden h-6 w-auto shrink-0 dark:block" />
+              <span className="font-display min-w-0 flex-1 truncate text-[12px] font-bold uppercase tracking-[0.02em] text-ink">
+                {t("brand.short")}
               </span>
             </Link>
           </div>
