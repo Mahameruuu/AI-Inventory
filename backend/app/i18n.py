@@ -928,6 +928,22 @@ TEKS: dict[str, dict[str, str]] = {
         "id": "received_date tidak boleh melewati tanggal hari ini.",
         "en": "received_date cannot be later than today.",
     },
+    "err.opname.not_draft": {
+        "id": "Opname {no} sudah berstatus {status}; hanya draft yang dapat diubah.",
+        "en": "Stock count {no} is already {status}; only drafts can be changed.",
+    },
+    "err.opname.nothing_counted": {
+        "id": "Belum ada satu pun barang yang dihitung pada opname ini.",
+        "en": "No item has been counted on this stock count yet.",
+    },
+    "err.opname.no_items": {
+        "id": "Gudang ini belum punya barang untuk dihitung.",
+        "en": "This warehouse has no items to count.",
+    },
+    "err.opname.below_reserved": {
+        "id": "Hitungan {sku} ({aktual}) di bawah stok yang sudah dicadangkan ({cadang}). Selesaikan atau batalkan transfer yang mencadangkannya lebih dulu.",
+        "en": "Count for {sku} ({aktual}) is below its reserved stock ({cadang}). Settle or cancel the transfer holding it first.",
+    },
     "err.date_future_issue": {
         "id": "issue_date tidak boleh melewati tanggal hari ini.",
         "en": "issue_date cannot be later than today.",

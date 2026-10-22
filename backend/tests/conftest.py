@@ -128,6 +128,8 @@ def bangun_basis_uji() -> str | None:
         GRANT EXECUTE ON FUNCTION auth_cari_pengguna(TEXT) TO {ROLE_UJI};
         GRANT EXECUTE ON FUNCTION
             auth_daftar_perusahaan(TEXT, TEXT, TEXT, TEXT, TEXT) TO {ROLE_UJI};
+        -- Sama seperti inventory_app pada migrasi 036: jejak audit hanya-baca.
+        REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON audit_log FROM {ROLE_UJI};
     """)
     if h.returncode != 0:
         return f"gagal menyiapkan role uji: {h.stderr.strip()[:300]}"

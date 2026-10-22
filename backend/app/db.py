@@ -58,10 +58,17 @@ def _pasang_penyewa(cur) -> None:
     pengguna saat masuk -- tidak menyentuh tabel ber-RLS atau lewat fungsi
     SECURITY DEFINER yang dibuat khusus untuk itu.
     """
-    cid = tenant.company_id()
-    if cid is None:
+    p = tenant.penyewa()
+    if p is None:
         return
-    cur.execute("SELECT set_config('app.company_id', %s, true)", (str(cid),))
+    # app.user_id dibaca trigger jejak audit dan default kolom created_by
+    # (migrasi 036). Kosong untuk pekerjaan latar: jejaknya tetap tercatat,
+    # hanya tanpa nama orang.
+    cur.execute(
+        "SELECT set_config('app.company_id', %s, true),"
+        "       set_config('app.user_id', %s, true)",
+        (str(p.company_id), str(p.user_id) if p.user_id else ""),
+    )
 
 
 @contextmanager

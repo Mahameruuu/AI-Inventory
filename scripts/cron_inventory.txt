@@ -1,7 +1,21 @@
 # ── Inventory AI (kontainer inventory-ai-backend) ──
 #
-# TIDAK ADA PEKERJAAN TERJADWAL. Berkas ini sengaja dipertahankan kosong
-# supaya jelas bahwa itu keadaan yang dituju, bukan berkas yang terlupa dibuat.
+# SATU PEKERJAAN TERJADWAL: cadangan basis data (sejak 22 Oktober 2026).
+# Senin-Sabtu cadangan biasa; Minggu sekalian dipulihkan ke basis data
+# sementara dan jumlah barisnya dibandingkan -- lihat scripts/backup.sh.
+# Berkas masuk ~/backups/inventory, 14 harian + 8 mingguan disimpan.
+#
+# Pasang dengan MENAMBAH baris, jangan menimpa crontab (ada proyek lain):
+#
+#     0 2 * * 1-6 /home/sml/meru/ai_inventory/scripts/backup.sh >> /home/sml/meru/ai_inventory/logs/backup.log 2>&1
+#     0 2 * * 0   /home/sml/meru/ai_inventory/scripts/backup.sh --uji-pulih >> /home/sml/meru/ai_inventory/logs/backup.log 2>&1
+#
+# Memulihkan dari cadangan (HENTIKAN backend dulu):
+#
+#     pg_restore --clean --if-exists --no-owner -d "$ADMIN_DATABASE_URL" \
+#         ~/backups/inventory/inventory-YYYYMMDD-HHMMSS.dump
+#
+# Selain cadangan, TIDAK ADA pekerjaan terjadwal lain.
 #
 # Dua baris pemindaian anomali dicabut pada 2 September 2026 bersama modulnya,
 # dan sudah dilepas dari crontab mesin ini pada tanggal yang sama. Penggantinya,

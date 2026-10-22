@@ -72,6 +72,10 @@ BEGIN;
 -- Moda angkut, biaya, dan jumlah diterima pada transfer.
 \ir migrations/035_transfer_moda_biaya.sql
 
+-- Jejak audit (trigger + audit_log hanya-baca) dan alur stok opname.
+-- Harus SETELAH 028: ia mencabut hak tulis yang diberikan default privileges.
+\ir migrations/036_audit_dan_opname.sql
+
 COMMIT;
 
 \echo 'Migration selesai.'

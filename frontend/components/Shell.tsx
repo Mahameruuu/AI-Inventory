@@ -18,6 +18,8 @@ import {
   ArrowLeftRight,
   ArrowUpFromLine,
   ChevronDown,
+  ClipboardCheck,
+  History,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -107,6 +109,9 @@ const NAV: NavGroup[] = [
     items: [
       { href: "/transactions/receipts", key: "nav.receipt", icon: ArrowDownToLine },
       { href: "/transactions/issues", key: "nav.issue", icon: ArrowUpFromLine },
+      // Stok opname menutup Input Manual: penerimaan dan pengeluaran mencatat
+      // barang yang bergerak, opname mengoreksi selisih yang tidak tercatat.
+      { href: "/transactions/opname", key: "nav.opname", icon: ClipboardCheck },
     ],
   },
   {
@@ -142,7 +147,10 @@ const NAV: NavGroup[] = [
  */
 const PENGATURAN: NavItem = { href: "/settings", key: "nav.settings", icon: Settings };
 
-const SEMUA = [...NAV.flatMap((g) => g.items), PENGATURAN];
+/** Jejak Audit, khusus admin/owner; pintunya di popup akun seperti Pengaturan. */
+const AUDIT: NavItem = { href: "/audit", key: "nav.audit", icon: History, kelola: true };
+
+const SEMUA = [...NAV.flatMap((g) => g.items), PENGATURAN, AUDIT];
 
 /** Rute terpilih = pencocokan terpanjang, supaya /inventory/items tidak menyalakan /inventory. */
 function isActive(pathname: string, href: string): boolean {
@@ -567,7 +575,7 @@ function LangToggle() {
  */
 function MenuAkun() {
   const { t } = useI18n();
-  const { pengguna, perusahaan, keluar } = useAuth();
+  const { pengguna, perusahaan, keluar, bolehMengelola } = useAuth();
   const [buka, setBuka] = useState(false);
   const [tanyaKeluar, setTanyaKeluar] = useState(false);
   const bungkus = useRef<HTMLDivElement | null>(null);
@@ -691,6 +699,17 @@ function MenuAkun() {
                 <Settings size={15} aria-hidden style={{ color: "var(--text-muted)" }} />
                 {t("nav.settings")}
               </Link>
+              {bolehMengelola && (
+                <Link
+                  href={AUDIT.href}
+                  role="menuitem"
+                  onClick={() => setBuka(false)}
+                  className="flex h-9 items-center gap-2.5 rounded-lg px-2.5 t-body text-ink-2 transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)] hover:text-ink"
+                >
+                  <History size={15} aria-hidden style={{ color: "var(--text-muted)" }} />
+                  {t("nav.audit")}
+                </Link>
+              )}
               <button
                 type="button"
                 role="menuitem"

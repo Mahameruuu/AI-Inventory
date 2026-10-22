@@ -26,10 +26,11 @@ from . import i18n
 from .errors import AppError
 from .limiter import limiter
 from .ml import predict
-from .routers import (assistant, auth, catalog, dashboard, demo,
+from .routers import (assistant, audit, auth, catalog, dashboard, demo,
                       forecast_api, forecasting, inventory, lifetime, master,
                       purchase_orders, reorder, reports, stock_issues,
-                      stock_receipts, transfer, users, warehouse_twin)
+                      stock_opname, stock_receipts, transfer, users,
+                      warehouse_twin)
 
 # Tanpa ini seluruh log.info di app/ hilang tanpa jejak: uvicorn hanya memasang
 # handler untuk logger miliknya sendiri, dan logger akar bawaannya berada di
@@ -194,6 +195,11 @@ app.include_router(catalog.router, dependencies=WAJIB_MASUK)
 app.include_router(inventory.router, dependencies=WAJIB_MASUK)
 app.include_router(stock_receipts.router, dependencies=WAJIB_MASUK)
 app.include_router(stock_issues.router, dependencies=WAJIB_MASUK)
+# Stok opname kembali pada 22 Oktober 2026 sebagai bagian Input Manual: ia
+# satu-satunya jalan mengoreksi stok yang menyimpang dari kenyataan, dan
+# posting-nya butuh persetujuan admin. Jejak audit hanya-baca, khusus admin.
+app.include_router(stock_opname.router, dependencies=WAJIB_MASUK)
+app.include_router(audit.router, dependencies=WAJIB_MASUK)
 app.include_router(purchase_orders.router, dependencies=WAJIB_MASUK)
 app.include_router(reports.router, dependencies=WAJIB_MASUK)
 app.include_router(forecasting.router, dependencies=WAJIB_MASUK)
