@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panduan Inventory AI</title>
+<meta name="description" content="Alur penggunaan Inventory AI dari masuk sampai keluar, beserta fungsi setiap fitur.">
+<style>
+  :root {
+    --bg: #f6f7f9; --surface: #ffffff; --surface-2: #f0f2f5; --border: #dde1e7;
+    --ink: #17202b; --ink-2: #3d4856; --muted: #6b7684;
+    --brand: #2563eb; --brand-soft: #e6eefd;
+    --c-start: #475569; --c-data: #0f766e; --c-input: #b45309; --c-ai: #7c3aed; --c-acc: #be123c;
+    --shadow: 0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1319; --surface: #171c24; --surface-2: #1e2530; --border: #2b3441;
+      --ink: #e8ecf1; --ink-2: #c3cad4; --muted: #8b95a3;
+      --brand: #6b9cff; --brand-soft: #1b2740;
+      --c-start: #94a3b8; --c-data: #2dd4bf; --c-input: #fbbf24; --c-ai: #a78bfa; --c-acc: #fb7185;
+      --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1319; --surface: #171c24; --surface-2: #1e2530; --border: #2b3441;
+    --ink: #e8ecf1; --ink-2: #c3cad4; --muted: #8b95a3;
+    --brand: #6b9cff; --brand-soft: #1b2740;
+    --c-start: #94a3b8; --c-data: #2dd4bf; --c-input: #fbbf24; --c-ai: #a78bfa; --c-acc: #fb7185;
+    --shadow: none;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 16px 80px; }
+  h1 { font-size: 30px; line-height: 1.2; margin: 0 0 8px; letter-spacing: -.01em; }
+  h2 { font-size: 22px; margin: 56px 0 6px; letter-spacing: -.01em; }
+  h3 { font-size: 17px; margin: 0; }
+  p { margin: 0 0 12px; color: var(--ink-2); }
+  .lead { font-size: 17px; color: var(--ink-2); max-width: 680px; }
+  .meta { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+  .sub { color: var(--muted); margin-bottom: 20px; }
+  nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 0; }
+  nav.toc a {
+    font-size: 13px; text-decoration: none; color: var(--brand); background: var(--brand-soft);
+    padding: 4px 10px; border-radius: 999px;
+  }
+
+  /* ---------- flowchart ---------- */
+  .flow { display: flex; flex-direction: column; align-items: center; }
+  .node {
+    width: 100%; max-width: 560px; background: var(--surface); border: 1px solid var(--border);
+    border-left: 4px solid var(--c, var(--c-start)); border-radius: 10px; padding: 12px 16px;
+    box-shadow: var(--shadow);
+  }
+  .node .tag { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--c); }
+  .node .t { font-weight: 650; color: var(--ink); }
+  .node .d { font-size: 13.5px; color: var(--muted); margin-top: 2px; }
+  .node.pill { max-width: 280px; text-align: center; border-left-width: 1px; border-radius: 999px; border-color: var(--c); }
+  .arrow { width: 2px; height: 26px; background: var(--border); position: relative; flex: none; }
+  .arrow::after {
+    content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%);
+    border: 6px solid transparent; border-top-color: var(--border); border-bottom: 0;
+  }
+  .arrow.lbl::before {
+    content: attr(data-l); position: absolute; left: 12px; top: 3px; white-space: nowrap;
+    font-size: 12px; color: var(--muted);
+  }
+  .group {
+    width: 100%; border: 1.5px dashed color-mix(in srgb, var(--c) 45%, transparent);
+    background: color-mix(in srgb, var(--c) 5%, transparent);
+    border-radius: 14px; padding: 14px; display: flex; flex-direction: column; align-items: center;
+  }
+  .group > .gh { align-self: flex-start; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--c); margin-bottom: 10px; }
+  .row { display: grid; gap: 10px; width: 100%; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+  .row .node { max-width: none; }
+  .steps { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+  .step { font-size: 12px; padding: 2px 8px; border-radius: 6px; background: var(--surface-2); color: var(--ink-2); border: 1px solid var(--border); }
+  .step.adm { border-color: var(--c-acc); color: var(--c-acc); }
+  .sep { color: var(--muted); font-size: 12px; }
+  .branch { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 560px; }
+  .note { font-size: 13px; color: var(--muted); text-align: center; max-width: 560px; margin: 8px auto 0; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 0 0 22px; font-size: 13px; color: var(--muted); }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--c); margin-right: 6px; vertical-align: -1px; }
+
+  /* ---------- fitur ---------- */
+  .cat { margin-top: 34px; }
+  .cat > .ch { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .cat > .ch .bar { width: 4px; height: 22px; border-radius: 2px; background: var(--c); }
+  .cat > .ch h3 { font-size: 18px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px 20px; margin-bottom: 12px; box-shadow: var(--shadow);
+  }
+  .card .top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; align-items: baseline; }
+  .card .where { font-size: 12.5px; color: var(--muted); }
+  .card .q { font-style: italic; color: var(--ink-2); margin: 6px 0 10px; }
+  .card ul { margin: 0; padding-left: 20px; color: var(--ink-2); }
+  .card li { margin: 3px 0; }
+  .card li b { color: var(--ink); font-weight: 600; }
+  .role { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); border: 1px solid var(--border); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; background: var(--surface); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--surface-2); font-size: 12.5px; color: var(--muted); font-weight: 600; }
+  td.c { text-align: center; }
+  .tablewrap { overflow-x: auto; }
+  .ok { color: var(--c-data); font-weight: 700; }
+  .no { color: var(--muted); }
+
+  @media (max-width: 560px) {
+    h1 { font-size: 24px; }
+    .branch { grid-template-columns: 1fr; }
+    .arrow.lbl::before { display: none; }
+  }
+  @media print {
+    body { background: #fff; }
+    .card, .node, table { box-shadow: none; }
+    .cat, .card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Panduan Penggunaan Inventory AI</h1>
+  <p class="lead">Alur kerja sistem dari masuk sampai keluar, lalu penjelasan fungsi setiap fitur. Urutan menunya sengaja mengikuti cerita: <b>data dasar → input manual → kecerdasan AI</b>.</p>
+  <div class="meta">Diperbarui 22 Oktober 2026</div>
+  <nav class="toc">
+    <a href="#alur">1. Alur penggunaan</a>
+    <a href="#fitur">2. Fungsi per fitur</a>
+    <a href="#peran">3. Hak akses per peran</a>
+  </nav>
+
+  <!-- ===================================================== -->
+  <h2 id="alur">1. Alur penggunaan</h2>
+  <p class="sub">Dari atas ke bawah. Kotak bergaris putus adalah kelompok menu di sisi kiri layar.</p>
+
+  <div class="legend">
+    <span style="--c:var(--c-start)">Masuk / keluar</span>
+    <span style="--c:var(--c-data)">Data dasar</span>
+    <span style="--c:var(--c-input)">Input manual</span>
+    <span style="--c:var(--c-ai)">Kecerdasan AI</span>
+    <span style="--c:var(--c-acc)">Menu akun &amp; persetujuan admin</span>
+  </div>
+
+  <div class="flow">
+    <div class="node pill" style="--c:var(--c-start)"><div class="t">Buka aplikasi</div></div>
+    <div class="arrow"></div>
+
+    <div class="node" style="--c:var(--c-start)">
+      <div class="tag">Halaman masuk</div>
+      <div class="t">Punya akun?</div>
+    </div>
+    <div class="arrow"></div>
+    <div class="branch">
+      <div class="node" style="--c:var(--c-start)">
+        <div class="t">Ya → Masuk</div>
+        <div class="d">Isi email dan kata sandi.</div>
+      </div>
+      <div class="node" style="--c:var(--c-start)">
+        <div class="t">Belum → Daftar perusahaan</div>
+        <div class="d">Isi nama perusahaan, nama, email, dan kata sandi. Pendaftar menjadi <b>owner</b>.</div>
+      </div>
+    </div>
+    <div class="arrow"></div>
+
+    <div class="node" style="--c:var(--c-start)">
+      <div class="tag">Beranda</div>
+      <div class="t">Dasbor</div>
+      <div class="d">Ringkasan kondisi stok sekarang, barang yang perlu perhatian, dan prakiraan ke depan.</div>
+    </div>
+    <div class="arrow lbl" data-l="siapkan data"></div>
+
+    <div class="group" style="--c:var(--c-data)">
+      <div class="gh">Data dasar · admin/owner</div>
+      <div class="row">
+        <div class="node" style="--c:var(--c-data)"><div class="t">Barang</div><div class="d">SKU, satuan, harga, lead time, stok pengaman, umur pakai.</div></div>
+        <div class="node" style="--c:var(--c-data)"><div class="t">Gudang</div><div class="d">Kode, nama, lokasi gudang.</div></div>
+      </div>
+    </div>
+    <div class="arrow lbl" data-l="catat kegiatan harian"></div>
+
+    <div class="group" style="--c:var(--c-input)">
+      <div class="gh">Input manual</div>
+      <div class="row">
+        <div class="node" style="--c:var(--c-input)"><div class="t">Penerimaan Barang</div><div class="d">Barang masuk → stok bertambah.</div></div>
+        <div class="node" style="--c:var(--c-input)"><div class="t">Pengeluaran Barang</div><div class="d">Barang keluar → stok berkurang. Ditolak bila stok kurang.</div></div>
+        <div class="node" style="--c:var(--c-input)">
+          <div class="t">Stok Opname</div><div class="d">Koreksi selisih hitung fisik.</div>
+          <div class="steps"><span class="step">Buat lembar</span><span class="sep">→</span><span class="step">Isi hitungan</span><span class="sep">→</span><span class="step adm">Posting (admin)</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="arrow lbl" data-l="ambil keputusan"></div>
+
+    <div class="group" style="--c:var(--c-ai)">
+      <div class="gh">Kecerdasan AI</div>
+      <div class="node" style="--c:var(--c-ai)"><div class="t">Prakiraan Permintaan</div><div class="d">Berapa yang akan terpakai ke depan?</div></div>
+      <div class="arrow"></div>
+      <div class="node" style="--c:var(--c-ai)">
+        <div class="t">Pemesanan Ulang</div><div class="d">Barang mana yang harus dipesan, kapan, dan berapa?</div>
+        <div class="steps"><span class="step">Pilih barang</span><span class="sep">→</span><span class="step">Buat pesanan pembelian (PO)</span></div>
+      </div>
+      <div class="arrow"></div>
+      <div class="node" style="--c:var(--c-ai)">
+        <div class="t">Transfer Antar Gudang</div><div class="d">Bisakah kekurangan ditutup dari gudang sendiri sebelum membeli?</div>
+        <div class="steps"><span class="step">Ajukan</span><span class="sep">→</span><span class="step">Setujui</span><span class="sep">→</span><span class="step">Kirim</span><span class="sep">→</span><span class="step">Terima</span></div>
+      </div>
+      <div class="arrow"></div>
+      <div class="node" style="--c:var(--c-ai)"><div class="t">Analisis Umur Pakai</div><div class="d">Apakah komponen bertahan sesuai umur pakainya?</div></div>
+      <div class="arrow"></div>
+      <div class="node" style="--c:var(--c-ai)"><div class="t">Asisten AI</div><div class="d">Tanya apa saja tentang stok dengan bahasa sehari-hari.</div></div>
+    </div>
+    <div class="arrow lbl" data-l="menu akun (kanan atas)"></div>
+
+    <div class="group" style="--c:var(--c-acc)">
+      <div class="gh">Menu akun</div>
+      <div class="row">
+        <div class="node" style="--c:var(--c-acc)"><div class="t">Pengaturan</div><div class="d">Bahasa, tema terang/gelap, status koneksi.</div></div>
+        <div class="node" style="--c:var(--c-acc)"><div class="t">Jejak Audit</div><div class="d">Siapa mengubah apa dan kapan. Khusus admin/owner.</div></div>
+      </div>
+    </div>
+    <div class="arrow"></div>
+
+    <div class="node pill" style="--c:var(--c-start)"><div class="t">Keluar</div></div>
+    <p class="note">Kegiatan harian biasanya berulang di bagian tengah: mencatat penerimaan dan pengeluaran, lalu melihat Pemesanan Ulang dan Transfer untuk menentukan langkah berikutnya. Stok opname dilakukan berkala, misalnya akhir bulan.</p>
+  </div>
+
+  <!-- ===================================================== -->
+  <h2 id="fitur">2. Fungsi per fitur</h2>
+  <p class="sub">Urutannya sama dengan menu di sisi kiri.</p>
+
+  <div class="cat" style="--c:var(--c-start)">
+    <div class="ch"><span class="bar"></span><h3>Masuk dan beranda</h3></div>
+
+    <div class="card">
+      <div class="top"><h3>Masuk &amp; Daftar</h3><span class="where">Halaman /login</span></div>
+      <p class="q">Siapa Anda, dan dari perusahaan mana?</p>
+      <ul>
+        <li><b>Masuk</b> dengan email dan kata sandi.</li>
+        <li><b>Daftar perusahaan baru</b>: perusahaan baru langsung dibuat dan pendaftarnya menjadi owner.</li>
+        <li>Setiap perusahaan hanya melihat datanya sendiri. Data perusahaan lain dipisahkan oleh basis data, bukan hanya oleh tampilan.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="top"><h3>Dasbor</h3><span class="where">Beranda</span></div>
+      <p class="q">Bagaimana kondisi persediaan saat ini?</p>
+      <ul>
+        <li><b>Kondisi sekarang</b>: jumlah barang, nilai stok, dan sebaran stok.</li>
+        <li><b>Perlu perhatian</b>: barang yang stoknya sudah di bawah titik pesan. Angkanya sama persis dengan halaman Pemesanan Ulang.</li>
+        <li><b>Prakiraan</b>: gambaran kebutuhan ke depan.</li>
+        <li><b>Gudang 3D</b>: gambaran gudang dengan rak dikelompokkan per kategori barang. Bisa dibuka layar penuh.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="cat" style="--c:var(--c-data)">
+    <div class="ch"><span class="bar"></span><h3>Data dasar</h3></div>
+
+    <div class="card">
+      <div class="top"><h3>Barang</h3><span class="role">admin/owner</span></div>
+      <p class="q">Barang apa saja yang dikelola?</p>
+      <ul>
+        <li>Tambah, ubah, dan nonaktifkan barang: SKU, nama, kategori, satuan, harga.</li>
+        <li><b>Parameter perencanaan</b>: lead time (lama pengiriman pemasok), stok pengaman, titik pesan ulang, stok minimum. Angka ini dipakai Pemesanan Ulang.</li>
+        <li><b>Jenis pemakaian</b>: habis pakai atau berumur pakai, lengkap dengan umur pakai yang diharapkan. Angka ini dipakai Analisis Umur Pakai.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="top"><h3>Gudang</h3><span class="role">admin/owner</span></div>
+      <p class="q">Di mana saja barang disimpan?</p>
+      <ul>
+        <li>Tambah, ubah, dan nonaktifkan gudang.</li>
+        <li>Lokasi gudang dipakai Transfer Antar Gudang untuk menghitung jarak dan waktu tempuh.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="cat" style="--c:var(--c-input)">
+    <div class="ch"><span class="bar"></span><h3>Input manual</h3></div>
+
+    <div class="card">
+      <div class="top"><h3>Penerimaan Barang</h3><span class="role">staf ke atas</span></div>
+      <p class="q">Barang apa yang baru masuk?</p>
+      <ul>
+        <li>Catat barang masuk per gudang: tanggal, pemasok, nomor referensi, jumlah, dan harga.</li>
+        <li>Stok langsung bertambah dan tercatat di riwayat pergerakan, dengan nomor dokumen otomatis.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="top"><h3>Pengeluaran Barang</h3><span class="role">staf ke atas</span></div>
+      <p class="q">Barang apa yang dipakai atau keluar?</p>
+      <ul>
+        <li>Catat barang keluar per gudang beserta keperluannya.</li>
+        <li>Sisa stok tampil sebagai petunjuk. Pengeluaran yang melebihi stok tersedia <b>ditolak</b>, jadi stok tidak pernah minus.</li>
+        <li>Data pengeluaran inilah bahan utama prakiraan dan pemesanan ulang.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="top"><h3>Stok Opname</h3><span class="role">isi: staf · posting: admin/owner</span></div>
+      <p class="q">Apakah stok di sistem sama dengan isi rak?</p>
+      <ul>
+        <li><b>Mulai opname</b>: pilih gudang, lalu semua barangnya masuk lembar hitung.</li>
+        <li><b>Isi hitungan fisik</b>, boleh bertahap. Kolom kosong artinya belum dihitung, dan itu berbeda dengan nol. Selisih dan nilainya dalam rupiah tampil langsung.</li>
+        <li><b>Setujui &amp; posting</b> hanya bisa dilakukan admin/owner. Stok barang yang dihitung disamakan dengan hasil hitung, dan selisihnya dicatat di riwayat pergerakan. Barang yang belum dihitung tidak diubah.</li>
+        <li>Selisih diukur terhadap stok saat posting. Kalau ada barang yang bergerak selama penghitungan, layar memberi peringatan.</li>
+        <li>Draf yang tidak jadi dipakai bisa <b>dibatalkan</b> tanpa mengubah stok.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="cat" style="--c:var(--c-ai)">
+    <div class="ch"><span class="bar"></span><h3>Kecerdasan AI</h3></div>
+
+    <div class="card">
+      <div class="top"><h3>Prakiraan Permintaan</h3></div>
+      <p class="q">Berapa yang akan terpakai dalam periode ke depan?</p>
+      <ul>
+        <li>Memprediksi kebutuhan per barang per gudang dari riwayat pengeluaran.</li>
+        <li>Tersedia beberapa model: model klasik, XGBoost, dan mode <b>"terbaik"</b> yang memilih model paling akurat lewat uji ke data masa lalu.</li>
+        <li>Menampilkan proyeksi stok, yaitu kapan stok diperkirakan habis, beserta penjelasan dalam kalimat biasa.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="top"><h3>Pemesanan Ulang</h3></div>
+      <p class="q">Barang mana yang harus dipesan sekarang, dan berapa?</p>
+      <ul>
+        <li>Membandingkan stok tersedia dengan kebutuhan selama lead time ditambah stok pengaman.</li>
+        <li>Status dan jumlah pesan mengikuti periode yang dipilih, diurutkan dari yang paling mendesak.</li>
+        <li>Dari saran ini Anda bisa langsung membuat <b>pesanan pembelian (PO)</b>.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="top"><h3>Transfer Antar Gudang</h3><span class="role">staf ke atas</span></div>
+      <p class="q">Bisakah kekurangan di satu gudang ditutup dari gudang lain sebelum membeli?</p>
+      <ul>
+        <li>Mencari gudang yang benar-benar kelebihan stok, lalu memeringkatnya berdasarkan kecukupan, jarak, dan waktu tempuh. Sisanya yang memang harus dibeli.</li>
+        <li>Rekomendasi rute dan moda angkut (darat/laut/udara) dari riwayat pengiriman sebelumnya.</li>
+        <li>Dokumen transfer berjalan bertahap: <b>diajukan → disetujui</b> (stok asal dicadangkan) <b>→ dikirim</b> (stok asal berkurang) <b>→ diterima</b> (stok tujuan bertambah).</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="top"><h3>Analisis Umur Pakai</h3></div>
+      <p class="q">Apakah komponen bertahan selama yang seharusnya?</p>
+      <ul>
+        <li>Membandingkan umur pakai aktual komponen dengan umur pakai yang diharapkan di data barang.</li>
+        <li>Grafik dengan batas atas dan bawah, dalam satuan hari.</li>
+        <li><b>Daftar tindak lanjut</b> untuk komponen yang terlalu cepat rusak atau terlalu lama tidak diganti.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="top"><h3>Asisten AI</h3></div>
+      <p class="q">"Barang apa yang hampir habis di gudang Surabaya?"</p>
+      <ul>
+        <li>Tanya jawab dengan bahasa sehari-hari tentang stok, prakiraan, dan pemesanan.</li>
+        <li>Angka yang disebut asisten diambil dari mesin yang sama dengan layar lain, jadi hasilnya selalu konsisten.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="cat" style="--c:var(--c-acc)">
+    <div class="ch"><span class="bar"></span><h3>Menu akun (kanan atas)</h3></div>
+
+    <div class="card">
+      <div class="top"><h3>Pengaturan</h3></div>
+      <ul>
+        <li>Ganti <b>bahasa</b> (Indonesia/Inggris) dan <b>tema</b> (terang/gelap).</li>
+        <li>Lihat status koneksi ke server dan basis data.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="top"><h3>Jejak Audit</h3><span class="role">admin/owner</span></div>
+      <p class="q">Siapa yang mengubah data ini, kapan, dan nilai sebelumnya berapa?</p>
+      <ul>
+        <li>Setiap pembuatan, perubahan, dan penghapusan data tercatat otomatis: barang, gudang, pengguna, dan semua dokumen.</li>
+        <li>Untuk perubahan, tampil kolom yang berubah dengan format <b>nilai lama → nilai baru</b>.</li>
+        <li>Bisa disaring per jenis data, jenis aksi, pengguna, dan tanggal.</li>
+        <li>Catatan ini tidak bisa diubah atau dihapus oleh siapa pun lewat aplikasi.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="top"><h3>Keluar</h3></div>
+      <ul>
+        <li>Mengakhiri sesi di perangkat ini, lalu kembali ke halaman masuk.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="cat" style="--c:var(--c-start)">
+    <div class="ch"><span class="bar"></span><h3>Berjalan di belakang layar</h3></div>
+    <div class="card">
+      <div class="top"><h3>Cadangan basis data</h3><span class="where">otomatis, tanpa layar</span></div>
+      <ul>
+        <li>Seluruh data dicadangkan otomatis setiap hari pukul 02.00.</li>
+        <li>Setiap hari Minggu, cadangan dicoba dipulihkan untuk memastikan isinya utuh.</li>
+        <li>Yang disimpan: cadangan 14 hari terakhir dan 8 minggu terakhir.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ===================================================== -->
+  <h2 id="peran">3. Hak akses per peran</h2>
+  <p class="sub">Setiap pengguna punya satu peran. Pendaftar perusahaan otomatis menjadi owner. Saat ini belum ada halaman untuk mengelola pengguna, jadi penambahan pengguna dan perubahan peran masih dilakukan oleh pengelola sistem.</p>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>Kegiatan</th><th class="c">Owner</th><th class="c">Admin</th><th class="c">Staf</th><th class="c">Viewer</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Melihat dasbor, prakiraan, pemesanan ulang, umur pakai, asisten</td><td class="c ok">✓</td><td class="c ok">✓</td><td class="c ok">✓</td><td class="c ok">✓</td></tr>
+        <tr><td>Mencatat penerimaan dan pengeluaran</td><td class="c ok">✓</td><td class="c ok">✓</td><td class="c ok">✓</td><td class="c no">—</td></tr>
+        <tr><td>Membuat dan mengisi stok opname</td><td class="c ok">✓</td><td class="c ok">✓</td><td class="c ok">✓</td><td class="c no">—</td></tr>
+        <tr><td>Mengajukan dan memproses transfer</td><td class="c ok">✓</td><td class="c ok">✓</td><td class="c ok">✓</td><td class="c no">—</td></tr>
+        <tr><td>Memposting stok opname</td><td class="c ok">✓</td><td class="c ok">✓</td><td class="c no">—</td><td class="c no">—</td></tr>
+        <tr><td>Mengelola barang dan gudang</td><td class="c ok">✓</td><td class="c ok">✓</td><td class="c no">—</td><td class="c no">—</td></tr>
+        <tr><td>Membuka jejak audit</td><td class="c ok">✓</td><td class="c ok">✓</td><td class="c no">—</td><td class="c no">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+</body>
+</html>
