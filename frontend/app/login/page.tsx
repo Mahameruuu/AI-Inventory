@@ -77,6 +77,13 @@ export default function HalamanMasuk() {
           >
             <img src="/logo-sml.svg" alt="" className="h-full w-full object-contain" />
           </span>
+          <span
+            className="flex h-11 shrink-0 items-center justify-center rounded-xl px-2.5 py-2"
+            style={{ background: "#0b1220" }}
+            aria-hidden
+          >
+            <img src="/logo-xorca-light-text.svg" alt="" className="h-full w-auto object-contain" />
+          </span>
           <div className="min-w-0">
             <div className="font-display truncate t-lead font-bold leading-tight text-ink">
               {t("brand.name")}

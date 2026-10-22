@@ -401,14 +401,14 @@ function LaciNavigasi({
           >
             <img src="/logo-sml.svg" alt="" className="h-full w-full object-contain" />
           </span>
-          <span className="min-w-0 flex-1">
-            <span className="font-display block truncate t-base font-bold leading-tight text-ink">
-              {t("brand.name")}
-            </span>
-            <span className="block truncate t-micro font-medium uppercase tracking-[0.11em] text-muted">
-              {t("brand.tagline")}
-            </span>
+          <span
+            className="flex h-9 shrink-0 items-center justify-center rounded-xl px-2 py-1"
+            style={{ background: "#0b1220" }}
+            aria-hidden
+          >
+            <img src="/logo-xorca-light-text.svg" alt="" className="h-full w-auto object-contain" />
           </span>
+          <span className="flex-1" />
           <button
             type="button"
             onClick={tutup}
@@ -418,6 +418,16 @@ function LaciNavigasi({
           >
             <X size={18} aria-hidden />
           </button>
+        </div>
+        {/* Nama produk turun ke barisnya sendiri: dua logo mitra sudah
+            memenuhi baris atas, dan menumpuknya membuat nama terpotong. */}
+        <div className="-mt-1 shrink-0 px-4 pb-3">
+          <div className="font-display truncate t-base font-bold leading-tight text-ink">
+            {t("brand.name")}
+          </div>
+          <div className="truncate t-micro font-medium uppercase tracking-[0.11em] text-muted">
+            {t("brand.tagline")}
+          </div>
         </div>
 
         <div className="mx-3 h-px shrink-0" style={{ background: "var(--border)" }} />
@@ -940,15 +950,17 @@ function KerangkaAplikasi({ children }: { children: ReactNode }) {
             <img src="/logo-sml.svg" alt="" className="h-full w-full object-contain" />
           </span>
           {!ringkas && (
+            <span
+              className="flex h-9 shrink-0 items-center justify-center rounded-xl px-2 py-1"
+              style={{ background: "#0b1220" }}
+              aria-hidden
+            >
+              <img src="/logo-xorca-light-text.svg" alt="" className="h-full w-auto object-contain" />
+            </span>
+          )}
+          {!ringkas && (
             <>
-              <span className="min-w-0 flex-1">
-                <span className="font-display block truncate t-base font-bold leading-tight text-ink">
-                  {t("brand.name")}
-                </span>
-                <span className="block truncate t-micro font-medium uppercase tracking-[0.11em] text-muted">
-                  {t("brand.tagline")}
-                </span>
-              </span>
+              <span className="flex-1" />
               <button
                 type="button"
                 onClick={ubahRingkas}
@@ -961,6 +973,16 @@ function KerangkaAplikasi({ children }: { children: ReactNode }) {
             </>
           )}
         </div>
+        {!ringkas && (
+          <div className="-mt-1.5 shrink-0 px-4 pb-3">
+            <div className="font-display truncate t-base font-bold leading-tight text-ink">
+              {t("brand.name")}
+            </div>
+            <div className="truncate t-micro font-medium uppercase tracking-[0.11em] text-muted">
+              {t("brand.tagline")}
+            </div>
+          </div>
+        )}
 
         <div className="mx-3 h-px shrink-0" style={{ background: "var(--border)" }} />
 
@@ -1042,7 +1064,14 @@ function KerangkaAplikasi({ children }: { children: ReactNode }) {
               >
                 <img src="/logo-sml.svg" alt="" className="h-full w-full object-contain" />
               </span>
-              <span className="font-display min-w-0 truncate t-base font-bold leading-tight text-ink">
+              <span
+                className="flex h-8 shrink-0 items-center justify-center rounded-lg px-1.5 py-1"
+                style={{ background: "#0b1220" }}
+                aria-hidden
+              >
+                <img src="/logo-xorca-light-text.svg" alt="" className="h-full w-auto object-contain" />
+              </span>
+              <span className="font-display hidden min-w-0 truncate t-base font-bold leading-tight text-ink sm:inline">
                 {t("brand.name")}
               </span>
             </Link>
